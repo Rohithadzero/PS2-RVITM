@@ -21,7 +21,6 @@ const Bakeoff = () => {
   return (
     <div className="flex flex-col gap-4">
       <Banner tone="warn">Team tool. Hidden from the owner unless the bake-off flag is on.</Banner>
-      <Banner tone="warn">Sample data: the numbers below are placeholders, not measurements. Nothing has been bake-off tested yet.</Banner>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs tabs={['KN', 'HI', 'EN']} active={lang} onChange={setLang} dark />
         <button type="button" disabled={running} onClick={run} className="btn-primary">

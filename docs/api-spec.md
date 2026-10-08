@@ -147,3 +147,27 @@ Keep these in `packages/contracts` and generate types for both web and API.
 ## 11. Status codes
 
 200/201 success, 202 job accepted, 400 validation, 401 unauth, 403 not allow-listed, 404 not found (also for other owners' objects), 409 state conflict (blocked / stale), 429 rate limited (with `retry_after`), 502 provider error (with fallback info).
+
+
+## 12. Planned services (frontend contracts; not built by the backend team)
+
+The frontend already calls these through `src/api/client.js` (they reject with 501 today). Owners implement them; the shapes below are what the UI sends and reads. All text on generated assets goes through the same slot renderer and validator as campaign copy, and carries `facts_version`.
+
+| Method | Path | Owner | Notes |
+|---|---|---|---|
+| POST | `/studio/pack` | Backend | Body: selected deliverables. Returns which pipelines will run and their readiness |
+| POST | `/launch/ideas` | Backend (planner agent) | Body: city, skills, budget, hours, avoid. Returns ranked ideas with startup range, first-month target, risks, channels. Ranges must be labelled estimates |
+| POST | `/launch/names` | Backend | Body: idea id, language list. Returns names and taglines per language; hi/kn flagged `needs_native_review` |
+| POST | `/launch/pack` | Backend | Returns the launch checklist and which deliverables are ready |
+| POST | `/identity/propose` | Backend | Returns palette, fonts, voice, banned phrases; palettes must meet WCAG AA text contrast |
+| POST | `/website/generate` | Website team | See the Website screen for the exact JSON; returns 202 with `site_id` |
+| GET | `/website/:id` | Website team | `status` queued / in_progress / ready / failed, `preview_url`, `facts_version`, `validator` |
+| POST | `/website/:id/publish` | Website team | Returns the live URL; refuses if `facts_version` is stale or validator failed |
+| POST | `/video/reel` | Video team | Body: shots (4-12 s each), aspect ratio, overlay from locked facts. Returns `reel_id` and one `job_id` per clip |
+| GET | `/video/:id` | Video team | Status and stitched URL; `labelled_fallback` true for saved demo output |
+
+Website: business name and tagline, palette and fonts, languages, sections, menu, offer facts and photos in; `site_id`, status, preview URL, facts version and validator result out.
+
+Video: Agnes clips are 4-12 s, created with `POST /v1/videos` and polled until `completed` or `failed`; free-tier video is 1 request per minute. A reel longer than 12 s is several clips joined deterministically (ffmpeg). Offer text and prices on screen are stamped by code from the approved facts, never drawn by the model.
+
+Not-connected behaviour: until a service is live the UI shows a "not connected" banner with the service owner and keeps local previews and cost maths usable.

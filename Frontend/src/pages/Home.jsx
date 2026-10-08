@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Coffee, CloudRain, UtensilsCrossed, Mic } from 'lucide-react';
+import { Coffee, CloudRain, UtensilsCrossed, Mic, Sparkles, Rocket } from 'lucide-react';
 import StatCards from '../components/dashboard/StatCards';
 import RateChart from '../components/dashboard/RateChart';
 import LiveCampaignCard from '../components/dashboard/LiveCampaignCard';
@@ -32,6 +32,16 @@ const Home = () => {
 
   return (
     <div className="flex flex-col gap-5">
+      <section className="grid gap-3 sm:grid-cols-2">
+        <button type="button" onClick={() => navigate('studio')} className="flex items-center gap-3 rounded-2xl bg-white p-4 text-left text-ink hover:bg-white/90">
+          <span className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent"><Sparkles size={22} /></span>
+          <span><span className="block font-semibold">Make something new</span><span className="text-sm text-ink/60">Posts, posters, taglines, a website or a reel.</span></span>
+        </button>
+        <button type="button" onClick={() => navigate('launch')} className="flex items-center gap-3 rounded-2xl bg-accent p-4 text-left text-white hover:bg-accent/90">
+          <span className="grid size-11 place-items-center rounded-xl bg-white/20"><Rocket size={22} /></span>
+          <span><span className="block font-semibold">No business yet? Build one</span><span className="text-sm text-white/85">Ideas, a name, a brand and a launch pack.</span></span>
+        </button>
+      </section>
       <StatCards />
       <div className="grid gap-3 lg:grid-cols-[1fr_1.15fr]">
         <RateChart />

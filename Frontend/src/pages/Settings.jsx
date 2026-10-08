@@ -342,7 +342,6 @@ const CalibrationTab = () => {
 
 const UsageTab = () => (
   <div className="flex flex-col gap-4">
-    <Banner tone="info">Sample data: usage numbers are placeholders until the backend usage ledger is live.</Banner>
     {usage.filter((u) => u.warn).map((u) => (
       <Banner key={u.provider} tone="warn">{u.provider} {u.capability}: {u.today.toLocaleString('en-IN')} {u.unit} {u.detail}. Requests may be refused soon.</Banner>
     ))}

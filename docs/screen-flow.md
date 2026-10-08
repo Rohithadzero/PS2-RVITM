@@ -21,6 +21,11 @@ Companion to [prd](prd.md) and [frontend.prd](frontend.prd.md). Screens are numb
 | S12 | Customers & Send | laptop | Consent list, per-customer language, simulated send, send log |
 | S13 | Settings (Providers, Voice, Limits, Calibration, Usage, Data) | laptop | Bring-your-own API keys per capability (default Agnes), STT/TTS providers, rate-limit tiers, calibration, usage, data export/delete. See [settings](settings.md) |
 | S14 | Bake-off (internal) | laptop | Record/score STT and TTS providers (team tool, hidden from owner) |
+| S15 | Studio | both | Choose what to make (posts, WhatsApp, posters, taglines, brand kit, website, reel); routes to the pipeline that makes each |
+| S16 | Build my business | both | No-business path: about you, ideas, name and tagline, brand look, offer and prices, launch pack |
+| S17 | Names and brand look | laptop | Business name, taglines per language, colours with contrast checks, starter logos, fonts |
+| S18 | Website | laptop | Section editor and live local preview; generation/publish by the website service |
+| S19 | Reels and video | both | Shot list, length, queue time and cost; generation by the video service |
 
 ## 2. Primary flow
 
@@ -99,3 +104,25 @@ S2 Home -- new campaign --> S3 Voice Brief               |
 | S6 | n/a | 429 queue message; failed asset retry |
 | S7 | no assets | partial results with gap notes |
 | S12 | no customers -> upload | no consent -> skipped count |
+
+
+## 7. Studio and no-business flows (S15-S19)
+
+```
+S2 Home --> S15 Studio --+--> "I have a business" --> pick deliverables --> first item's screen
+                         |        posts / WhatsApp / posters --> S3 Voice Brief (campaign pipeline)
+                         |        taglines / brand kit        --> S17 Names and brand look
+                         |        website                     --> S18 Website   (website service)
+                         |        reel                        --> S19 Reels     (video service)
+                         |
+                         +--> "I don't have a business yet" --> S16 Build my business
+                                  1 About you -> 2 Ideas -> 3 Name & tagline -> 4 Brand look
+                                  -> 5 Offer & prices -> 6 Launch pack -> S3 Voice Brief (opening campaign)
+```
+
+Rules:
+- Screens and Studio items with no backend yet are greyed out (sidebar and Studio cards). They stay clickable so the team can build against them. The list is `NO_BACKEND` in `Frontend/src/data/studio.js`.
+- S16 outputs are examples until the planner service exists; the owner sets every price. The opening-offer price is calculated from the discount, never typed.
+- S17 colour contrast and starter logos are computed in the browser (real). Hindi and Kannada taglines are drafts and carry "needs native review".
+- S18 and S19 show a "not connected" banner when the owner presses Generate, plus the contract the service must implement. Local previews and cost maths stay usable.
+- Website and video text go through the same locked-facts rules: prices and offer text are stamped from the approved facts by code.

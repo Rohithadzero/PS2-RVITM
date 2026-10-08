@@ -131,3 +131,11 @@ Guardrail: numbers, days and negations in the cleaned text are diffed against th
 ## 9. Code-mixed input (Kanglish / Hinglish)
 
 STT may return Latin-script Kanglish/Hinglish or native script. Numbers in spoken form are the main risk: the LLM misread most spoken number words in calibration, so the brief pipeline uses a deterministic number-word parser first and asks the owner to confirm any disagreement ([validator-and-scoring](validator-and-scoring.md) section 8, [calibration-results](calibration-results.md)). Native speakers record the real test set (20 natural Kanglish/Hinglish offer sentences) during the bake-off.
+
+## 10. Vosk models installed in this project (8 Oct 2026)
+
+Installed by `python apps/api/scripts/get_vosk_models.py` into `models/vosk/` (about 200 MB, **not committed**; `models/` is gitignored): `vosk-model-small-en-in-0.4` (Indian English), `vosk-model-small-en-us-0.15`, `vosk-model-small-hi-0.22` (Hindi, Devanagari output). The script can fetch any other tag from the Vosk catalogue (`--list`). Adapter: `apps/api/app/voice/vosk_stt.py` (`transcribe(wav, lang)`, 16 kHz mono conversion, 0.5 word-confidence filter).
+
+- **Kannada and Hinglish have no Vosk model.** The adapter raises `Unsupported` for `kn`, `hinglish`, `kn-en` and `hi-en` (never a guess). Kannada needs Sarvam, Whisper or AI4Bharat; Latin-script Hinglish is handled by the Hindi or Indian-English model plus the number-word parser and owner confirmation.
+- **Measured test** (Windows speech synthesis saying "Filter coffee twenty percent off, Saturday and Sunday, eight to eleven in the morning, dine in only", 16 kHz): en-in (1.1 s) heard "...saturday and sunday **eleven** in the morning **done in only**"; en-us (1.4 s) heard "...eight to eleven in the morning **in only**". Numbers and days were right, but each model dropped or garbled part of the time and the "dine in" condition. This is exactly why STT never writes the lock, offer-critical tokens are highlighted, and the read-back approval is required. Synthetic voice, one sentence, two models: a smoke test, not a benchmark; the real bake-off uses native-speaker recordings.
+- The Hindi model loads and runs (265 ms on 1 s of silence); no Hindi test audio was available, so Hindi accuracy is untested.

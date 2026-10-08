@@ -13,6 +13,18 @@ Team of 3-4, about 36 hours. The PRD owner designs the docs and contracts first;
 
 With 3 people, merge PRD lead into whoever is lightest on the critical path; keep the voice/validation owner separate because the validator is the product's core.
 
+## 1a. Service ownership (studio scope)
+
+| Area | Owner | State in this repo |
+|---|---|---|
+| Campaign pipeline, facts lock, validator, planner, scoring, change preview | Backend / agents | Domain code in `apps/api/app` (not wired to routes yet) |
+| Identity, launch planner (ideas, names, taglines) | Backend / agents | Screens built (mock); service not built |
+| Website generation + publish | Website teammate | Screen, local preview and contract built; service not connected |
+| Video generation | Video teammate | Screen, shot/cost maths and contract built; service not connected |
+| Frontend | Frontend | S0-S19 on mock data; screens with no backend are greyed out |
+
+Teammates remove their screen's slug from `NO_BACKEND` in `Frontend/src/data/studio.js` when they connect it, and replace the stub in `Frontend/src/api/client.js`.
+
 ## 2. Repository layout (monorepo)
 
 ```

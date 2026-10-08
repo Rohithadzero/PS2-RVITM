@@ -270,3 +270,22 @@ For each screen: loading skeleton, empty, partial data, error with retry, offlin
 5. S9 Compare and Optimize
 6. S1 Onboarding, S12 Customers and Send
 7. S0, S2, S11, S13, S14 (polish)
+
+
+## 11. Studio, business builder, brand identity, website, video (S15-S19)
+
+All run on mock data; the parts marked **real** are computed in the browser.
+
+| Screen | What it shows | Real in the browser | Backend |
+|---|---|---|---|
+| S15 Studio | Two paths (have a business / no business yet), deliverable cards, "Your pack" grouped by pipeline | Selection and routing | `POST /studio/pack` (planned) |
+| S16 Build my business | 6-step wizard: About you, Ideas (3 cards with example costs and risks), Name and tagline (hi/kn flagged draft), Brand look (palette + starter logos), Offer and prices (editable, opening price calculated), Launch pack (checklist, each item opens its screen) | Wizard state, price arithmetic, contrast | `POST /launch/ideas`, `/launch/names`, `/launch/pack` (planned) |
+| S17 Names and brand look | Name, tagline per language, colour editor with WCAG contrast table, three starter logos, font pair, live brand preview | Contrast ratios and grades, logo SVGs | `POST /identity/propose`, `PUT /brand` |
+| S18 Website | Section toggles, languages, address, device preview built from brand and approved facts, Generate and Publish | Preview | `POST /website/generate`, `GET /website/:id`, `POST /website/:id/publish` (website team) |
+| S19 Reels and video | Shot list (4-12 s each), shape, length, clips, queue-time estimate, list price, job states | Maths (1 RPM queue, $0.025/s list price) | `POST /video/reel`, `GET /jobs/:id` (video team) |
+
+Cross-cutting:
+- **Screens with no backend are greyed out** in the sidebar (dimmed, tooltip "No backend yet") and on Studio cards. They stay clickable. The list is `NO_BACKEND` in `Frontend/src/data/studio.js`; remove a slug when its backend is wired. There are no Demo/Building/Teammates tags and no build-status page.
+- **NotConnected banner** and **ContractCard** (`components/ui/studio.jsx`) show where a teammate's service plugs in (Website, Video). `src/api/client.js` has stub methods (`api.website.generate`, `api.video.createReel`, ...) that reject with HTTP 501 until replaced.
+- The collapsed sidebar scrolls so all screens fit on a laptop height.
+- Hindi and Kannada generated text is always labelled "draft: needs native review" until a native speaker checks it.

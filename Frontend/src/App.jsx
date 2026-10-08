@@ -19,6 +19,11 @@ import BrandData from './pages/BrandData';
 import Settings from './pages/Settings';
 import Bakeoff from './pages/Bakeoff';
 import Login from './pages/Login';
+import Studio from './pages/Studio';
+import Launch from './pages/Launch';
+import Identity from './pages/Identity';
+import Website from './pages/Website';
+import Video from './pages/Video';
 import { findPage, pages } from './navigation';
 import { useRoute, navigate } from './lib/router';
 import { useStore } from './state/store';
@@ -38,6 +43,11 @@ const SCREENS = {
   brand: BrandData,
   settings: Settings,
   bakeoff: Bakeoff,
+  studio: Studio,
+  launch: Launch,
+  identity: Identity,
+  website: Website,
+  video: Video,
 };
 
 const readExpanded = () => {

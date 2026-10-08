@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useReducer } from 'react';
 import { initialAssets, factsVersions, events as initialEvents, customers as initialCustomers, slotsIn } from '../data/mock';
 import { FIELD_TO_SLOT, diffFacts } from '../lib/facts';
+import { PALETTES, FONT_PAIRS, TAGLINES, SITE_SECTIONS, SHOT_TEMPLATES } from '../data/studio';
 
 // Client-side state for the demo. Each action mirrors an API call in docs/api-spec.md;
 // swap the reducer for API calls + SSE updates once the backend is live.
@@ -21,6 +22,12 @@ const initialState = {
   customers: initialCustomers,
   sendLog: [],
   sync: 'connected', // connected | reconnecting | offline
+  // Studio and business builder (docs/frontend.prd.md S15-S19). Mock state only; services are separate.
+  studio: { mode: 'have', selected: ['post', 'whatsapp', 'poster'] },
+  launch: { step: 0, answers: { city: 'Bengaluru', skills: [], budget: '10to50k', hours: 20, avoid: '' }, ideas: null, chosenIdea: null, name: '', tagline: null, items: null, offer: { discount_pct: 10, days: ['sat', 'sun'] } },
+  identity: { name: "Priya's Café", tagline: TAGLINES[0].id, palette: PALETTES[0].id, custom: null, fonts: FONT_PAIRS[0].id, logo: 0, saved: false },
+  website: { sections: SITE_SECTIONS, langs: ['en', 'kn'], slug: 'priyas-cafe', generated: false },
+  video: { aspect: '9:16', shots: SHOT_TEMPLATES, requested: false },
 };
 
 const log = (state, actor, kind, action, why, link = null) => ({
@@ -123,6 +130,17 @@ const reducer = (state, action) => {
 
     case 'SIMULATE_SEND':
       return log({ ...state, sendLog: [...action.rows, ...state.sendLog] }, 'Priya', 'sends', `Simulated send to ${action.rows.length} customers`, 'No real messages sent');
+
+    case 'SET_STUDIO':
+      return { ...state, studio: { ...state.studio, ...action.patch } };
+    case 'SET_LAUNCH':
+      return { ...state, launch: { ...state.launch, ...action.patch } };
+    case 'SET_IDENTITY':
+      return { ...state, identity: { ...state.identity, ...action.patch } };
+    case 'SET_WEBSITE':
+      return { ...state, website: { ...state.website, ...action.patch } };
+    case 'SET_VIDEO':
+      return { ...state, video: { ...state.video, ...action.patch } };
 
     case 'LOG':
       return log(state, action.actor, action.kind, action.action, action.why, action.link);

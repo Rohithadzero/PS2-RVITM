@@ -138,3 +138,19 @@ Schema in [data-model](data-model.md).
 | Validator mismatch | Asset set to Blocked with the offending token and the lock field; optimizer may not "fix" by editing facts |
 | Phone offline | Queue the voice clip locally (PWA) and send on reconnect |
 | Video task slow/failed | Keep status polling; show labelled saved clip |
+
+
+## 11. Service boundaries (studio scope)
+
+```
+Frontend (Studio, Build my business, Names & brand, Website, Video, Build status)
+   |
+   +-- Campaign pipeline (apps/api)  : brief -> facts lock -> plan -> copy -> validate -> board   [Backend]
+   +-- Identity / launch planner     : ideas, names, taglines, palettes                           [Backend, agents]
+   +-- Website service               : site generation + publish                                  [Website team]
+   +-- Video service                 : clip generation, stitching, job status                     [Video team]
+```
+
+- Every service honours the **locked Offer Facts**: prices, dates and conditions on any asset (post, poster, website, reel) are filled by code from the approved facts version and re-validated; a stale version cannot be published.
+- Services are independent; the frontend greys out screens listed in `NO_BACKEND` and shows a not-connected banner on HTTP 501 responses.
+- The shared contracts are in [api-spec](api-spec.md) section 12. Services may be separate processes; auth, owner scoping and the key-handling rules in [security](security.md) apply to all of them.

@@ -20,6 +20,9 @@
 | [team-plan.md](team-plan.md) | Roles, repo layout, GitHub workflow, 36-hour timeline |
 | [demo-script.md](demo-script.md) | 5-minute script, contingencies, rehearsal checklist |
 
+## Studio scope (added)
+Beyond campaigns: posts, posters, names and taglines, brand kit, website, promo reels, and a **Build my business** path for people with no business yet. Website and video are teammates' services; the frontend has their screens, local previews and contracts (see [api-spec](api-spec.md) section 12). Screens with no backend yet are greyed out in the sidebar.
+
 ## Decisions in one place
 - Native Kannada speakers on the team; Kannada is the headline language.
 - Free-only: no paid keys; local models on RTX 5060 / M4 first, cloud free tiers by bake-off.

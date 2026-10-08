@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AudioLines, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
-import { sidebarGroups, logoutItem } from '../navigation';
+import { sidebarGroups, logoutItem, hasBackend } from '../navigation';
+
 
 const RAIL = 64;
 const EXPANDED = 236;
@@ -25,6 +26,7 @@ const Tooltip = ({ children }) => (
 
 const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) => {
   const Icon = item.icon;
+  const dim = !accent && !hasBackend(item.slug) && !active;
   return (
     <div className="group relative">
       <button
@@ -32,9 +34,10 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
         onClick={() => onSelect(item.slug)}
         aria-label={expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
         aria-current={active ? 'page' : undefined}
+        title={!hasBackend(item.slug) ? 'No backend yet' : undefined}
         className={`relative flex items-center rounded-xl text-sm font-medium transition-colors ${
           expanded ? 'h-10 w-full gap-3 px-3' : 'rail-btn justify-center'
-        } ${
+        } ${dim ? 'opacity-40 hover:opacity-70' : ''} ${
           accent
             ? 'rounded-full bg-accent text-white hover:bg-accent/90'
             : active
@@ -49,7 +52,7 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
         )}
         {badge && !expanded && !active && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent ring-2 ring-panel" />}
       </button>
-      {!expanded && <Tooltip>{item.label}</Tooltip>}
+      {!expanded && <Tooltip>{!hasBackend(item.slug) ? `${item.label} (no backend yet)` : item.label}</Tooltip>}
     </div>
   );
 };
@@ -106,7 +109,7 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
       {expanded ? <ChevronLeft size={15} strokeWidth={2.5} /> : <ChevronRight size={15} strokeWidth={2.5} />}
     </button>
 
-    <div className={`mt-4 flex min-h-0 flex-1 flex-col ${expanded ? '-mx-1 overflow-y-auto px-1' : ''}`}>
+    <div className={`mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${expanded ? '-mx-1 px-1' : ''}`}>
       <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} />
     </div>
     <div className="mt-3">

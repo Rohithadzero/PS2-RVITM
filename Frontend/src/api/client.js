@@ -119,6 +119,32 @@ export const api = {
   bakeoffResults: () => get('/bakeoff/results'),
 };
 
+// 10. Planned services (docs/api-spec.md "Planned services"). Not built: each call rejects with a 501 so screens can show
+// a "not connected" state. Replace the body with a real request when the owning team's service is live.
+const notConnected = (service) => () =>
+  Promise.reject(new ApiError(501, 'not_connected', `${service} is not connected yet`));
+
+export const studioApi = {
+  pack: notConnected('Studio pack service'), // POST /studio/pack
+};
+api.launch = {
+  ideas: notConnected('Business ideas service'), // POST /launch/ideas
+  names: notConnected('Name generation service'), // POST /launch/names
+  pack: notConnected('Launch pack service'), // POST /launch/pack
+};
+api.identity = {
+  propose: notConnected('Identity service'), // POST /identity/propose
+};
+api.website = {
+  generate: notConnected('Website generation service'), // POST /website/generate
+  get: notConnected('Website service'), // GET /website/:id
+  publish: notConnected('Website publishing service'), // POST /website/:id/publish
+};
+api.video = {
+  createReel: notConnected('Video generation service'), // POST /video/reel
+  get: notConnected('Video service'), // GET /video/:id
+};
+
 // 9. Live updates (asset.updated, job.progress, facts.versioned, change.logged, plan.updated, send.logged,
 // calibration.updated, provider.status, usage.warning). EventSource resumes with Last-Event-ID on its own.
 export const subscribe = (campaignId, handlers) => {

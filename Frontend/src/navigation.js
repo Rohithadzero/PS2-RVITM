@@ -1,3 +1,4 @@
+import { NO_BACKEND } from './data/studio';
 import {
   House,
   Mic,
@@ -14,6 +15,11 @@ import {
   Settings,
   FlaskConical,
   LogOut,
+  Sparkles,
+  Rocket,
+  Palette,
+  Globe,
+  Clapperboard,
 } from 'lucide-react';
 
 // Screens from docs/screen-flow.md. `slug` is the URL hash (#/board).
@@ -31,11 +37,17 @@ export const pages = {
   customers: { slug: 'customers', screen: 'S12', label: 'Customers & Send', icon: Users, description: 'Consent per channel, language per customer, and a simulated send.' },
   brand: { slug: 'brand', screen: 'S1', label: 'Brand & Data', icon: Store, description: 'Menu, photos, sample posts, customers and your brand rules. Set once, used in every campaign.' },
   settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Providers and keys, voice, limits, calibration, usage and data.' },
+  studio: { slug: 'studio', screen: 'S15', label: 'Studio', icon: Sparkles, description: 'Posts, posters, taglines, a website, a reel. Pick what you want made.' },
+  launch: { slug: 'launch', screen: 'S16', label: 'Build my business', icon: Rocket, description: 'No business yet? Answer a few questions and get ideas, a name, a brand and a launch pack.' },
+  identity: { slug: 'identity', screen: 'S17', label: 'Names & Brand look', icon: Palette, description: 'Business names, taglines in each language, colours and starter logos.' },
+  website: { slug: 'website', screen: 'S18', label: 'Website', icon: Globe, description: 'A one-page site from your menu, offer and brand. Preview it here.' },
+  video: { slug: 'video', screen: 'S19', label: 'Reels & Video', icon: Clapperboard, description: 'Plan a short promo reel: shots, length, cost and queue time.' },
   bakeoff: { slug: 'bakeoff', screen: 'S14', label: 'Bake-off', icon: FlaskConical, description: 'Team tool: score speech-to-text and read-back voices per language.' },
 };
 
 export const sidebarGroups = [
   { title: 'Overview', items: [pages.home] },
+  { title: 'Studio', items: [pages.studio, pages.launch, pages.identity, pages.website, pages.video] },
   { title: 'Create', items: [pages.voice, pages.facts, pages.planner, pages.generating] },
   { title: 'Campaign', items: [pages.board, pages.compare, pages.change, pages.log, pages.customers] },
   { title: 'Setup', items: [pages.brand, pages.settings, pages.bakeoff] },
@@ -53,3 +65,5 @@ export const flowSteps = [
 ];
 
 export const findPage = (slug) => pages[slug];
+
+export const hasBackend = (slug) => !NO_BACKEND.includes(slug);

@@ -57,6 +57,7 @@ Non-goals (out of scope)
 | D9 | Outbound messaging: the owner uploads her own data (customers, prices, photos). Send is **simulated**, consent-checked, and gated by the validator. |
 | D10 | Surface: web app on laptop and phone (PWA), synced through Google login. |
 | D11 | **Bring your own key.** Text/image/video default to Agnes with the team's server-held key; any capability can be switched to the user's own key in Settings. Voice defaults to local/free adapters (Agnes has no audio). See [settings](settings.md). |
+| D13 | **Broader studio.** Beyond campaigns the product makes posts, posters, names and taglines, a brand kit, a website and promo reels, and has a **no-business path** ("Build my business") for people who do not have a business yet. Website and video generation are separate services owned by teammates; the frontend ships their screens and contracts, no backend from this team. See [frontend.prd](frontend.prd.md) S15-S19. |
 | D12 | **Calibration runs in the backend** and feeds the queue and the knapsack with measured latency, limits and token usage. See [calibration](calibration.md). |
 
 ## 6. Concrete scope matrix
@@ -71,6 +72,10 @@ Owner-defined, planner-checked. Reference demo configurations:
 
 Audiences are defined by the owner at onboarding and grounded in her uploaded customer list. Default two: "regular locals" and "new / nearby office crowd". Languages: English, Hindi, Kannada.
 
+## 6a. Who it serves
+1. **Has a business** (Priya): campaigns, posters, a site and reels for what she already sells.
+2. **Has no business yet**: answers a few questions, picks an idea, and gets a name, a brand, a menu with prices, an opening offer and a launch pack. Ideas, costs and names on these screens are placeholders until the service exists; the owner decides every price and word.
+
 ## 7. User stories
 
 1. Priya speaks her idea and gets a full campaign in minutes.
@@ -83,6 +88,8 @@ Audiences are defined by the owner at onboarding and grounded in her uploaded cu
 8. She uploads her own photos, menu/prices and customer list once; they are reused in every campaign.
 9. The system remembers her corrections ("never say 'cheap'") and applies them next time.
 10. She uses the same account on phone (voice) and laptop (board); both stay in sync.
+11. A person with no business answers a few questions and gets ideas, a name, a brand and a launch pack.
+12. She picks everything she wants made (posts, posters, taglines, website, reel) and sees where each item is made and whether that service is connected.
 
 ## 8. Features
 
@@ -102,8 +109,12 @@ Audiences are defined by the owner at onboarding and grounded in her uploaded cu
 13. **Google login + live sync** across phone and laptop.
 14. **Settings: bring your own key per capability, default Agnes**, rate-limit tiers, usage meters, and backend calibration ([settings](settings.md), [calibration](calibration.md)).
 
+15. **Studio** (S15): choose what to make (posts, WhatsApp, posters, names and taglines, brand kit, website, reel). Items are routed to the pipeline that makes them; items with no backend yet are greyed out.
+16. **Build my business** (S16, no-business path): about you, ideas, name and tagline, brand look, offer and prices, launch pack. Example output until the planner/identity service exists.
+17. **Names and brand look** (S17): names, taglines per language (hi/kn flagged "draft: needs native review"), colours with real WCAG contrast checks, starter logo marks.
+
 ### P1 (if time)
-- 8 s (or planner-sized) promo reel via Agnes Video, queued, with task-status UI and a labelled saved fallback.
+- Website (S18) and promo reel (S19): owned by teammates' services; this repo provides the screens, local preview/cost maths and the request/response contracts ([api-spec](api-spec.md) section 12). 8 s (or planner-sized) reels via Agnes Video, queued, with task-status UI and a labelled saved fallback.
 - Brand kit visuals (logo, colours) reused across campaigns.
 
 ### P2 (pitch only)
