@@ -36,6 +36,7 @@ Runs on the **rendered** text (and on text overlaid on posters). Rules:
 | V8 | Brand rules | Banned phrases and taboo claims from the Brand Constitution |
 | V9 | Channel limits | Instagram caption length; WhatsApp length; SMS segments (below) |
 | V10 | Stale facts | `asset.facts_version` must equal the approved version |
+| V12 | Mixed script | In Kannada/Devanagari assets, Latin letters are allowed only inside slots, the brand name and an allow-listed loanword set; a Latin run inside a native word (e.g. "ಆffer") fails. Romanized assets (Hinglish/Kanglish) use separate lexicons for V2/V4/V6 |
 | V11 | Arithmetic | `price == original * (1 - pct/100)` under the documented rounding (checked at lock time too) |
 
 Result: pass, or fail with `{rule, token, expected_field, position}` shown on the asset ("Blocked: '50' not in slot; lock price is 48").
@@ -118,3 +119,8 @@ Pass criteria: 100% of injected faults blocked or flagged; false positives on 20
 - Verified phrases for each controlled term.
 - Implied-promise phrase lists.
 - A set of 10 correct and 10 subtly wrong Kannada/Hindi offer sentences for validator tuning.
+
+
+## 8. Spoken number-word parsing (input side)
+
+Calibration showed the LLM misreads spoken number words in Kanglish/Hinglish (see [calibration-results](calibration-results.md)). A deterministic parser for EN/HI/KN number words (native script and Latin romanizations, native-speaker lexicons) runs on the transcript. The LLM's extracted numbers are accepted only when they equal the parser's; otherwise the field is marked unconfirmed and the owner confirms it before the lock. The same lexicons feed V2.
