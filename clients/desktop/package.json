@@ -1,0 +1,12 @@
+{
+  "name": "desktop",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "web": "bun run --cwd ../../apps/web dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -4,7 +4,7 @@ import wave
 
 import pytest
 
-from app.voice import vosk_stt as v
+from app.lab.voice import vosk_stt as v
 
 
 def _silence(seconds=1, rate=16000):

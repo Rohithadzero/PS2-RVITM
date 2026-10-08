@@ -1,21 +1,16 @@
 {
-  "name": "ps2-rvitm",
+  "name": "loudlaunch",
+  "private": true,
   "version": "1.0.0",
-  "description": "Voice-first marketing campaigns for small businesses on Agnes models. Design lives in [`docs/`](docs/README.md); the app UI lives in [`Frontend/`](Frontend/); backend experiments (calibration) in [`apps/api/calibration/`](apps/api/calibration/).",
+  "description": "LoudLaunch: voice-first marketing campaigns for small businesses on Agnes models (HR26-AI-02).",
   "homepage": "https://github.com/Rohithadzero/PS2-RVITM#readme",
-  "bugs": {
-    "url": "https://github.com/Rohithadzero/PS2-RVITM/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Rohithadzero/PS2-RVITM.git"
-  },
-  "type": "commonjs",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/Rohithadzero/PS2-RVITM.git" },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "setup": "python -m venv venv && venv/Scripts/pip install -r apps/api/requirements.txt && npm --prefix Frontend install",
+    "api": "python -m uvicorn app.main:app --app-dir apps/api --host 127.0.0.1 --port 8000",
+    "web": "npm --prefix Frontend run dev",
+    "build": "npm --prefix Frontend run build",
+    "test": "python -m pytest -q -c apps/api/pytest.ini apps/api/tests",
+    "models": "python apps/api/scripts/get_vosk_models.py"
   }
 }

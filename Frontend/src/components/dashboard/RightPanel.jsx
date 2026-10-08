@@ -1,26 +1,27 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ShieldX, Clock, ArrowLeftRight } from 'lucide-react';
-import { owner, audiences, LANGS, channelName } from '../../data/mock';
-import { useStore } from '../../state/store';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, ShieldX, Clock, Languages } from 'lucide-react';
+import { getBoard, getPlan } from '../../campaign/lib/api';
+import { channelLabel, langName } from '../../campaign/lib/format';
+import { useCurrent } from '../../campaign/lib/current';
 import { navigate } from '../../lib/router';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const initialsOf = (name) => (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
 
-const Profile = () => {
-  const { state } = useStore();
+const Profile = ({ plan }) => {
   const stats = [
-    { value: LANGS.length, label: 'Languages' },
-    { value: audiences.length, label: 'Audiences' },
-    { value: state.customers.length, label: 'Customers' },
+    { value: plan?.languages.length ?? '–', label: 'Languages' },
+    { value: plan?.audiences.length ?? '–', label: 'Audiences' },
+    { value: plan?.channels.length ?? '–', label: 'Channels' },
   ];
   return (
     <div>
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-semibold">{owner.initials}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-semibold">{plan ? initialsOf(plan.business.name) : '·'}</span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{owner.business}</p>
-          <p className="text-xs text-white/50">{owner.area}</p>
+          <p className="truncate font-semibold">{plan ? plan.business.name : 'No campaign yet'}</p>
+          <p className="truncate text-xs text-white/50">{plan ? plan.business.area : 'Start one with Talk'}</p>
         </div>
       </div>
       <dl className="mt-4 grid grid-cols-3 divide-x divide-white/10 rounded-2xl bg-black/20 py-3 text-center">
@@ -35,21 +36,24 @@ const Profile = () => {
   );
 };
 
-const Calendar = () => {
-  const { approvedFacts } = useStore();
-  const facts = approvedFacts.json;
+// Marks come from the plan's computed schedule: offer days, teaser and last day.
+const Calendar = ({ plan }) => {
   const today = new Date();
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const dates = plan?.offer_facts.dates ?? [];
+  const start = dates[0];
+  const end = dates.at(-1);
   const firstWeekday = month.getDay();
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
   const shift = (delta) => setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
+  const scheduled = new Set((plan?.schedule ?? []).map((s) => s.date));
 
   const dayStyle = (date) => {
     const d = iso(date);
     if (d === iso(today)) return 'bg-accent text-white font-semibold';
-    if (d === facts.end_date) return 'bg-rose text-white font-semibold';
-    if (d >= facts.start_date && d <= facts.end_date) return 'bg-good text-white font-semibold';
+    if (end && start !== end && d === end) return 'bg-rose text-white font-semibold';
+    if (scheduled.has(d) || (start && d >= start && d <= end)) return 'bg-good text-white font-semibold';
     return 'text-white/75';
   };
 
@@ -80,34 +84,44 @@ const Calendar = () => {
       </div>
       <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-accent" />Today</li>
-        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Offer runs</li>
+        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Scheduled</li>
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose" />Last day</li>
       </ul>
     </div>
   );
 };
 
-const NextUp = () => {
-  const { state } = useStore();
-  const items = [
-    ...state.assets.filter((a) => a.status === 'blocked').map((a) => ({ id: a.id, icon: ShieldX, tone: 'text-bad bg-bad/20', tag: 'Blocked', title: `Fix ${a.lang.toUpperCase()} ${channelName(a.channel)}`, detail: `"${a.block_reason.token}" is not the locked price` })),
-    ...state.assets.filter((a) => a.status === 'pending').map((a) => ({ id: a.id, icon: Clock, tone: 'text-info bg-info/20', tag: 'Pending', title: `Review ${a.lang.toUpperCase()} ${channelName(a.channel)}`, detail: audiences.find((x) => x.id === a.audience_id).name })),
-    ...state.assets.filter((a) => a.status === 'changed').map((a) => ({ id: a.id, icon: ArrowLeftRight, tone: 'text-warn bg-warn/20', tag: 'Changed', title: `Regenerate ${a.lang.toUpperCase()} ${channelName(a.channel)}`, detail: 'Uses an older facts version' })),
-  ].slice(0, 4);
+const NextUp = ({ board, id }) => {
+  const items = (board?.assets ?? [])
+    .filter((a) => a.status !== 'approved')
+    .map((a) => {
+      const blocked = a.status === 'blocked';
+      return {
+        id: a.id,
+        icon: blocked ? ShieldX : a.review?.status === 'flagged' ? Languages : Clock,
+        tone: blocked ? 'text-bad bg-bad/20' : a.review?.status === 'flagged' ? 'text-warn bg-warn/20' : 'text-info bg-info/20',
+        tag: blocked ? 'Blocked' : a.review?.status === 'flagged' ? 'Meaning flagged' : 'To review',
+        title: `${blocked ? 'Fix' : 'Review'} ${langName(a.lang)} ${channelLabel(a.channel)}`,
+        detail: blocked ? (a.block_reason?.[0] ?? 'Fact check failed') : a.audience,
+      };
+    })
+    .slice(0, 4);
 
   return (
     <section>
       <div className="flex items-center justify-between">
         <h2 className="border-l-2 border-accent pl-2 font-semibold">Next up</h2>
-        <button type="button" onClick={() => navigate('log')} className="text-sm text-white/60 hover:text-white">View all</button>
+        {id && (
+          <button type="button" onClick={() => navigate('campaign', id)} className="text-sm text-white/60 hover:text-white">View all</button>
+        )}
       </div>
       {items.length === 0 ? (
-        <p className="mt-3 rounded-2xl bg-black/20 p-4 text-sm text-white/60">Nothing waiting. Every asset is approved.</p>
+        <p className="mt-3 rounded-2xl bg-black/20 p-4 text-sm text-white/60">{board ? 'Nothing waiting. Every asset is approved.' : 'Nothing yet. Assets that need you appear here.'}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
-          {items.map(({ id, icon: Icon, tone, tag, title, detail }) => (
-            <li key={id}>
-              <button type="button" onClick={() => navigate('asset', id)} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
+          {items.map(({ id: aid, icon: Icon, tone, tag, title, detail }) => (
+            <li key={aid}>
+              <button type="button" onClick={() => navigate('campaign', id)} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
                 <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${tone}`}>
                   <Icon size={18} />
                 </span>
@@ -125,12 +139,30 @@ const NextUp = () => {
   );
 };
 
-const RightPanel = () => (
-  <aside className="glass-panel hidden w-80 shrink-0 flex-col gap-4 overflow-y-auto rounded-[28px] p-4 xl:flex">
-    <Profile />
-    <Calendar />
-    <NextUp />
-  </aside>
-);
+const RightPanel = () => {
+  const { id } = useCurrent();
+  const [plan, setPlan] = useState(null);
+  const [board, setBoard] = useState(null);
+
+  useEffect(() => {
+    setPlan(null);
+    setBoard(null);
+    if (!id) return undefined;
+    let live = true;
+    getPlan(id).then((p) => live && setPlan(p)).catch(() => undefined);
+    getBoard(id).then((b) => live && setBoard(b)).catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [id]);
+
+  return (
+    <aside aria-label="Campaign summary" className="glass-panel hidden w-[320px] shrink-0 flex-col gap-5 overflow-y-auto rounded-[28px] p-5 xl:flex">
+      <Profile plan={plan} />
+      <Calendar plan={plan} />
+      <NextUp board={board} id={id} />
+    </aside>
+  );
+};
 
 export default RightPanel;

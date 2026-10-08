@@ -4,6 +4,7 @@
 
 | Doc | What it defines |
 |---|---|
+| [merge.md](merge.md) | **Read first.** What the merged app kept from each build, screen to API map, known gaps |
 | [prd.md](prd.md) | Problem, user, decisions, scope, P0/P1/P2, success metrics, risks |
 | [frontend.prd.md](frontend.prd.md) | Every screen with wireframes, components, states, a11y, build order |
 | [screen-flow.md](screen-flow.md) | Screen inventory S0-S14 and the user flow between them |

@@ -6,3 +6,9 @@ __pycache__/
 *.pyc
 node_modules/
 /models/
+venv/
+.venv/
+*.db
+apps/api/data/
+Frontend/dist/
+*.log

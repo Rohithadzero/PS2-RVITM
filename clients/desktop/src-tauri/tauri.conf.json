@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Campaign",
+  "version": "0.1.0",
+  "identifier": "com.ps2rvitm.campaign",
+  "build": {
+    "frontendDist": "../../../apps/web/out",
+    "devUrl": "http://127.0.0.1:3000",
+    "beforeDevCommand": "bun run --cwd ../../../apps/web dev",
+    "beforeBuildCommand": "bun run --cwd ../../../apps/web build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Campaign",
+        "width": 1280,
+        "height": 840,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

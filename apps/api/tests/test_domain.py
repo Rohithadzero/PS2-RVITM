@@ -1,11 +1,11 @@
 """Domain tests: slots, validator (fault injection), number words, facts arithmetic, blast radius, planner."""
 import pytest
 
-from app.domain import facts as F
-from app.domain.numberwords import extract_offer_numbers, find_numbers, reconcile
-from app.domain.planner import Calibration, reel_clip_options, solve
-from app.domain.slots import render
-from app.domain.validator import sms_segments, validate
+from app.lab.domain import facts as F
+from app.lab.domain.numberwords import extract_offer_numbers, find_numbers, reconcile
+from app.lab.domain.planner import Calibration, reel_clip_options, solve
+from app.lab.domain.slots import render
+from app.lab.domain.validator import sms_segments, validate
 
 LOCK = F.OfferFacts(item="Filter coffee", item_i18n={"kn": "ಫಿಲ್ಟರ್ ಕಾಫಿ", "hi": "फ़िल्टर कॉफ़ी"}, discount_pct=20,
                     price_inr=48, original_price_inr=60, days=["sat", "sun"], start_date="2026-10-10",

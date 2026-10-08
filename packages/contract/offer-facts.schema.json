@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ps2rvitm.local/offer-facts.schema.json",
+  "title": "OfferFacts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["item", "audiences", "languages", "channels"],
+  "properties": {
+    "item": { "type": "string", "minLength": 1 },
+    "discount_percent": { "type": ["number", "null"] },
+    "price_amount": { "type": ["number", "null"] },
+    "currency": { "type": ["string", "null"] },
+    "dates": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+    },
+    "timings": { "type": ["string", "null"] },
+    "terms": { "type": ["string", "null"] },
+    "audiences": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "languages": {
+      "type": "array",
+      "items": { "enum": ["en", "kn", "hi"] },
+      "minItems": 1
+    },
+    "channels": {
+      "type": "array",
+      "items": { "enum": ["instagram_post", "whatsapp", "poster", "story", "reel"] },
+      "minItems": 1
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "mobile",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync",
+    "add:ios": "cap add ios",
+    "add:android": "cap add android",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7",
+    "@capacitor/core": "^7",
+    "@capacitor/ios": "^7"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7"
+  }
+}

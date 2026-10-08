@@ -1,0 +1,57 @@
+/* LoudLaunch skin for the campaign screens: Rohith's palette and shapes over Francis's structure. */
+.cv {
+  --paper: #ffffff;
+  --card: #fbf8f4;
+  --paper-2: #f1ece6;
+  --ink: #1c1c1f;
+  --muted: #5f5a55;
+  --line: #e0d8cf;
+  --accent: #f26b1d;
+  --accent-hover: #ff7f35;
+  --approved: #1a5d8f;
+  --approved-bg: #e1eef7;
+  --flagged: #7a4b00;
+  --flagged-bg: #fbecc4;
+  --blocked: #a3201f;
+  --blocked-bg: #fbdcd9;
+  --serif: var(--font-sans, 'Figtree', ui-sans-serif, system-ui, sans-serif);
+  --mono: var(--font-sans, 'Figtree', ui-sans-serif, system-ui, sans-serif);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.cv-portal { position: relative; z-index: 60; }
+.cv :lang(kn), .cv :lang(hi) { line-height: 1.65; }
+.cv .label, .cv .kicker, .cv .chip, .cv .badge, .cv .cvb, .cv .step, .cv th, .cv time { letter-spacing: 0; }
+.cv .kicker, .cv .label { text-transform: none; font-size: 13px; font-weight: 600; }
+.cv .cvb { border: 0; border-radius: 999px; min-height: 44px; box-shadow: none; background: rgba(28,28,31,.07); font-weight: 600; font-size: 14px; }
+.cv .cvb:hover:not(:disabled) { transform: none; box-shadow: none; background: rgba(28,28,31,.13); }
+.cv .cvb:active:not(:disabled) { transform: none; background: rgba(28,28,31,.2); }
+.cv .cvb-primary { background: var(--accent); color: #fff; }
+.cv .cvb-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.cv .cvb-quiet { background: transparent; text-decoration: underline; }
+.cv .bubble { border: 1.5px solid var(--line); box-shadow: none; font-size: 16px; }
+.cv .bubble:hover:not(:disabled) { transform: none; background: var(--paper-2); }
+.cv .bubble[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.cv .input { border: 1.5px solid var(--line); border-radius: 12px; background: #fff; }
+.cv .mic { border: 0; background: var(--accent); color: #fff; box-shadow: 0 10px 24px -10px rgba(242,107,29,.8); }
+.cv .mic:hover:not(:disabled) { background: var(--accent-hover); transform: none; box-shadow: 0 12px 28px -10px rgba(242,107,29,.9); }
+.cv .mic:active:not(:disabled) { transform: scale(.98); box-shadow: none; }
+.cv .mic-live { background: var(--ink); color: #fff; }
+.cv .fab { border: 0; background: var(--ink); color: #fff; box-shadow: 0 10px 24px -10px rgba(0,0,0,.5); }
+.cv .step { border: 1.5px solid var(--line); border-radius: 999px; }
+.cv .step-now { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cv .badge { border-width: 1px; border-radius: 999px; }
+.cv .chip { border-width: 1px; }
+.cv .empty { border-width: 1.5px; border-radius: 14px; background: var(--card); }
+.cv .error-note { border-width: 1.5px; border-radius: 12px; }
+.cv-portal .sheet { background: #fff; border-color: var(--line); color: #1c1c1f; }
+.cv-portal .sheet-head { border-color: var(--line); }
+.cv-steps { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.cv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-bottom: 1rem; }
+.cv-bar .top-biz { font-size: 14px; color: var(--muted); font-weight: 600; }
+.cv.cv-portal { padding: 0; background: transparent; border-radius: 0; }

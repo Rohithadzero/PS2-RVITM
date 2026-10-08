@@ -1,0 +1,8 @@
+{
+  "appId": "com.ps2rvitm.campaign",
+  "appName": "Campaign",
+  "webDir": "../../apps/web/out",
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -5,13 +5,11 @@ import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import RightPanel from './components/dashboard/RightPanel';
 import Home from './pages/Home';
-import VoiceBrief from './pages/VoiceBrief';
-import OfferFacts from './pages/OfferFacts';
+import Talk from './pages/Talk';
+import Plan from './pages/Plan';
+import Campaign from './pages/Campaign';
+import Dashboard from './pages/Dashboard';
 import BudgetPlanner from './pages/BudgetPlanner';
-import Generating from './pages/Generating';
-import Board from './pages/Board';
-import AssetDetail from './pages/AssetDetail';
-import Compare from './pages/Compare';
 import ChangeByVoice from './pages/ChangeByVoice';
 import ChangeLog from './pages/ChangeLog';
 import Customers from './pages/Customers';
@@ -30,13 +28,11 @@ import { useStore } from './state/store';
 
 const SCREENS = {
   home: Home,
-  voice: VoiceBrief,
-  facts: OfferFacts,
+  voice: Talk,
+  plan: Plan,
   planner: BudgetPlanner,
-  generating: Generating,
-  board: Board,
-  asset: AssetDetail,
-  compare: Compare,
+  campaign: Campaign,
+  dashboard: Dashboard,
   change: ChangeByVoice,
   log: ChangeLog,
   customers: Customers,
@@ -92,7 +88,6 @@ const App = () => {
   const page = findPage(slug) ?? pages.home;
   const Screen = SCREENS[page.slug];
   const isHome = page.slug === 'home';
-  const pendingCount = state.assets.filter((a) => a.status === 'pending' || a.status === 'blocked').length;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -105,7 +100,7 @@ const App = () => {
           onToggle={() => setExpanded((v) => !v)}
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
-          badges={{ board: pendingCount || undefined, facts: state.draftFacts ? 'draft' : undefined }}
+          badges={{}}
         />
 
         <div className="glass-panel relative flex min-w-0 flex-1 flex-col rounded-[28px]">

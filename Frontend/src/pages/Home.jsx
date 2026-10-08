@@ -1,96 +1,146 @@
-import { useState } from 'react';
-import { Coffee, CloudRain, UtensilsCrossed, Mic, Sparkles, Rocket } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Mic, Sparkles, Rocket, Store } from 'lucide-react';
 import StatCards from '../components/dashboard/StatCards';
-import RateChart from '../components/dashboard/RateChart';
-import LiveCampaignCard from '../components/dashboard/LiveCampaignCard';
 import { SectionTitle } from '../components/ui';
-import { campaigns } from '../data/mock';
-import { useStore } from '../state/store';
+import { listOverview, startInterview, getDashboard } from '../campaign/lib/api';
+import { LANGS, humanize } from '../campaign/lib/format';
+import { go, setCurrent, useCurrent } from '../campaign/lib/current';
 import { navigate } from '../lib/router';
 
-const ICONS = { c1: Coffee, c2: CloudRain, c3: UtensilsCrossed };
-const STATUS_LABEL = { live: 'Live', planning: 'Planning', draft: 'Draft', facts_pending: 'Facts pending', generating: 'Generating' };
+const nameOf = (b) => (!b ? '' : typeof b === 'string' ? b : b.name || '');
+const nextStage = (status) => (status === 'draft' || status === 'planned' ? 'plan' : 'campaign');
 
-const summary = (counts) => {
-  const parts = [
-    counts.approved && `${counts.approved} approved`,
-    counts.pending && `${counts.pending} pending`,
-    counts.changed && `${counts.changed} changed`,
-    counts.blocked && `${counts.blocked} blocked`,
-  ].filter(Boolean);
-  return parts.length ? parts.join(', ') : 'No assets yet';
-};
-
-// S2: campaigns with status summary, plus what the live campaign needs.
+// S2: start a campaign, see every campaign and what the current one needs. All numbers come from the API.
 const Home = () => {
-  const { state } = useStore();
-  const [selected, setSelected] = useState('c1');
+  const cur = useCurrent();
+  const [rows, setRows] = useState(null);
+  const [totals, setTotals] = useState(null);
+  const [error, setError] = useState('');
+  const [starting, setStarting] = useState(null);
 
-  // Live counts for the active campaign come from the store; others from the list.
-  const live = state.assets.reduce((acc, a) => ({ ...acc, [a.status]: (acc[a.status] ?? 0) + 1 }), {});
-  const list = campaigns.map((c) => (c.id === state.campaign.id ? { ...c, counts: live } : c));
+  useEffect(() => {
+    let live = true;
+    listOverview()
+      .then((res) => {
+        if (!live) return;
+        setRows(
+          Array.isArray(res)
+            ? res.map((r) => ({ id: r.campaign_id, name: nameOf(r.business), status: r.status, totals: r.totals }))
+            : res.legacy.map((c) => ({ id: c.id, name: c.transcript.slice(0, 48), status: c.status, totals: {} }))
+        );
+      })
+      .catch((e) => {
+        if (live) {
+          setError(e.message);
+          setRows([]);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const activeId = cur.id || rows?.[0]?.id;
+  useEffect(() => {
+    if (!activeId) return undefined;
+    let live = true;
+    getDashboard(activeId)
+      .then((d) => live && setTotals(d.totals))
+      .catch(() => live && setTotals(null));
+    return () => {
+      live = false;
+    };
+  }, [activeId]);
+
+  const start = async (lang) => {
+    setStarting(lang);
+    setError('');
+    try {
+      const s = await startInterview(lang);
+      go({ name: 'talk', sid: s.id });
+    } catch (e) {
+      setError(e.message);
+      setStarting(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5">
+      <section className="rounded-2xl bg-white p-5 text-ink">
+        <p className="text-sm font-semibold text-accent">Campaign 0 for your shop</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Say the offer. We write the campaign.</h1>
+        <p className="mt-2 max-w-xl text-sm text-ink/65">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>
+        <div role="group" aria-label="Start in a language" className="mt-4 flex flex-wrap gap-2">
+          {LANGS.map((l, i) => (
+            <button key={l.code} type="button" disabled={starting !== null} onClick={() => start(l.code)} className={i === 0 ? 'btn-primary' : 'btn-ghost'}>
+              <Mic size={16} /> {starting === l.code ? 'Starting' : `Start in ${l.native}`}
+            </button>
+          ))}
+        </div>
+        {error && (
+          <p role="alert" className="mt-3 text-sm text-bad">
+            {error}
+          </p>
+        )}
+      </section>
+
       <section className="grid gap-3 sm:grid-cols-2">
         <button type="button" onClick={() => navigate('studio')} className="flex items-center gap-3 rounded-2xl bg-white p-4 text-left text-ink hover:bg-white/90">
-          <span className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent"><Sparkles size={22} /></span>
-          <span><span className="block font-semibold">Make something new</span><span className="text-sm text-ink/60">Posts, posters, taglines, a website or a reel.</span></span>
+          <span className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent">
+            <Sparkles size={22} />
+          </span>
+          <span>
+            <span className="block font-semibold">Make something new</span>
+            <span className="text-sm text-ink/60">Posts, posters, taglines, a website or a reel.</span>
+          </span>
         </button>
         <button type="button" onClick={() => navigate('launch')} className="flex items-center gap-3 rounded-2xl bg-accent p-4 text-left text-white hover:bg-accent/90">
-          <span className="grid size-11 place-items-center rounded-xl bg-white/20"><Rocket size={22} /></span>
-          <span><span className="block font-semibold">No business yet? Build one</span><span className="text-sm text-white/85">Ideas, a name, a brand and a launch pack.</span></span>
+          <span className="grid size-11 place-items-center rounded-xl bg-white/20">
+            <Rocket size={22} />
+          </span>
+          <span>
+            <span className="block font-semibold">No business yet? Build one</span>
+            <span className="text-sm text-white/85">Ideas, a name, a brand and a launch pack.</span>
+          </span>
         </button>
       </section>
-      <StatCards />
-      <div className="grid gap-3 lg:grid-cols-[1fr_1.15fr]">
-        <RateChart />
-        <LiveCampaignCard />
-      </div>
+
+      {activeId && <StatCards totals={totals} id={activeId} />}
 
       <section>
-        <SectionTitle action={<button type="button" onClick={() => navigate('voice')} className="text-sm text-white/60 hover:text-white">New campaign</button>}>
-          Campaigns
-        </SectionTitle>
+        <SectionTitle>Campaigns</SectionTitle>
+        {rows === null && <p className="text-sm text-white/60">Loading campaigns.</p>}
+        {rows?.length === 0 && !error && (
+          <p className="rounded-2xl border border-dashed border-white/20 p-5 text-sm text-white/70">No campaigns yet. Start one above. It appears here once the conversation is finished.</p>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {list.map((c) => {
-            const Icon = ICONS[c.id];
-            const on = selected === c.id;
+          {rows?.map((c) => {
+            const on = c.id === activeId;
+            const t = c.totals || {};
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => {
-                  setSelected(c.id);
-                  if (c.id === state.campaign.id) navigate('board');
+                  setCurrent({ id: c.id, business: c.name });
+                  go({ name: nextStage(c.status), id: c.id });
                 }}
                 aria-pressed={on}
                 className={`flex items-start justify-between gap-3 rounded-2xl p-4 text-left transition-colors ${on ? 'bg-accent text-white' : 'bg-white text-ink hover:bg-white/90'}`}
               >
                 <span className="min-w-0">
-                  <span className="block font-semibold">{c.name}</span>
-                  <span className={`mt-1 block text-xs ${on ? 'text-white/85' : 'text-ink/55'}`}>{summary(c.counts)}</span>
-                  <span className={`mt-1 block text-xs ${on ? 'text-white/70' : 'text-ink/45'}`}>{c.last_change}</span>
-                  <span className={`mt-3 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${on ? 'bg-white text-accent' : 'bg-ink/5 text-ink/70'}`}>
-                    {STATUS_LABEL[c.status]}
+                  <span className="block truncate font-semibold">{c.name || `Campaign ${c.id.slice(0, 6)}`}</span>
+                  <span className={`mt-1 block text-xs ${on ? 'text-white/85' : 'text-ink/55'}`}>
+                    {t.assets ?? 0} assets, {t.approved ?? 0} approved, {t.clicks ?? 0} clicks
                   </span>
+                  <span className={`mt-3 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${on ? 'bg-white text-accent' : 'bg-ink/5 text-ink/70'}`}>{humanize(c.status)}</span>
                 </span>
                 <span className={`grid size-12 shrink-0 place-items-center rounded-full ${on ? 'bg-white/20' : 'bg-accent-soft text-accent'}`}>
-                  <Icon size={22} />
+                  <Store size={22} />
                 </span>
               </button>
             );
           })}
-          <button
-            type="button"
-            onClick={() => navigate('voice')}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 p-4 text-sm text-white/70 transition-colors hover:border-accent hover:text-white"
-          >
-            <span className="grid size-12 place-items-center rounded-full bg-accent text-white">
-              <Mic size={20} />
-            </span>
-            Say your next idea
-          </button>
         </div>
       </section>
     </div>

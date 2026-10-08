@@ -1,52 +1,94 @@
-"""Settings from environment / project-root .env. Secrets never leave the server (docs/security.md)."""
+from __future__ import annotations
+
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+LANGS = ("en", "kn", "hi")
+CHANNELS = (
+    "cold_email",
+    "instagram_post",
+    "instagram_story",
+    "blog_post",
+    "whatsapp",
+    "poster",
+    "google_business_post",
+    "reel",
+)
+LANG_NAMES = {"en": "English", "kn": "Kannada", "hi": "Hindi"}
 
 
-def _load_dotenv() -> None:
-    env = ROOT / ".env"
-    if env.exists():
-        for line in env.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-
-
-_load_dotenv()
-
-
-def _bool(name: str, default: bool) -> bool:
-    return os.environ.get(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
-
-
-@dataclass
+@dataclass(frozen=True)
 class Settings:
-    data_dir: Path = field(default_factory=lambda: Path(os.environ.get("DATA_DIR", ROOT / "data")))
-    agnes_api_key: str = field(default_factory=lambda: os.environ.get("AGNES_API_KEY", ""))
-    agnes_base: str = field(default_factory=lambda: os.environ.get("AGNES_BASE", "https://apihub.agnes-ai.com/v1"))
-    agnes_poll_base: str = field(default_factory=lambda: os.environ.get("AGNES_POLL_BASE", "https://apihub.agnes-ai.com/agnesapi"))
-    text_model: str = "agnes-3.0-flash"
-    image_model: str = "agnes-image-2.5-flash"
-    video_model: str = "agnes-video-2.5"
-    # AUTH_MODE=dev signs everyone in as the demo owner (local only). google = OAuth (not implemented yet).
-    auth_mode: str = field(default_factory=lambda: os.environ.get("AUTH_MODE", "dev"))
-    session_secret: str = field(default_factory=lambda: os.environ.get("SESSION_SECRET", "dev-only-change-me"))
-    key_encryption_master: str = field(default_factory=lambda: os.environ.get("KEY_ENCRYPTION_MASTER", ""))
-    allow_list: list = field(default_factory=lambda: [e.strip() for e in os.environ.get("ALLOW_LIST", "").split(",") if e.strip()])
-    cors_origins: list = field(default_factory=lambda: os.environ.get(
-        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(","))
-    calibrate_on_start: bool = field(default_factory=lambda: _bool("CALIBRATE_ON_START", False))
-    # Free-tier RPM presets (docs/settings.md). Tier can be raised per provider in Settings.
-    rpm: dict = field(default_factory=lambda: {"text": 10, "image": 10, "video": 1})
-    offline_llm: bool = field(default_factory=lambda: _bool("OFFLINE_LLM", False))  # canned outputs, no network
-
-    @property
-    def db_path(self) -> Path:
-        return self.data_dir / "app.db"
+    agnes_api_key: str | None
+    agnes_base_url: str
+    agnes_origin: str
+    database_path: Path
+    assets_dir: Path
+    text_rpm: float = 10
+    image_rpm: float = 10
+    video_rpm: float = 1
+    agnes_key_pool: str | None = None  # "token_plan" | "free" | None, which key agnes_api_key came from
 
 
-settings = Settings()
+def load_env_file(path: Path) -> None:
+    if not path.is_file():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def _blank_early(name: str) -> str | None:
+    value = os.environ.get(name, "").strip()
+    return value or None
+
+
+# Read the repo .env before the model names below are fixed. Real environment variables still win.
+load_env_file(ROOT / ".env")
+TEXT_MODEL = "agnes-3.0-flash"
+IMAGE_MODEL = _blank_early("IMAGE_MODEL") or "agnes-image-2.5-flash"
+VIDEO_MODEL = _blank_early("VIDEO_MODEL") or "agnes-video-2.5-flash"
+
+
+def _blank(name: str) -> str | None:
+    value = os.environ.get(name, "").strip()
+    return value or None
+
+
+def _rpm(name: str, default: float) -> float:
+    raw = _blank(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a number, got {raw!r}") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be above zero")
+    return value
+
+
+def load_settings() -> Settings:
+    load_env_file(ROOT / ".env")
+    database = _blank("DATABASE_PATH") or str(ROOT / "apps" / "api" / "data" / "campaign.db")
+    assets = _blank("ASSETS_DIR") or str(ROOT / "apps" / "api" / "data" / "assets")
+    token_key, free_key = _blank("TOKEN_PLAN_KEY"), _blank("AGNES_API_KEY")
+    return Settings(
+        agnes_api_key=token_key or free_key,
+        agnes_key_pool="token_plan" if token_key else "free" if free_key else None,
+        agnes_base_url=_blank("AGNES_BASE_URL") or "https://apihub.agnes-ai.com/v1",
+        agnes_origin=_blank("AGNES_ORIGIN") or "https://apihub.agnes-ai.com",
+        database_path=Path(database),
+        assets_dir=Path(assets),
+        text_rpm=_rpm("TEXT_RPM", 10),
+        image_rpm=_rpm("IMAGE_RPM", 10),
+        video_rpm=_rpm("VIDEO_RPM", 1),
+    )

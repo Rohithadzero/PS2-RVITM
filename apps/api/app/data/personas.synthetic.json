@@ -1,0 +1,1502 @@
+[
+  {
+    "id": "C001",
+    "name": "Arjun",
+    "segment": "young_family",
+    "age": 36,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 972,
+    "visits_per_month": 2,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.77,
+    "pet_peeves": [
+      "fake urgency",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C002",
+    "name": "Ananya",
+    "segment": "foodie_influencer",
+    "age": 32,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 841,
+    "visits_per_month": 2,
+    "veg": false,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.93,
+    "pet_peeves": [
+      "fake urgency",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C003",
+    "name": "Shreya",
+    "segment": "young_family",
+    "age": 37,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 859,
+    "visits_per_month": 12,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.22,
+    "pet_peeves": [
+      "english-only",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C004",
+    "name": "Nikhil",
+    "segment": "it_professional",
+    "age": 24,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 615,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.81,
+    "pet_peeves": [
+      "english-only",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C005",
+    "name": "Diya",
+    "segment": "young_family",
+    "age": 34,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 1222,
+    "visits_per_month": 4,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.66,
+    "pet_peeves": [
+      "too many emojis",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C006",
+    "name": "Divya",
+    "segment": "remote_freelancer",
+    "age": 26,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 443,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.94,
+    "pet_peeves": [
+      "fake urgency",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C007",
+    "name": "Diya",
+    "segment": "foodie_influencer",
+    "age": 27,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 774,
+    "visits_per_month": 1,
+    "veg": true,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.71,
+    "pet_peeves": [
+      "fake urgency",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C008",
+    "name": "Shreya",
+    "segment": "north_indian_migrant",
+    "age": 35,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 425,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "chai",
+      "snacks",
+      "veg"
+    ],
+    "offer_sensitivity": 0.22,
+    "pet_peeves": [
+      "fake urgency",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C009",
+    "name": "Shreya",
+    "segment": "it_professional",
+    "age": 35,
+    "language_pref": "kn-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 433,
+    "visits_per_month": 2,
+    "veg": false,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.23,
+    "pet_peeves": [
+      "fake urgency",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C010",
+    "name": "Priya",
+    "segment": "foodie_influencer",
+    "age": 22,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 572,
+    "visits_per_month": 1,
+    "veg": true,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.85,
+    "pet_peeves": [
+      "fake urgency",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C011",
+    "name": "Kavya",
+    "segment": "retired_regular",
+    "age": 71,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 230,
+    "visits_per_month": 6,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.22,
+    "pet_peeves": [
+      "fake urgency",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C012",
+    "name": "Ananya",
+    "segment": "retired_regular",
+    "age": 60,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 196,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.26,
+    "pet_peeves": [
+      "english-only",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C013",
+    "name": "Aarav",
+    "segment": "college_student",
+    "age": 19,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 217,
+    "visits_per_month": 1,
+    "veg": true,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.44,
+    "pet_peeves": [
+      "unclear terms",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Thu"
+    ]
+  },
+  {
+    "id": "C014",
+    "name": "Aarav",
+    "segment": "young_family",
+    "age": 38,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 693,
+    "visits_per_month": 1,
+    "veg": true,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.77,
+    "pet_peeves": [
+      "too many emojis",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C015",
+    "name": "Shreya",
+    "segment": "college_student",
+    "age": 23,
+    "language_pref": "hi-en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 269,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.59,
+    "pet_peeves": [
+      "fake urgency",
+      "english-only"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C016",
+    "name": "Pooja",
+    "segment": "it_professional",
+    "age": 35,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 563,
+    "visits_per_month": 2,
+    "veg": true,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.21,
+    "pet_peeves": [
+      "robotic translation",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C017",
+    "name": "Manoj",
+    "segment": "neighbour_homemaker",
+    "age": 50,
+    "language_pref": "hi",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 481,
+    "visits_per_month": 12,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.41,
+    "pet_peeves": [
+      "english-only",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C018",
+    "name": "Diya",
+    "segment": "neighbour_homemaker",
+    "age": 43,
+    "language_pref": "hi",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 477,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.95,
+    "pet_peeves": [
+      "robotic translation",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C019",
+    "name": "Ananya",
+    "segment": "young_family",
+    "age": 39,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 947,
+    "visits_per_month": 4,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.22,
+    "pet_peeves": [
+      "english-only",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C020",
+    "name": "Lakshmi",
+    "segment": "neighbour_homemaker",
+    "age": 38,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 431,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.2,
+    "pet_peeves": [
+      "fake urgency",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C021",
+    "name": "Karthik",
+    "segment": "it_professional",
+    "age": 30,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 740,
+    "visits_per_month": 8,
+    "veg": true,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.56,
+    "pet_peeves": [
+      "unclear terms",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Thu"
+    ]
+  },
+  {
+    "id": "C022",
+    "name": "Shreya",
+    "segment": "retired_regular",
+    "age": 62,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 228,
+    "visits_per_month": 4,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.48,
+    "pet_peeves": [
+      "unclear terms",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C023",
+    "name": "Lakshmi",
+    "segment": "it_professional",
+    "age": 32,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 807,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.94,
+    "pet_peeves": [
+      "unclear terms",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C024",
+    "name": "Sneha",
+    "segment": "neighbour_homemaker",
+    "age": 49,
+    "language_pref": "hi",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 318,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.76,
+    "pet_peeves": [
+      "unclear terms",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C025",
+    "name": "Rohan",
+    "segment": "retired_regular",
+    "age": 67,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 219,
+    "visits_per_month": 12,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.35,
+    "pet_peeves": [
+      "fake urgency",
+      "english-only"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C026",
+    "name": "Manoj",
+    "segment": "young_family",
+    "age": 37,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 741,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.53,
+    "pet_peeves": [
+      "unclear terms",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C027",
+    "name": "Sneha",
+    "segment": "young_family",
+    "age": 41,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 1121,
+    "visits_per_month": 2,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.42,
+    "pet_peeves": [
+      "english-only",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C028",
+    "name": "Lakshmi",
+    "segment": "college_student",
+    "age": 19,
+    "language_pref": "hi-en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 288,
+    "visits_per_month": 8,
+    "veg": true,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.87,
+    "pet_peeves": [
+      "long messages",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C029",
+    "name": "Ishaan",
+    "segment": "college_student",
+    "age": 23,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 299,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.47,
+    "pet_peeves": [
+      "english-only",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C030",
+    "name": "Nikhil",
+    "segment": "remote_freelancer",
+    "age": 26,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 444,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.75,
+    "pet_peeves": [
+      "fake urgency",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C031",
+    "name": "Kavya",
+    "segment": "neighbour_homemaker",
+    "age": 40,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 387,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.77,
+    "pet_peeves": [
+      "unclear terms",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C032",
+    "name": "Pooja",
+    "segment": "retired_regular",
+    "age": 67,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 209,
+    "visits_per_month": 4,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.24,
+    "pet_peeves": [
+      "robotic translation",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C033",
+    "name": "Karthik",
+    "segment": "young_family",
+    "age": 42,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 863,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.47,
+    "pet_peeves": [
+      "unclear terms",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C034",
+    "name": "Meghana",
+    "segment": "north_indian_migrant",
+    "age": 32,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 415,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "chai",
+      "snacks",
+      "veg"
+    ],
+    "offer_sensitivity": 0.44,
+    "pet_peeves": [
+      "unclear terms",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C035",
+    "name": "Rahul",
+    "segment": "retired_regular",
+    "age": 62,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 208,
+    "visits_per_month": 8,
+    "veg": true,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.92,
+    "pet_peeves": [
+      "fake urgency",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C036",
+    "name": "Priya",
+    "segment": "retired_regular",
+    "age": 71,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 223,
+    "visits_per_month": 4,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.25,
+    "pet_peeves": [
+      "long messages",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C037",
+    "name": "Ishaan",
+    "segment": "neighbour_homemaker",
+    "age": 36,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 416,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.38,
+    "pet_peeves": [
+      "robotic translation",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C038",
+    "name": "Rahul",
+    "segment": "college_student",
+    "age": 19,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 318,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.46,
+    "pet_peeves": [
+      "too many emojis",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C039",
+    "name": "Diya",
+    "segment": "retired_regular",
+    "age": 59,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 232,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.26,
+    "pet_peeves": [
+      "long messages",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C040",
+    "name": "Sneha",
+    "segment": "retired_regular",
+    "age": 62,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 190,
+    "visits_per_month": 4,
+    "veg": true,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.92,
+    "pet_peeves": [
+      "robotic translation",
+      "english-only"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C041",
+    "name": "Lakshmi",
+    "segment": "remote_freelancer",
+    "age": 33,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 502,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.9,
+    "pet_peeves": [
+      "robotic translation",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C042",
+    "name": "Rahul",
+    "segment": "college_student",
+    "age": 19,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 299,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.88,
+    "pet_peeves": [
+      "too many emojis",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Sun"
+    ]
+  },
+  {
+    "id": "C043",
+    "name": "Kavya",
+    "segment": "young_family",
+    "age": 34,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 694,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.63,
+    "pet_peeves": [
+      "too many emojis",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C044",
+    "name": "Aarav",
+    "segment": "it_professional",
+    "age": 28,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 665,
+    "visits_per_month": 2,
+    "veg": false,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.45,
+    "pet_peeves": [
+      "robotic translation",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C045",
+    "name": "Diya",
+    "segment": "remote_freelancer",
+    "age": 34,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 623,
+    "visits_per_month": 6,
+    "veg": false,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.35,
+    "pet_peeves": [
+      "too many emojis",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C046",
+    "name": "Nikhil",
+    "segment": "it_professional",
+    "age": 25,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 595,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "coffee quality",
+      "quiet",
+      "speed"
+    ],
+    "offer_sensitivity": 0.74,
+    "pet_peeves": [
+      "robotic translation",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C047",
+    "name": "Aarav",
+    "segment": "retired_regular",
+    "age": 64,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 160,
+    "visits_per_month": 6,
+    "veg": true,
+    "cares_about": [
+      "filter coffee",
+      "morning",
+      "no loud music"
+    ],
+    "offer_sensitivity": 0.91,
+    "pet_peeves": [
+      "robotic translation",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Thu"
+    ]
+  },
+  {
+    "id": "C048",
+    "name": "Suresh",
+    "segment": "foodie_influencer",
+    "age": 25,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 594,
+    "visits_per_month": 1,
+    "veg": false,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.4,
+    "pet_peeves": [
+      "unclear terms",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Wed"
+    ]
+  },
+  {
+    "id": "C049",
+    "name": "Aarav",
+    "segment": "young_family",
+    "age": 32,
+    "language_pref": "kn",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 661,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.25,
+    "pet_peeves": [
+      "long messages",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C050",
+    "name": "Karthik",
+    "segment": "remote_freelancer",
+    "age": 29,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 547,
+    "visits_per_month": 3,
+    "veg": false,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.27,
+    "pet_peeves": [
+      "too many emojis",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C051",
+    "name": "Arjun",
+    "segment": "foodie_influencer",
+    "age": 26,
+    "language_pref": "en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 923,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.3,
+    "pet_peeves": [
+      "unclear terms",
+      "english-only"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C052",
+    "name": "Rohan",
+    "segment": "north_indian_migrant",
+    "age": 34,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 422,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "chai",
+      "snacks",
+      "veg"
+    ],
+    "offer_sensitivity": 0.21,
+    "pet_peeves": [
+      "robotic translation",
+      "long messages"
+    ],
+    "preferred_days": [
+      "Sat",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C053",
+    "name": "Shreya",
+    "segment": "college_student",
+    "age": 20,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp/Instagram",
+    "avg_spend_inr": 253,
+    "visits_per_month": 2,
+    "veg": true,
+    "cares_about": [
+      "price",
+      "wifi",
+      "hangout"
+    ],
+    "offer_sensitivity": 0.79,
+    "pet_peeves": [
+      "long messages",
+      "too many emojis"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C054",
+    "name": "Meghana",
+    "segment": "neighbour_homemaker",
+    "age": 35,
+    "language_pref": "kn-en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 328,
+    "visits_per_month": 8,
+    "veg": true,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.74,
+    "pet_peeves": [
+      "fake urgency",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Wed",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C055",
+    "name": "Ananya",
+    "segment": "foodie_influencer",
+    "age": 25,
+    "language_pref": "hi-en",
+    "primary_channel": "Instagram",
+    "avg_spend_inr": 689,
+    "visits_per_month": 12,
+    "veg": true,
+    "cares_about": [
+      "aesthetic",
+      "new items",
+      "photos"
+    ],
+    "offer_sensitivity": 0.94,
+    "pet_peeves": [
+      "long messages",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Sun",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C056",
+    "name": "Kavya",
+    "segment": "remote_freelancer",
+    "age": 36,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 494,
+    "visits_per_month": 8,
+    "veg": true,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.25,
+    "pet_peeves": [
+      "english-only",
+      "fake urgency"
+    ],
+    "preferred_days": [
+      "Tue",
+      "Mon"
+    ]
+  },
+  {
+    "id": "C057",
+    "name": "Diya",
+    "segment": "young_family",
+    "age": 35,
+    "language_pref": "en",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 911,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "kid friendly",
+      "veg",
+      "weekend"
+    ],
+    "offer_sensitivity": 0.69,
+    "pet_peeves": [
+      "fake urgency",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Sat"
+    ]
+  },
+  {
+    "id": "C058",
+    "name": "Nikhil",
+    "segment": "neighbour_homemaker",
+    "age": 45,
+    "language_pref": "hi",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 297,
+    "visits_per_month": 3,
+    "veg": true,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.3,
+    "pet_peeves": [
+      "too many emojis",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Fri",
+      "Tue"
+    ]
+  },
+  {
+    "id": "C059",
+    "name": "Kavya",
+    "segment": "remote_freelancer",
+    "age": 26,
+    "language_pref": "en",
+    "primary_channel": "Google Maps",
+    "avg_spend_inr": 562,
+    "visits_per_month": 2,
+    "veg": true,
+    "cares_about": [
+      "wifi",
+      "plugs",
+      "long stay"
+    ],
+    "offer_sensitivity": 0.3,
+    "pet_peeves": [
+      "too many emojis",
+      "unclear terms"
+    ],
+    "preferred_days": [
+      "Thu",
+      "Fri"
+    ]
+  },
+  {
+    "id": "C060",
+    "name": "Meghana",
+    "segment": "neighbour_homemaker",
+    "age": 51,
+    "language_pref": "hi",
+    "primary_channel": "WhatsApp",
+    "avg_spend_inr": 303,
+    "visits_per_month": 8,
+    "veg": false,
+    "cares_about": [
+      "value",
+      "bakery",
+      "veg"
+    ],
+    "offer_sensitivity": 0.87,
+    "pet_peeves": [
+      "too many emojis",
+      "robotic translation"
+    ],
+    "preferred_days": [
+      "Mon",
+      "Tue"
+    ]
+  }
+]

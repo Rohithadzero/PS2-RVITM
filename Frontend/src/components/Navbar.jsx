@@ -1,7 +1,8 @@
-import { Search, Bell, Menu, Mic, Lock } from 'lucide-react';
-import { owner } from '../data/mock';
-import { useStore } from '../state/store';
+import { useEffect, useState } from 'react';
+import { Bell, Menu, Mic, Lock } from 'lucide-react';
 import { SyncDot, ProviderChip } from './ui';
+import { getPlan, health } from '../campaign/lib/api';
+import { useCurrent } from '../campaign/lib/current';
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -10,11 +11,39 @@ const greeting = () => {
   return 'Good evening';
 };
 
-// AppShell top bar: page title, campaign name, facts version, sync dot and provider chip (docs/frontend.prd.md section 4).
+const POOL = { token_plan: 'Agnes, token plan', free: 'Agnes, free tier' };
+
+// AppShell top bar: page title, campaign name, plan state, sync dot and provider chip (docs/frontend.prd.md section 4).
+// Everything here is read from the API; nothing is a placeholder.
 const Navbar = ({ page, onSelect, onOpenMenu }) => {
-  const { state, approvedFacts } = useStore();
+  const { id, business } = useCurrent();
+  const [status, setStatus] = useState(null); // null while loading, false when unreachable
+  const [locked, setLocked] = useState(null);
   const isHome = page.slug === 'home';
-  const pending = state.assets.filter((a) => a.status === 'pending' || a.status === 'blocked').length;
+
+  useEffect(() => {
+    let live = true;
+    const ping = () => health().then((h) => live && setStatus(h)).catch(() => live && setStatus(false));
+    ping();
+    const t = setInterval(ping, 15000);
+    return () => {
+      live = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    setLocked(null);
+    if (!id) return undefined;
+    let live = true;
+    getPlan(id).then((p) => live && setLocked(p.status === 'locked')).catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [id, page.slug]);
+
+  const provider = status ? (status.agnes_configured ? POOL[status.agnes_key_pool] || 'Agnes' : 'Agnes not connected') : 'Server unreachable';
+  const sync = status ? 'connected' : status === false ? 'offline' : 'reconnecting';
 
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">
@@ -23,26 +52,22 @@ const Navbar = ({ page, onSelect, onOpenMenu }) => {
           <Menu size={20} />
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{isHome ? `${greeting()}, ${owner.name} 👋` : page.label}</h1>
-          <p className="mt-0.5 max-w-xl text-sm text-white/55">
-            {isHome ? `${state.campaign.name} is live. ${pending} asset${pending === 1 ? '' : 's'} need you.` : page.description}
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{isHome ? `${greeting()}${business ? `, ${business}` : ''}` : page.label}</h1>
+          <p className="mt-0.5 max-w-xl text-sm text-white/55">{isHome ? 'Your campaigns and what needs you next.' : page.description}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">{state.campaign.name}</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">
-              <Lock size={11} className="text-accent" /> Facts v{approvedFacts.version} approved
-            </span>
-            <ProviderChip name="Agnes, free tier" />
-            <SyncDot state={state.sync} />
+            {business && <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">{business}</span>}
+            {locked !== null && page.slug !== 'voice' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">
+                <Lock size={11} className="text-accent" /> {locked ? 'Facts locked' : 'Plan not locked yet'}
+              </span>
+            )}
+            <ProviderChip name={provider} />
+            <SyncDot state={sync} />
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="hidden h-10 w-60 items-center gap-2 rounded-full bg-black/25 px-4 text-white/50 ring-1 ring-white/10 focus-within:ring-accent md:flex">
-          <Search size={16} className="shrink-0" />
-          <input type="search" placeholder="Search assets, customers…" className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none" />
-        </label>
         <button
           type="button"
           onClick={() => onSelect('change')}
@@ -55,11 +80,11 @@ const Navbar = ({ page, onSelect, onOpenMenu }) => {
         <button
           type="button"
           onClick={() => onSelect('log')}
-          aria-label={`Notifications, ${pending} pending`}
+          aria-label="Change log"
+          title="Change log"
           className="relative grid size-10 place-items-center rounded-full bg-black/25 text-white/70 ring-1 ring-white/10 transition-colors hover:text-white"
         >
           <Bell size={18} />
-          {pending > 0 && <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-accent ring-2 ring-panel" />}
         </button>
       </div>
     </header>

@@ -1,22 +1,28 @@
 # PS2 RVITM: "LoudLaunch" campaign studio (HR26-AI-02)
 
-Voice-first marketing campaigns for small businesses on Agnes models. Design lives in [`docs/`](docs/README.md); the app UI lives in [`Frontend/`](Frontend/); backend experiments (calibration) in [`apps/api/calibration/`](apps/api/calibration/).
+Voice-first marketing campaigns for small businesses on Agnes models. Design lives in [`docs/`](docs/README.md); the app UI lives in [`Frontend/`](Frontend/); the API in [`apps/api/`](apps/api/) with calibration in [`apps/api/calibration/`](apps/api/calibration/); desktop and mobile shells in [`clients/`](clients/).
 
-## Run the frontend (demo mode, mock data)
+## Run it
 ```
-cd Frontend
-npm install
-npm run dev        # http://localhost:5173
+npm run setup                  # venv + Python deps + frontend deps (Windows paths; adapt venv/Scripts on macOS)
+copy .env.example .env         # set AGNES_API_KEY (never commit .env)
+npm run api                    # FastAPI on http://127.0.0.1:8000
+npm run web                    # LoudLaunch on http://127.0.0.1:5173
+npm run test                   # 210 backend tests
+npm run models                 # optional: offline Vosk speech models (English, Hindi)
 ```
-No backend is needed yet: pages read `src/data/mock.js` and `src/state/store.jsx`. `src/api/client.js` already wraps every route in `docs/api-spec.md`; set `VITE_API_URL` when the FastAPI backend exists.
+The app talks to the API at `http://127.0.0.1:8000`; set `VITE_API_URL` to change it. Nothing in the screens that have a backend is mock data.
 
-## What is real vs placeholder
+## Where it came from
+One app from two builds: the LoudLaunch UI, planner, Vosk, bring-your-own keys and docs from this repo, and the interview, grounding, validator, meaning check, Campaign 0, outreach and dashboard from Francis's backend ([`francisreubenr-rvu/PS2RVITM`](https://github.com/francisreubenr-rvu/PS2RVITM)). What was kept from each, and why: [`docs/merge.md`](docs/merge.md).
+
+## What is real vs not connected
 | Part | Status |
 |---|---|
-| Screens S0-S14, flows, status rules, planner maths, offer-facts diff | Implemented in the frontend against mock data |
-| Agnes calibration numbers (Settings > Calibration, provider status) | **Real**, measured 8 Oct 2026 (`docs/calibration-results.md`) |
-| Voice bake-off, usage, home dashboard numbers | **Sample data**, labelled in the UI |
-| Backend (FastAPI), real Agnes calls from the app, STT/TTS, validator service | Not built yet; specs in `docs/` |
+| Talk, Plan, Campaign 0, Dashboard, Change by voice, Budget Planner, Settings | Real, on the API |
+| Studio, Build my business, Names, Website, Reels | Greyed out; teammates' services, mock previews |
+| Customers, Brand & Data, Bake-off | Greyed out; no backend yet |
+| Login | Placeholder; the API has no auth |
 
 ## Calibrate Agnes (needs your own key)
 ```

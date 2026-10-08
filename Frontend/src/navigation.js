@@ -4,11 +4,10 @@ import {
   Mic,
   ShieldCheck,
   Scale,
-  Loader,
   LayoutGrid,
   FileText,
-  GitCompareArrows,
   MessageSquareDiff,
+  ChartNoAxesColumn,
   History,
   Users,
   Store,
@@ -25,18 +24,16 @@ import {
 // Screens from docs/screen-flow.md. `slug` is the URL hash (#/board).
 export const pages = {
   home: { slug: 'home', screen: 'S2', label: 'Home', icon: House, description: 'Your campaigns and what needs you next.' },
-  voice: { slug: 'voice', screen: 'S3', label: 'Voice Brief', icon: Mic, description: 'Say your idea. Fix any word before it becomes an offer.' },
-  facts: { slug: 'facts', screen: 'S4', label: 'Offer Facts', icon: ShieldCheck, description: 'The only facts any asset can contain. Approve them after the read-back.' },
+  voice: { slug: 'voice', screen: 'S3', label: 'Talk', icon: Mic, description: 'Answer a few questions by voice or tap. Every answer is kept with your own words.' },
+  plan: { slug: 'plan', screen: 'S4', label: 'Plan', icon: ShieldCheck, description: 'What you said, as a plan. Each line shows its source and the schedule is worked out by rule.' },
+  campaign: { slug: 'campaign', screen: 'S7', label: 'Campaign 0', icon: LayoutGrid, description: 'Every asset shown as the surface it will appear on, with its fact and meaning checks.' },
+  dashboard: { slug: 'dashboard', screen: 'S9', label: 'Dashboard', icon: ChartNoAxesColumn, description: 'Sends, clicks and checks. Every number comes from this app.' },
   planner: { slug: 'planner', screen: 'S5', label: 'Budget Planner', icon: Scale, description: 'Pick what you want. See what fits your time, money and review effort.' },
-  generating: { slug: 'generating', screen: 'S6', label: 'Generating', icon: Loader, description: 'Live queue for every asset. Finished assets open while others run.' },
-  board: { slug: 'board', screen: 'S7', label: 'Campaign Board', icon: LayoutGrid, description: 'Every asset by audience, language and channel.' },
-  asset: { slug: 'asset', screen: 'S8', label: 'Asset Detail', icon: FileText, description: 'Preview, validator report, back-translation and history.' },
-  compare: { slug: 'compare', screen: 'S9', label: 'Compare & Optimize', icon: GitCompareArrows, description: 'Blind pairwise comparison with repeats, plus votes from native speakers.' },
   change: { slug: 'change', screen: 'S10', label: 'Change by Voice', icon: MessageSquareDiff, description: 'Say a change. See exactly which assets it touches before it runs.' },
   log: { slug: 'log', screen: 'S11', label: 'Change Log', icon: History, description: 'What changed, who changed it, why, and what is still pending.' },
   customers: { slug: 'customers', screen: 'S12', label: 'Customers & Send', icon: Users, description: 'Consent per channel, language per customer, and a simulated send.' },
   brand: { slug: 'brand', screen: 'S1', label: 'Brand & Data', icon: Store, description: 'Menu, photos, sample posts, customers and your brand rules. Set once, used in every campaign.' },
-  settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Providers and keys, voice, limits, calibration, usage and data.' },
+  settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Your own Agnes keys, offline voice and the numbers the planner uses.' },
   studio: { slug: 'studio', screen: 'S15', label: 'Studio', icon: Sparkles, description: 'Posts, posters, taglines, a website, a reel. Pick what you want made.' },
   launch: { slug: 'launch', screen: 'S16', label: 'Build my business', icon: Rocket, description: 'No business yet? Answer a few questions and get ideas, a name, a brand and a launch pack.' },
   identity: { slug: 'identity', screen: 'S17', label: 'Names & Brand look', icon: Palette, description: 'Business names, taglines in each language, colours and starter logos.' },
@@ -48,8 +45,8 @@ export const pages = {
 export const sidebarGroups = [
   { title: 'Overview', items: [pages.home] },
   { title: 'Studio', items: [pages.studio, pages.launch, pages.identity, pages.website, pages.video] },
-  { title: 'Create', items: [pages.voice, pages.facts, pages.planner, pages.generating] },
-  { title: 'Campaign', items: [pages.board, pages.compare, pages.change, pages.log, pages.customers] },
+  { title: 'Campaign', items: [pages.voice, pages.plan, pages.planner, pages.campaign, pages.dashboard] },
+  { title: 'Manage', items: [pages.change, pages.log, pages.customers] },
   { title: 'Setup', items: [pages.brand, pages.settings, pages.bakeoff] },
 ];
 
@@ -57,11 +54,10 @@ export const logoutItem = { slug: 'logout', label: 'Log out', icon: LogOut };
 
 // Bottom pill: the main flow in order (docs/screen-flow.md section 2).
 export const flowSteps = [
-  { slug: 'voice', label: 'Brief', icon: Mic },
-  { slug: 'facts', label: 'Facts', icon: ShieldCheck },
-  { slug: 'planner', label: 'Plan', icon: Scale },
-  { slug: 'generating', label: 'Generate', icon: Loader },
-  { slug: 'board', label: 'Board', icon: LayoutGrid },
+  { slug: 'voice', label: 'Talk', icon: Mic },
+  { slug: 'plan', label: 'Plan', icon: ShieldCheck },
+  { slug: 'campaign', label: 'Campaign 0', icon: LayoutGrid },
+  { slug: 'dashboard', label: 'Dashboard', icon: ChartNoAxesColumn },
 ];
 
 export const findPage = (slug) => pages[slug];
