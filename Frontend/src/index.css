@@ -90,15 +90,14 @@ body {
     0 30px 60px -30px rgb(0 0 0 / 0.7);
 }
 
-/* Rail buttons shrink on short screens so every page icon fits without scrolling. */
-.rail-btn {
-  width: 2.5rem;
+/* Rail rows shrink on short screens so every page icon fits without scrolling.
+   Only the height changes: the width follows the animated sidebar width. */
+.rail-row {
   height: 2.5rem;
 }
 
 @media (max-height: 820px) {
-  .rail-btn {
-    width: 2.125rem;
+  .rail-row {
     height: 2.125rem;
   }
 }

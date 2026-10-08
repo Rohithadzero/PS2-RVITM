@@ -23,7 +23,7 @@ const Login = () => {
         <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
           <AudioLines size={28} strokeWidth={2.4} />
         </span>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Tell it once</h1>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight">LoudLaunch</h1>
         <p className="mt-2 text-sm text-white/60">Your brand and campaigns sync to your phone and laptop.</p>
 
         <button type="button" onClick={signIn} disabled={state === 'loading'} className="btn mt-8 h-12 w-full bg-white text-ink hover:bg-white/90">

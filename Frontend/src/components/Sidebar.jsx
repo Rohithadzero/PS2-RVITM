@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { AudioLines, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
+import { AudioLines, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
 import { sidebarGroups, logoutItem, hasBackend } from '../navigation';
-
 
 const RAIL = 64;
 const EXPANDED = 236;
@@ -11,7 +10,7 @@ const Brand = ({ showName }) => (
     <span className="grid size-10 shrink-0 place-items-center text-accent" aria-hidden="true">
       <AudioLines size={22} strokeWidth={2.4} />
     </span>
-    {showName && <span className="whitespace-nowrap text-base font-semibold">Tell it once</span>}
+    {showName && <span className="whitespace-nowrap text-base font-semibold">LoudLaunch</span>}
   </div>
 );
 
@@ -24,6 +23,9 @@ const Tooltip = ({ children }) => (
   </span>
 );
 
+// Labels fade instead of mounting, so only the width animates. Fade-in waits for the panel to open up a little.
+const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
+
 const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) => {
   const Icon = item.icon;
   const dim = !accent && !hasBackend(item.slug) && !active;
@@ -35,22 +37,22 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
         aria-label={expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
         aria-current={active ? 'page' : undefined}
         title={!hasBackend(item.slug) ? 'No backend yet' : undefined}
-        className={`relative flex items-center rounded-xl text-sm font-medium transition-colors ${
-          expanded ? 'h-10 w-full gap-3 px-3' : 'rail-btn justify-center'
-        } ${dim ? 'opacity-40 hover:opacity-70' : ''} ${
+        className={`rail-row relative flex w-full items-center gap-3 overflow-hidden px-[11px] text-sm font-medium transition-colors ${
+          dim ? 'opacity-40 hover:opacity-70' : ''
+        } ${
           accent
             ? 'rounded-full bg-accent text-white hover:bg-accent/90'
             : active
-              ? 'bg-accent text-white shadow-[0_8px_18px_-8px_rgb(242_107_29/0.9)]'
-              : 'text-white/60 hover:bg-white/10 hover:text-white'
+              ? 'rounded-xl bg-accent text-white shadow-[0_8px_18px_-8px_rgb(242_107_29/0.9)]'
+              : 'rounded-xl text-white/60 hover:bg-white/10 hover:text-white'
         }`}
       >
         <Icon size={18} className="shrink-0" />
-        {expanded && <span className="truncate">{item.label}</span>}
-        {badge && expanded && (
-          <span className={`ml-auto rounded-md px-1.5 text-xs font-semibold ${active ? 'bg-white/20' : 'bg-accent/20 text-accent'}`}>{badge}</span>
+        <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{item.label}</span>
+        {badge && (
+          <span className={`shrink-0 rounded-md px-1.5 text-xs font-semibold ${active ? 'bg-white/20' : 'bg-accent/20 text-accent'} ${fade(expanded)}`}>{badge}</span>
         )}
-        {badge && !expanded && !active && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent ring-2 ring-panel" />}
+        {badge && !active && <span className={`absolute right-1.5 top-1.5 size-2 rounded-full bg-accent ring-2 ring-panel ${fade(!expanded)}`} />}
       </button>
       {!expanded && <Tooltip>{!hasBackend(item.slug) ? `${item.label} (no backend yet)` : item.label}</Tooltip>}
     </div>
@@ -58,13 +60,17 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
 };
 
 const NavList = ({ active, onSelect, expanded, badges }) => (
-  <nav aria-label="Main" className={`flex flex-1 flex-col gap-1 ${expanded ? 'items-stretch' : 'items-center'}`}>
+  <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
     {sidebarGroups.map((group, index) => (
-      <div key={group.title} className={`flex flex-col gap-1 ${expanded ? 'items-stretch' : 'items-center'}`}>
-        {expanded ? (
-          index > 0 && <p className="mt-3 px-3 pb-1 text-xs font-medium text-white/40">{group.title}</p>
-        ) : (
-          index > 0 && <span aria-hidden="true" className="my-1.5 h-px w-6 bg-white/10" />
+      <div key={group.title} className="flex flex-col gap-1">
+        {index > 0 && (
+          // Fixed height for both states, so rows don't jump when the title swaps for the divider.
+          <div className="relative mt-1 h-5 shrink-0">
+            <span aria-hidden="true" className={`absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 bg-white/10 ${fade(!expanded)}`} />
+            <p aria-hidden={!expanded} className={`absolute inset-x-0 bottom-0 truncate px-3 text-xs font-medium text-white/40 ${fade(expanded)}`}>
+              {group.title}
+            </p>
+          </div>
         )}
         {group.items.map((item) => (
           <NavButton
@@ -82,34 +88,66 @@ const NavList = ({ active, onSelect, expanded, badges }) => (
 );
 
 const Footer = ({ expanded, onSelect }) => (
-  <div className={`flex flex-col gap-1 ${expanded ? 'items-stretch' : 'items-center'}`}>
+  <div className="flex flex-col gap-1">
     <NavButton item={{ slug: 'voice', label: 'New campaign', icon: Plus }} expanded={expanded} onSelect={onSelect} accent />
     <span aria-hidden="true" className="h-1" />
     <NavButton item={logoutItem} expanded={expanded} onSelect={onSelect} />
   </div>
 );
 
+// Collapsed: hovering the logo reveals the expand button. Expanded: the collapse button sits beside the app name.
+const RailHeader = ({ expanded, onToggle }) => (
+  <div className="flex h-10 shrink-0 items-center">
+    <div className="group relative grid size-10 shrink-0 place-items-center text-accent">
+      <AudioLines
+        size={22}
+        strokeWidth={2.4}
+        aria-hidden="true"
+        className={expanded ? '' : 'transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0'}
+      />
+      {!expanded && (
+        <>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label="Expand sidebar"
+            aria-expanded={false}
+            className="absolute inset-0 grid place-items-center rounded-xl text-white/70 opacity-0 transition-opacity hover:bg-white/10 hover:text-white focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <PanelLeftOpen size={18} />
+          </button>
+          <Tooltip>Expand sidebar</Tooltip>
+        </>
+      )}
+    </div>
+    <div inert={!expanded} className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden pl-1 ${fade(expanded)}`}>
+      <span className="truncate whitespace-nowrap text-base font-semibold">LoudLaunch</span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label="Collapse sidebar"
+        aria-expanded
+        title="Collapse sidebar"
+        className="ml-auto grid size-8 shrink-0 place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+      >
+        <PanelLeftClose size={18} />
+      </button>
+    </div>
+  </div>
+);
+
 const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
   // z-30 keeps tooltips above the main panel, which has its own stacking context from backdrop-filter.
+  // Padding stays constant (64px rail - 2px border - 22px = 40px content), so the width is the only thing that animates.
   <motion.aside
     initial={false}
-    animate={{ width: expanded ? EXPANDED : RAIL }}
+    animate={{ width: expanded ? EXPANDED : RAIL, borderRadius: expanded ? 28 : RAIL / 2 }}
     transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-    className={`glass-panel relative z-30 hidden shrink-0 flex-col py-3 lg:flex ${expanded ? 'rounded-[28px] px-3' : 'items-center rounded-full'}`}
+    className="glass-panel relative z-30 hidden shrink-0 flex-col px-[11px] py-3 lg:flex"
   >
-    <Brand showName={expanded} />
+    <RailHeader expanded={expanded} onToggle={onToggle} />
 
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-      aria-expanded={expanded}
-      className="absolute -right-3.5 top-14 z-10 grid size-7 place-items-center rounded-full bg-accent text-white shadow-lg ring-4 ring-[#3a2c22]/60 transition-transform hover:scale-110"
-    >
-      {expanded ? <ChevronLeft size={15} strokeWidth={2.5} /> : <ChevronRight size={15} strokeWidth={2.5} />}
-    </button>
-
-    <div className={`mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${expanded ? '-mx-1 px-1' : ''}`}>
+    <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} />
     </div>
     <div className="mt-3">
