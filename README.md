@@ -1,4 +1,4 @@
-# PS2 RVITM: "Tell it once" campaign studio (HR26-AI-02)
+# PS2 RVITM: "LoudLaunch" campaign studio (HR26-AI-02)
 
 Voice-first marketing campaigns for small businesses on Agnes models. Design lives in [`docs/`](docs/README.md); the app UI lives in [`Frontend/`](Frontend/); backend experiments (calibration) in [`apps/api/calibration/`](apps/api/calibration/).
 
