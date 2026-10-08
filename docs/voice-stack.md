@@ -126,3 +126,8 @@ Guardrail: numbers, days and negations in the cleaned text are diffed against th
 - Vosk EN/HI as the lightest offline captions.
 - Pre-recorded clips for each demo utterance as a labelled last resort ("recorded sample").
 - A warm cache of TTS read-backs for the demo facts.
+
+
+## 9. Code-mixed input (Kanglish / Hinglish)
+
+STT may return Latin-script Kanglish/Hinglish or native script. Numbers in spoken form are the main risk: the LLM misread most spoken number words in calibration, so the brief pipeline uses a deterministic number-word parser first and asks the owner to confirm any disagreement ([validator-and-scoring](validator-and-scoring.md) section 8, [calibration-results](calibration-results.md)). Native speakers record the real test set (20 natural Kanglish/Hinglish offer sentences) during the bake-off.
