@@ -330,8 +330,8 @@ export const optimizeRounds = [
 ];
 
 export const providers = {
-  text: { capability: 'Text / LLM', mode: 'default', provider: 'Agnes', model: 'agnes-3.0-flash', tier: 'Free (10 RPM)', p50: '2.1 s', p90: '3.4 s', json: '100%', tools: 'yes', status: 'ok', fallback: ['My Groq key'] },
-  image: { capability: 'Image', mode: 'default', provider: 'Agnes', model: 'agnes-image-2.5-flash', tier: 'Free (1K: 10 RPM)', p50: '14 s', p90: '31 s', timeout: '120 s', status: 'ok', fallback: [] },
+  text: { capability: 'Text / LLM', mode: 'default', provider: 'Agnes', model: 'agnes-3.0-flash', tier: 'Free (10 RPM)', p50: '3.9 s', p90: '4.3 s', json: '100%', tools: 'yes', status: 'ok', fallback: ['My Groq key'] },
+  image: { capability: 'Image', mode: 'default', provider: 'Agnes', model: 'agnes-image-2.5-flash', tier: 'Free (1K: 10 RPM)', p50: '9.5 s', p90: null, timeout: '120 s', status: 'ok', fallback: [] },
   video: { capability: 'Video (optional)', mode: 'default', provider: 'Agnes', model: 'agnes-video-2.5 (Flash, 720P)', tier: 'Free (1 RPM)', p50: null, status: 'not_calibrated', fallback: [] },
 };
 
@@ -369,11 +369,14 @@ export const priceTable = [
   { item: 'Sarvam TTS Bulbul v3', price: 'Rs 30 / 10K characters', verified: '8 Oct 2026' },
 ];
 
+// Measured on 8 Oct 2026 by apps/api/calibration/quick_calibrate.py (real Agnes calls, Free tier). Raw: data/calibration/.
+// Image has a single sample, so no p90. Voice providers are not calibrated yet.
 export const calibration = [
-  { provider: 'Agnes', capability: 'Text', p50: '2.1 s', p90: '3.4 s', errors: '0%', limit: '10 RPM', tokens: '1.8K / call', ran: '14:02', ttl: '24 h', stale: false },
-  { provider: 'Agnes', capability: 'Image 1K', p50: '14 s', p90: '31 s', errors: '4%', limit: '10 RPM', tokens: '—', ran: '14:02', ttl: '24 h', stale: false },
-  { provider: 'Agnes', capability: 'Video', p50: '—', p90: '—', errors: '—', limit: '1 RPM', tokens: '—', ran: 'never', ttl: '—', stale: true },
-  { provider: 'Sarvam', capability: 'STT (kn)', p50: '0.8 s', p90: '1.3 s', errors: '0%', limit: '60 RPM', tokens: '—', ran: '13:40', ttl: '24 h', stale: false },
+  { provider: 'Agnes', capability: 'Text: JSON extraction', p50: '3.9 s', p90: '4.3 s', errors: '0%', limit: '10 RPM (tier)', tokens: '167 in / 109 out', ran: '21:16', ttl: '24 h', stale: false },
+  { provider: 'Agnes', capability: 'Text: copy batch (kn/hi/en)', p50: '7.1 s', p90: '10.6 s', errors: '0%', limit: '10 RPM (tier)', tokens: '160 in / 215 out', ran: '21:16', ttl: '24 h', stale: false },
+  { provider: 'Agnes', capability: 'Text: pairwise scoring', p50: '3.3 s', p90: '6.8 s', errors: '0%', limit: '10 RPM (tier)', tokens: '211 in / 132 out', ran: '21:16', ttl: '24 h', stale: false },
+  { provider: 'Agnes', capability: 'Image 1K (1 sample)', p50: '9.5 s', p90: '—', errors: '0%', limit: '10 RPM (tier)', tokens: '—', ran: '21:16', ttl: '24 h', stale: false },
+  { provider: 'Agnes', capability: 'Video', p50: '—', p90: '—', errors: '—', limit: '1 RPM (tier)', tokens: '—', ran: 'never', ttl: '—', stale: true },
 ];
 
 export const usage = [
@@ -383,6 +386,7 @@ export const usage = [
   { provider: 'Groq', capability: 'STT', today: 6000, unit: 'audio s this hour', detail: 'of 7,200', listCost: 'Rs 0', actual: 'Rs 0', rateLimited: 0, cacheHits: 0, warn: true },
 ];
 
+// SAMPLE DATA: placeholder numbers, NOT measured. Replace with results from the real bake-off (docs/voice-stack.md).
 export const bakeoffStt = [
   { provider: 'Local: faster-whisper', lang: 'kn', tokenAcc: '82%', wer: '24%', latency: '1.9 s' },
   { provider: 'Sarvam Saaras v4', lang: 'kn', tokenAcc: '96%', wer: '11%', latency: '0.8 s' },
