@@ -248,6 +248,16 @@ body {
   outline-offset: 2px;
 }
 
+/* Walkthrough spotlight edge: a soft accent pulse that grows outward and fades. */
+.tour-ring {
+  animation: tour-pulse 1.8s ease-out infinite;
+}
+
+@keyframes tour-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 55%, transparent), 0 0 28px color-mix(in oklab, var(--color-accent) 30%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent, 0 0 28px color-mix(in oklab, var(--color-accent) 30%, transparent); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -52,7 +52,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="flex min-w-0 items-start gap-2">
-        <button type="button" aria-label="Open menu" onClick={onOpenMenu} className="-ml-2 grid size-10 shrink-0 place-items-center rounded-xl text-white/80 hover:bg-white/10 lg:hidden">
+        <button type="button" aria-label="Open menu" onClick={onOpenMenu} data-tour="menu" className="-ml-2 grid size-10 shrink-0 place-items-center rounded-xl text-white/80 hover:bg-white/10 lg:hidden">
           <Menu size={20} />
         </button>
         <div className="min-w-0">
@@ -84,6 +84,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
         <button
           type="button"
           onClick={() => onSelect('change')}
+          data-tour="mic"
           aria-label="Change something by voice"
           title="Change something by voice"
           className="voice-mic voice-mic-dark voice-mic-sm grid size-10 place-items-center rounded-full"
@@ -93,6 +94,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
         <button
           type="button"
           onClick={onOpenSummary}
+          data-tour="summary"
           aria-label="Open the calendar panel"
           title="Calendar and next up"
           className="grid size-10 place-items-center rounded-full bg-black/25 text-white/70 ring-1 ring-white/10 transition-colors hover:text-white xl:hidden"

@@ -66,7 +66,7 @@ const Home = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="rounded-2xl bg-white p-5 text-ink">
+      <section data-tour="start" className="rounded-2xl bg-white p-5 text-ink">
         <p className="text-sm font-semibold text-accent-deep">Campaign 0 for your shop</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Say the offer. We write the campaign.</h1>
         <p className="mt-2 max-w-xl text-sm text-ink/65">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>

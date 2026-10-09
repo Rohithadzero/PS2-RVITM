@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic, Check, RotateCcw } from 'lucide-react';
+import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic, Check, RotateCcw, Compass } from 'lucide-react';
 import ColorPicker from '../components/ColorPicker.jsx';
 import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
 import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
 import { ACCENTS, BACKDROPS, DEFAULTS, SURFACES, useAppearance } from '../lib/appearance';
+import { startTour } from '../lib/tour';
 
 const TABS = ['Appearance', 'Providers', 'Voice', 'Calibration', 'Guardrails'];
 
@@ -396,6 +397,18 @@ const AppearanceTab = () => {
           </span>
           <Toggle checked={look.reactive} onChange={(reactive) => setLook({ reactive })} label="Background reacts to the cursor" />
         </div>
+      </section>
+      <section className="card xl:col-span-2">
+        <CardTitle
+          sub="A short tour of the screens and the Talk, Plan, Campaign 0, Dashboard flow, in English, Kannada or Hindi."
+          action={
+            <button type="button" onClick={startTour} className="btn-ghost h-9 px-4 text-sm">
+              <Compass size={14} /> Show me around
+            </button>
+          }
+        >
+          Walkthrough
+        </CardTitle>
       </section>
     </div>
   );

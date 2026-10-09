@@ -30,6 +30,7 @@ import Video from './pages/Video';
 import { findPage, pages } from './navigation';
 import { useRoute, navigate } from './lib/router';
 import { useAuth } from './lib/auth';
+import Walkthrough from './components/tour/Walkthrough';
 
 const SCREENS = {
   home: Home,
@@ -146,6 +147,7 @@ const App = () => {
 
         <RightPanel drawerOpen={summaryOpen} onCloseDrawer={closeSummary} />
       </div>
+      <Walkthrough user={me.user} />
     </MotionConfig>
   );
 };
