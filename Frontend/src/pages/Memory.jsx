@@ -6,13 +6,6 @@ import { navigate } from '../lib/router';
 
 const send = (method, path, body) => api(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
 
-// What to jot down first, by kind of business. Each chip fills the form; the owner writes the content.
-const TEMPLATES = {
-  'Cafe or restaurant': [['menu', 'Menu and prices'], ['hours', 'Opening hours'], ['offers', 'Regular specials'], ['rules', 'Allergen and diet notes']],
-  'Software company': [['pricing', 'Plans and pricing'], ['hours', 'Support hours'], ['about', 'What the product does'], ['rules', 'Claims we never make']],
-  Consultant: [['pricing', 'Services and rates'], ['hours', 'Availability and timings'], ['about', 'Who we work with'], ['rules', 'Booking and cancellation rules']],
-  'Salon or shop': [['menu', 'Services and prices'], ['hours', 'Opening hours'], ['voice', 'How we talk to customers']],
-};
 const EMPTY = { id: null, kind: 'other', title: '', body: '', use_ai: true, pinned: false };
 const WRITES = ['voice', 'rules'];
 
@@ -110,10 +103,6 @@ const Memory = () => {
   return (
     <div className="flex flex-col gap-4">
       {error && <Banner tone="warn">{error}</Banner>}
-      <Banner tone="info">
-        This is what GrowIT knows about your business. Add things yourself, such as your menu, pricing or timings, and edit anything here at any time.
-        {' '}{data.note}
-      </Banner>
       {data.suggested.length > 0 && (
         <Banner tone="info" action={<button type="button" className="btn-primary h-8 px-3 text-xs" onClick={() => navigate('insights')}>See them on Insights</button>}>
           <span className="inline-flex items-center gap-2"><Lightbulb size={15} /> GrowIT has {data.suggested.length} suggestion{data.suggested.length === 1 ? '' : 's'} waiting for your yes.</span>
@@ -122,25 +111,9 @@ const Memory = () => {
 
 
       <section className="card">
-        <CardTitle sub="Pick what fits your business, or start from a blank note." action={
+        <CardTitle sub="Anything GrowIT should keep in mind: menu, pricing, timings, how you like to sound." action={
           <button type="button" className="btn-primary" onClick={() => setEditing({ ...EMPTY })}><Plus size={15} /> Add a note</button>
         }>What GrowIT remembers</CardTitle>
-
-        <details className="mb-3 rounded-xl bg-ink/5 px-3 py-2 text-sm">
-          <summary className="cursor-pointer font-medium">Not sure what to add? Ideas by kind of business</summary>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {Object.entries(TEMPLATES).map(([name, chips]) => (
-              <div key={name}>
-                <p className="mb-1 text-xs font-semibold text-ink/60">{name}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {chips.map(([kind, title]) => (
-                    <button key={title} type="button" onClick={() => setEditing({ ...EMPTY, kind, title })} className="rounded-full bg-white px-3 py-1 text-xs font-medium ring-1 ring-ink/10 hover:bg-ink/5">{title}</button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </details>
 
         {editing && (!editing.id || !data.items.some((i) => i.id === editing.id)) && <div className="mb-4"><Editor value={editing} kinds={data.kinds} busy={busy} onChange={(p) => setEditing({ ...editing, ...p })} onSave={save} onCancel={() => setEditing(null)} /></div>}
 
