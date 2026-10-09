@@ -119,3 +119,45 @@ def test_results_you_entered_become_a_suggestion_with_evidence(rig):
     got = [s for s in c.get("/memory").json()["suggested"] if s["kind"] == "results"]
     assert got and got[0]["title"].startswith("What worked: filter coffee") and "Best channel: whatsapp" in got[0]["body"]
     assert "200" in got[0]["evidence"] and got[0]["status"] == "suggested"
+
+
+def fact(**kw):
+    return {"subject": "", "relation": "founded", "object": "Brew Bandi", "kind": "org", "detail": "in 2019", "quote": "I started it in a garage", **kw}
+
+
+def test_a_briefing_is_kept_only_when_the_owner_saves_it_and_one_note_per_kind(rig):
+    _, c = rig
+    r = c.post("/memory/briefing", json={"facts": [fact(), fact(relation="worked at", object="Infosys", detail="", quote=""), fact(kind="skill", relation="is good at", object="roasting", detail="", quote="")]})
+    assert r.json() == {"saved": 3, "notes": 2}
+    items = {i["title"]: i for i in c.get("/memory").json()["items"]}
+    org = items["From my briefing: Organisations"]
+    assert org["source"] == "you" and org["status"] == "active" and org["kind"] == "about" and "briefing" in org["evidence"]
+    assert "founded Brew Bandi (in 2019)" in org["body"] and "\u201cI started it in a garage\u201d" in org["body"] and "worked at Infosys" in org["body"]
+    assert "is good at roasting" in items["From my briefing: Skills"]["body"]
+
+
+def test_a_second_briefing_adds_lines_and_never_removes_or_duplicates(rig):
+    _, c = rig
+    c.post("/memory/briefing", json={"facts": [fact()]})
+    note = c.get("/memory").json()["items"][0]
+    c.put(f"/memory/{note['id']}", json={"kind": "about", "title": note["title"], "body": note["body"] + "\nmy own line"})  # the owner edits it
+    c.post("/memory/briefing", json={"facts": [fact(), fact(relation="led", object="a team of ten", kind="org", detail="", quote="")]})
+    body = c.get("/memory").json()["items"][0]["body"].split("\n")
+    assert body.count([b for b in body if b.startswith("founded")][0]) == 1 and "my own line" in body and any("led a team of ten" in b for b in body)
+
+
+def test_a_removed_briefing_note_comes_back_clean_when_a_new_briefing_is_saved(rig):
+    _, c = rig
+    c.post("/memory/briefing", json={"facts": [fact()]})
+    c.delete(f"/memory/{c.get('/memory').json()['items'][0]['id']}")
+    assert c.get("/memory").json()["items"] == []
+    c.post("/memory/briefing", json={"facts": [fact(object="Other Cafe")]})
+    body = c.get("/memory").json()["items"][0]["body"]
+    assert body.startswith("founded Other Cafe") and "\n\n" not in body
+
+
+def test_briefing_input_is_checked(rig):
+    _, c = rig
+    assert c.post("/memory/briefing", json={"facts": []}).status_code == 422
+    assert c.post("/memory/briefing", json={"facts": [fact(kind="secret")]}).json()["detail"]["code"] == "bad_kind"
+    assert c.post("/memory/briefing", json={"facts": [fact(object="x" * 201)]}).status_code == 422

@@ -153,6 +153,35 @@ def prompt_notes(db: Database, owner: str | None = None) -> list[str]:
     return notes
 
 
+# ---------------------------------------------------------------- the voice briefing
+
+BRIEFING_KINDS = {"org": "Organisations", "role": "Roles", "project": "Projects", "skill": "Skills", "judgment": "What I believe", "ambition": "Ambitions", "trait": "Traits"}
+
+
+class BriefFact(BaseModel):
+    """One fact from the voice briefing, as the live agent recorded it: subject, relation, object, and what sort of thing the object is."""
+    subject: str = Field(default="", max_length=160)
+    relation: str = Field(min_length=1, max_length=60)
+    object: str = Field(min_length=1, max_length=200)
+    kind: str = Field(max_length=20)
+    detail: str = Field(default="", max_length=300)
+    quote: str = Field(default="", max_length=400)
+
+
+class BriefingIn(BaseModel):
+    facts: list[BriefFact] = Field(min_length=1, max_length=120)
+
+
+def fact_line(f: BriefFact) -> str:
+    head = f"{f.subject.strip()} " if f.subject.strip() else ""
+    line = f"{head}{f.relation.strip()} {f.object.strip()}"
+    if f.detail.strip():
+        line += f" ({f.detail.strip()})"
+    if f.quote.strip():
+        line += f" - \u201c{f.quote.strip()}\u201d"
+    return line
+
+
 # ---------------------------------------------------------------- routes
 
 class ItemIn(BaseModel):
@@ -245,6 +274,37 @@ def remove(item_id: str, request: Request) -> dict:
     else:
         db.execute("DELETE FROM memory_item WHERE id = ?", (item_id,))
     return {"ok": True}
+
+
+@router.post("/memory/briefing")
+def save_briefing(body: BriefingIn, request: Request) -> dict:
+    """Keep what the owner said in a voice briefing. They press Save after seeing the live map, so this is their own yes: the notes are active.
+    One note per kind of fact. A later briefing adds lines the note does not have yet and never removes or rewrites what is there."""
+    db: Database = request.app.state.db
+    owner = connections._require_owner(request)
+    grouped: dict[str, list[str]] = {}
+    for f in body.facts:
+        if f.kind not in BRIEFING_KINDS:
+            raise fail("bad_kind", f"A fact's kind must be one of: {', '.join(BRIEFING_KINDS)}.", 422)
+        grouped.setdefault(f.kind, []).append(fact_line(f))
+    now = _now()
+    saved = 0
+    for kind, lines in grouped.items():
+        key = f"briefing:{kind}"
+        row = db.query_one("SELECT id, body FROM memory_item WHERE owner = ? AND dedupe_key = ?", (owner, key))
+        title = f"From my briefing: {BRIEFING_KINDS[kind]}"
+        if row is None:
+            if db.query_one("SELECT COUNT(*) AS n FROM memory_item WHERE owner = ?", (owner,))["n"] >= MAX_ITEMS:
+                raise fail("too_many", f"At most {MAX_ITEMS} memories. Remove some first.", 409)
+            db.execute("INSERT INTO memory_item (id, owner, kind, title, body, source, status, evidence, dedupe_key, created_at, updated_at) "
+                       "VALUES (?, ?, 'about', ?, ?, 'you', 'active', ?, ?, ?, ?)",
+                       (uuid.uuid4().hex[:12], owner, title, "\n".join(dict.fromkeys(lines))[:2000], f"Said by you in a voice briefing on {now[:10]}.", key, now, now))
+        else:
+            have = [ln for ln in row["body"].split("\n") if ln]  # a note the owner removed has an empty body
+            merged = have + [ln for ln in dict.fromkeys(lines) if ln not in have]
+            db.execute("UPDATE memory_item SET body = ?, status = 'active', updated_at = ? WHERE id = ?", ("\n".join(merged)[:2000], now, row["id"]))
+        saved += len(lines)
+    return {"saved": saved, "notes": len(grouped)}
 
 
 @router.post("/memory/refresh")
