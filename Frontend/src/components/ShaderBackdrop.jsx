@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, Vector3, WebGLRenderer } from 'three';
 
-// A flowing, warped gradient drawn by a small fragment shader on one full-screen triangle pair. It runs fast on purpose.
+// A flowing, warped gradient drawn by a small fragment shader on one full-screen triangle pair.
 // It draws at a reduced resolution (the blur hides it), pauses while the tab is hidden, stands still for people who ask
 // for reduced motion, and removes itself if WebGL is missing so the CSS gradient underneath shows instead.
-const SPEED = 0.9;
+const SPEED = 0.3;
 const SCALE = 0.55; // render at 55% of the screen size, then let the browser stretch it
 
 const VERT = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
