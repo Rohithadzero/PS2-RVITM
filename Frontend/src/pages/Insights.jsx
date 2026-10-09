@@ -5,6 +5,7 @@ import { buildInsights } from '../data/insightsMock';
 import { api, getLearning } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
 import { navigate } from '../lib/router';
+import Suggestions from '../components/Suggestions';
 
 const Kpi = ({ icon: Icon, label, value, note }) => (
   <article className="rounded-2xl bg-white p-4 text-ink">
@@ -108,6 +109,7 @@ const Insights = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <Suggestions />
       <p className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-white/80" role="note">
         The charts below are <strong>sample data</strong>, made up to show the screen. Real account figures appear in the strip above once Instagram is connected and its insights are allowed. Nothing here is measured, so do not read them as results.
       </p>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Brain, Check, Download, Pencil, Pin, PinOff, Plus, RefreshCw, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { Brain, Check, Download, Lightbulb, Pencil, Pin, PinOff, Plus, Search, Trash2 } from 'lucide-react';
 import { CardTitle, Field, Banner, Toggle } from '../components/ui';
 import { api } from '../campaign/lib/api';
+import { navigate } from '../lib/router';
 
 const send = (method, path, body) => api(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
 
@@ -70,10 +71,6 @@ const Memory = () => {
     }
   }, []);
 
-  useEffect(() => {
-    // Look at the shop's data once on opening, so new suggestions are waiting.
-    send('POST', '/memory/refresh').catch(() => undefined).finally(() => load());
-  }, [load]);
   useEffect(() => { const t = setTimeout(() => load(q.trim()), 250); return () => clearTimeout(t); }, [q, load]);
 
   const act = async (fn, message) => {
@@ -87,11 +84,6 @@ const Memory = () => {
     await (id ? send('PUT', `/memory/${id}`, body) : send('POST', '/memory', body));
     setEditing(null);
   }, 'Saved.');
-
-  const refresh = () => act(async () => {
-    const r = await send('POST', '/memory/refresh');
-    setNotice(r.added ? `GrowIT found ${r.added} new thing${r.added === 1 ? '' : 's'} to suggest.` : 'Nothing new to suggest.');
-  });
 
   const exportAll = async () => {
     const out = await api('/memory/export');
@@ -119,33 +111,15 @@ const Memory = () => {
     <div className="flex flex-col gap-4">
       {error && <Banner tone="warn">{error}</Banner>}
       <Banner tone="info">
-        This is what GrowIT knows about your business. Add things yourself, or accept what GrowIT suggests from your shop details, offers and customers.
+        This is what GrowIT knows about your business. Add things yourself, such as your menu, pricing or timings, and edit anything here at any time.
         {' '}{data.note}
       </Banner>
+      {data.suggested.length > 0 && (
+        <Banner tone="info" action={<button type="button" className="btn-primary h-8 px-3 text-xs" onClick={() => navigate('insights')}>See them on Insights</button>}>
+          <span className="inline-flex items-center gap-2"><Lightbulb size={15} /> GrowIT has {data.suggested.length} suggestion{data.suggested.length === 1 ? '' : 's'} waiting for your yes.</span>
+        </Banner>
+      )}
 
-      <section className="card">
-        <CardTitle sub="Suggestions wait here. Nothing is used until you accept it." action={
-          <button type="button" className="btn-ghost" onClick={refresh} disabled={busy}><RefreshCw size={15} /> Look at my shop again</button>
-        }>Suggested by GrowIT</CardTitle>
-        {data.suggested.length === 0 ? (
-          <p className="text-sm text-ink/55">No suggestions right now. Save your shop details and approve an offer, and GrowIT will suggest what it noticed.</p>
-        ) : (
-          <ul className="grid gap-3 md:grid-cols-2">
-            {data.suggested.map((s) => (
-              <li key={s.id} className="flex flex-col gap-2 rounded-2xl border border-accent/40 bg-accent-soft/40 p-3.5">
-                <div className="flex flex-wrap items-center gap-2"><Sparkles size={15} className="text-accent-deep" /><strong className="text-sm">{s.title}</strong><span className="text-[11px] text-ink/50">{s.kind_label}</span></div>
-                <p className="whitespace-pre-wrap text-sm text-ink/80">{s.body}</p>
-                <p className="text-xs text-ink/55">{s.evidence}</p>
-                <div className="mt-auto flex flex-wrap gap-2">
-                  <button type="button" className="btn-primary h-9" disabled={busy} onClick={() => act(() => send('POST', `/memory/${s.id}/accept`), 'Added to what GrowIT remembers.')}><Check size={14} /> Accept</button>
-                  <button type="button" className="btn-ghost h-9" onClick={() => setEditing({ ...EMPTY, ...s })}><Pencil size={14} /> Edit first</button>
-                  <button type="button" className="btn-ghost h-9" disabled={busy} onClick={() => act(() => send('POST', `/memory/${s.id}/dismiss`))}><X size={14} /> Not right</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
 
       <section className="card">
         <CardTitle sub="Pick what fits your business, or start from a blank note." action={
