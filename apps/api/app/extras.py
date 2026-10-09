@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import wave
 from datetime import datetime, timezone
 from typing import Any
@@ -18,7 +19,7 @@ from app.config import ROOT
 from app.db import Database
 from app.lab.domain.planner import Calibration, solve
 from app.lab.security import BlockedUrl, check_custom_base_url, decrypt_key, encrypt_key, last4
-from app.lab.voice import vosk_stt
+from app.lab.voice import groq_stt, vosk_stt
 
 router = APIRouter()
 
@@ -36,9 +37,27 @@ CREATE TABLE IF NOT EXISTS provider_keys (
 """
 CALIBRATION_DIR = ROOT / "data" / "calibration"
 
+# Extra services the owner can switch on or off. The key lives in the server's .env; the switch is the owner's consent.
+TOGGLES = {
+    "groq": {"label": "Groq", "env": "GROQ_API_KEY", "used_for": "Speech to text for Kannada and Hindi (Whisper). Audio is sent to Groq."},
+    "gemini": {"label": "Gemini", "env": "GEMINI_API_KEY", "used_for": "Not used by any feature yet. The switch is saved for when it is."},
+}
+TOGGLE_SCHEMA = "CREATE TABLE IF NOT EXISTS service_toggle (name TEXT PRIMARY KEY, enabled INTEGER NOT NULL, updated_at TEXT NOT NULL)"
+
 
 def ensure_schema(db: Database) -> None:
     db.ensure(SCHEMA)
+    db.ensure(TOGGLE_SCHEMA)
+
+
+def toggle_state(db: Database, name: str) -> dict:
+    """configured: a key is set on the server. enabled: the owner's switch (on until they turn it off). active: both."""
+    meta = TOGGLES[name]
+    row = db.query_one("SELECT enabled FROM service_toggle WHERE name = ?", (name,))
+    configured = bool((os.environ.get(meta["env"]) or "").strip())
+    enabled = True if row is None else bool(row["enabled"])
+    return {"name": name, "label": meta["label"], "used_for": meta["used_for"], "configured": configured, "enabled": enabled,
+            "active": configured and enabled}
 
 
 def key_override(db: Database, capability: str) -> str | None:
@@ -152,23 +171,56 @@ def reset_provider(capability: str, request: Request) -> dict:
     return {"capability": capability, "reset": True}
 
 
+# ---------------------------------------------------------------- service switches
+
+class ToggleIn(BaseModel):
+    enabled: bool
+
+
+@router.get("/settings/toggles")
+def list_toggles(request: Request) -> dict:
+    return {"toggles": [toggle_state(request.app.state.db, n) for n in TOGGLES]}
+
+
+@router.put("/settings/toggles/{name}")
+def set_toggle(name: str, body: ToggleIn, request: Request) -> dict:
+    if name not in TOGGLES:
+        raise _fail("unknown_service", f"Unknown service. Choose from {', '.join(TOGGLES)}.", 404)
+    db: Database = request.app.state.db
+    db.execute("INSERT INTO service_toggle (name, enabled, updated_at) VALUES (?, ?, ?) "
+               "ON CONFLICT(name) DO UPDATE SET enabled=excluded.enabled, updated_at=excluded.updated_at",
+               (name, int(body.enabled), datetime.now(timezone.utc).isoformat()))
+    return toggle_state(db, name)
+
+
 # ---------------------------------------------------------------- offline speech-to-text
 
 @router.get("/stt/languages")
 def stt_languages() -> dict:
     return {"engine": "vosk", "installed": vosk_stt.available_languages(),
             "unsupported": ["kn", "hinglish"],
-            "note": "Vosk has no Kannada or Hinglish model. Use the browser mic or type the answer for those."}
+            "note": "Vosk has no Kannada or Hinglish model. Switch Groq on in Settings, use the browser mic, or type the answer."}
 
 
 @router.post("/stt")
-async def stt(audio: UploadFile = File(...), lang: str = Form("en")) -> dict:
+async def stt(request: Request, audio: UploadFile = File(...), lang: str = Form("en")) -> dict:
     data = await audio.read()
+    groq = toggle_state(request.app.state.db, "groq")
+    # Vosk first (offline, nothing leaves the machine). Groq only for what Vosk cannot do, and only when switched on.
+    if groq["active"] and (lang in ("kn", "hinglish") or lang not in vosk_stt.available_languages()):
+        try:
+            return await groq_stt.transcribe(data, "hi" if lang == "hinglish" else lang, os.environ["GROQ_API_KEY"].strip())
+        except groq_stt.GroqError as exc:
+            raise _fail("groq_failed", str(exc), 502) from exc
     try:
         # Vosk is CPU-bound; keep the event loop free.
         result = await asyncio.to_thread(vosk_stt.transcribe, data, lang)
     except vosk_stt.Unsupported as exc:
-        raise _fail("stt_unsupported", str(exc), 422) from exc
+        hint = ""
+        if lang in ("kn", "hinglish") or lang not in vosk_stt.available_languages():
+            hint = (" Switch Groq on in Settings to transcribe it." if groq["configured"] and not groq["enabled"]
+                    else " Add a Groq key to the server to transcribe it." if not groq["configured"] else "")
+        raise _fail("stt_unsupported", str(exc) + hint, 422) from exc
     except (ValueError, EOFError, wave.Error) as exc:
         raise _fail("bad_audio", f"Send a 16-bit PCM WAV file ({exc}).", 422) from exc
     # The transcript is only text for the owner to correct. It never writes the locked offer facts.

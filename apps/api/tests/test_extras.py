@@ -5,6 +5,7 @@ import wave
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.lab.voice import groq_stt
 from app.main import create_app
 
 
@@ -48,7 +49,8 @@ def test_provider_custom_url_blocks_private_hosts(tmp_path):
     assert r.status_code == 422 and r.json()["detail"]["code"] == "blocked_url"
 
 
-def test_stt_rejects_kannada_and_bad_audio(tmp_path):
+def test_stt_rejects_kannada_and_bad_audio(tmp_path, monkeypatch):
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
     c = client(tmp_path)
     b = io.BytesIO()
     w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b"\0\0" * 1600); w.close()
@@ -56,3 +58,73 @@ def test_stt_rejects_kannada_and_bad_audio(tmp_path):
     assert r.status_code == 422 and r.json()["detail"]["code"] == "stt_unsupported"
     r = c.post("/stt", files={"audio": ("a.wav", b"not audio", "audio/wav")}, data={"lang": "en"})
     assert r.status_code == 422
+
+
+def _wav():
+    b = io.BytesIO()
+    w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b"\0\0" * 1600); w.close()
+    return b.getvalue()
+
+
+def test_toggles_report_key_state_and_persist(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    c = client(tmp_path)
+    t = {x["name"]: x for x in c.get("/settings/toggles").json()["toggles"]}
+    assert t["groq"]["configured"] and t["groq"]["enabled"] and t["groq"]["active"]
+    assert t["gemini"]["configured"] is False and t["gemini"]["active"] is False
+    off = c.put("/settings/toggles/groq", json={"enabled": False}).json()
+    assert off["enabled"] is False and off["active"] is False
+    assert {x["name"]: x["enabled"] for x in c.get("/settings/toggles").json()["toggles"]}["groq"] is False
+    assert c.put("/settings/toggles/nope", json={"enabled": True}).status_code == 404
+    assert "gsk_test" not in c.get("/settings/toggles").text  # keys are never returned
+
+
+def test_groq_is_used_for_kannada_only_when_switched_on(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    seen = {}
+
+    async def fake(data, lang, key, **kw):
+        seen["lang"], seen["key"] = lang, key
+        return {"text": "ok", "segments": [], "lang": lang, "provider": "groq", "model": "m", "latency_ms": 1}
+
+    monkeypatch.setattr("app.lab.voice.groq_stt.transcribe", fake)
+    c = client(tmp_path)
+    files = {"audio": ("a.wav", _wav(), "audio/wav")}
+    r = c.post("/stt", files=files, data={"lang": "kn"})
+    assert r.status_code == 200 and r.json()["provider"] == "groq" and seen["lang"] == "kn"
+    c.put("/settings/toggles/groq", json={"enabled": False})
+    off = c.post("/stt", files=files, data={"lang": "kn"})
+    assert off.status_code == 422 and "Switch Groq on in Settings" in off.json()["detail"]["message"]
+
+
+def test_groq_failure_is_a_clean_502(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+
+    async def boom(*a, **k):
+        raise groq_stt.GroqError("Groq is rate limiting this key. Try again in a minute.")
+
+    monkeypatch.setattr("app.lab.voice.groq_stt.transcribe", boom)
+    r = client(tmp_path).post("/stt", files={"audio": ("a.wav", _wav(), "audio/wav")}, data={"lang": "kn"})
+    assert r.status_code == 502 and r.json()["detail"]["code"] == "groq_failed"
+
+
+def test_groq_client_never_passes_on_the_response_body():
+    import asyncio
+    import httpx
+
+    def handler(request):
+        if request.headers["authorization"] != "Bearer good":
+            return httpx.Response(401, json={"error": "invalid key gsk_secretecho"})
+        return httpx.Response(200, json={"text": " ನಮಸ್ಕಾರ "})
+
+    async def run(key):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await groq_stt.transcribe(b"x", "kn", key, client=client)
+
+    assert asyncio.run(run("good"))["text"] == "ನಮಸ್ಕಾರ"
+    try:
+        asyncio.run(run("bad"))
+        raise AssertionError("expected an error")
+    except groq_stt.GroqError as exc:
+        assert "401" in str(exc) and "gsk_secretecho" not in str(exc)

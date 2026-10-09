@@ -139,11 +139,13 @@ const RailHeader = ({ expanded, onToggle }) => (
 const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
   // z-30 keeps tooltips above the main panel, which has its own stacking context from backdrop-filter.
   // Padding stays constant (64px rail - 2px border - 22px = 40px content), so the width is the only thing that animates.
+  // The corner radius is fixed (28px is already a full pill at 64px): animating it made the shape change before the width did.
   <motion.aside
     initial={false}
-    animate={{ width: expanded ? EXPANDED : RAIL, borderRadius: expanded ? 28 : RAIL / 2 }}
-    transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-    className="glass-panel relative z-30 hidden shrink-0 flex-col px-[11px] py-3 lg:flex"
+    animate={{ width: expanded ? EXPANDED : RAIL }}
+    transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
+    style={{ willChange: 'width' }}
+    className="glass-panel relative z-30 hidden shrink-0 flex-col rounded-[28px] px-[11px] py-3 lg:flex"
   >
     <RailHeader expanded={expanded} onToggle={onToggle} />
 

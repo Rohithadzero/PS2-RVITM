@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ShieldX, Clock, Languages } from 'lucide-react';
-import { getBoard, getPlan } from '../../campaign/lib/api';
+import { motion } from 'framer-motion';
+import { PanelRightClose, PanelRightOpen, ShieldX, Clock, Languages } from 'lucide-react';
+import { getBoard, getPlan, getScout } from '../../campaign/lib/api';
+import { Calendar, DateRail, useDayModel } from './CalendarParts';
 import { channelLabel, langName } from '../../campaign/lib/format';
 import { useCurrent } from '../../campaign/lib/current';
 import { navigate } from '../../lib/router';
 
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const initialsOf = (name) => (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
 
 const Profile = ({ plan }) => {
@@ -32,61 +32,6 @@ const Profile = ({ plan }) => {
           </div>
         ))}
       </dl>
-    </div>
-  );
-};
-
-// Marks come from the plan's computed schedule: offer days, teaser and last day.
-const Calendar = ({ plan }) => {
-  const today = new Date();
-  const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const dates = plan?.offer_facts.dates ?? [];
-  const start = dates[0];
-  const end = dates.at(-1);
-  const firstWeekday = month.getDay();
-  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
-  const shift = (delta) => setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
-  const scheduled = new Set((plan?.schedule ?? []).map((s) => s.date));
-
-  const dayStyle = (date) => {
-    const d = iso(date);
-    if (d === iso(today)) return 'bg-accent text-white font-semibold';
-    if (end && start !== end && d === end) return 'bg-rose text-white font-semibold';
-    if (scheduled.has(d) || (start && d >= start && d <= end)) return 'bg-good text-white font-semibold';
-    return 'text-white/75';
-  };
-
-  return (
-    <div className="rounded-2xl bg-black/20 p-4">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold">{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
-        <div className="flex gap-1">
-          <button type="button" onClick={() => shift(-1)} aria-label="Previous month" className="grid size-7 place-items-center rounded-full bg-white/10 text-white/70 hover:text-white">
-            <ChevronLeft size={14} />
-          </button>
-          <button type="button" onClick={() => shift(1)} aria-label="Next month" className="grid size-7 place-items-center rounded-full bg-white/10 text-white/70 hover:text-white">
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-xs">
-        {WEEKDAYS.map((d) => (
-          <span key={d} className="pb-1 text-white/40">{d}</span>
-        ))}
-        {cells.map((date, i) =>
-          date ? (
-            <span key={i} className={`mx-auto grid size-7 place-items-center rounded-full ${dayStyle(date)}`}>{date.getDate()}</span>
-          ) : (
-            <span key={i} />
-          )
-        )}
-      </div>
-      <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-accent" />Today</li>
-        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Scheduled</li>
-        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose" />Last day</li>
-      </ul>
     </div>
   );
 };
@@ -139,29 +84,82 @@ const NextUp = ({ board, id }) => {
   );
 };
 
+const KEY = 'right-expanded';
+const RAIL = 64;
+const WIDE = 320;
+
+const readExpanded = () => {
+  try {
+    return localStorage.getItem(KEY) !== '0';
+  } catch {
+    return true;
+  }
+};
+
+const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
+
 const RightPanel = () => {
   const { id } = useCurrent();
   const [plan, setPlan] = useState(null);
   const [board, setBoard] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [expanded, setExpanded] = useState(readExpanded);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY, expanded ? '1' : '0');
+    } catch {
+      // Storage blocked: the panel just opens expanded next time.
+    }
+  }, [expanded]);
 
   useEffect(() => {
     setPlan(null);
     setBoard(null);
+    setEvents([]);
     if (!id) return undefined;
     let live = true;
     getPlan(id).then((p) => live && setPlan(p)).catch(() => undefined);
     getBoard(id).then((b) => live && setBoard(b)).catch(() => undefined);
+    getScout(id).then((s) => live && setEvents(s.owner_events)).catch(() => undefined);
     return () => {
       live = false;
     };
   }, [id]);
 
+  const model = useDayModel(plan, events);
+
   return (
-    <aside aria-label="Campaign summary" className="glass-panel hidden w-[320px] shrink-0 flex-col gap-5 overflow-y-auto rounded-[28px] p-5 xl:flex">
-      <Profile plan={plan} />
-      <Calendar plan={plan} />
-      <NextUp board={board} id={id} />
-    </aside>
+    <motion.aside
+      aria-label="Campaign summary"
+      initial={false}
+      animate={{ width: expanded ? WIDE : RAIL }}
+      transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
+      style={{ willChange: 'width' }}
+      className="glass-panel hidden shrink-0 flex-col overflow-hidden rounded-[28px] p-[11px] xl:flex"
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-label={expanded ? 'Collapse the calendar panel' : 'Expand the calendar panel'}
+        aria-expanded={expanded}
+        title={expanded ? 'Collapse' : 'Expand'}
+        className={`grid size-10 shrink-0 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white ${expanded ? 'self-start' : 'self-center'}`}
+      >
+        {expanded ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+      </button>
+      {expanded ? (
+        <div className={`mt-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-1 ${fade(expanded)}`}>
+          <Profile plan={plan} />
+          <Calendar model={model} />
+          <NextUp board={board} id={id} />
+        </div>
+      ) : (
+        <div className="mt-2 flex min-h-0 flex-1 flex-col">
+          <DateRail model={model} />
+        </div>
+      )}
+    </motion.aside>
   );
 };
 

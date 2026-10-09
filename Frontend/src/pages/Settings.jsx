@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic } from 'lucide-react';
-import { CardTitle, Field, Tabs, Banner } from '../components/ui';
+import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
 
 const TABS = ['Providers', 'Voice', 'Calibration', 'Guardrails'];
@@ -80,12 +80,57 @@ const ProviderCard = ({ cap, row, onSaved }) => {
   );
 };
 
+
+// Groq and Gemini keys live in the server's .env. These switches are the owner's consent to use them.
+const ServicesCard = () => {
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    api('/settings/toggles').then((d) => setRows(d.toggles)).catch((e) => setError(e.message));
+  }, []);
+  const flip = async (name, enabled) => {
+    setError('');
+    const before = rows;
+    setRows((cur) => cur.map((r) => (r.name === name ? { ...r, enabled, active: r.configured && enabled } : r)));
+    try {
+      const next = await api(`/settings/toggles/${name}`, { method: 'PUT', body: JSON.stringify({ enabled }) });
+      setRows((cur) => cur.map((r) => (r.name === name ? next : r)));
+    } catch (e) {
+      setRows(before);
+      setError(e.message);
+    }
+  };
+  return (
+    <section className="card xl:col-span-2">
+      <CardTitle sub="Switch a service off to stop the app using it, even if its key is set.">Other services</CardTitle>
+      {error && <p role="alert" className="mb-2 text-sm text-bad">{error}</p>}
+      {!rows && !error && <p className="text-sm text-ink/55">Loading.</p>}
+      <ul className="flex flex-col gap-2">
+        {rows?.map((r) => (
+          <li key={r.name} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-ink/5 px-3 py-3">
+            <div className="min-w-0">
+              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                {r.label}
+                {r.configured ? <Badge tone={r.active ? 'good' : 'neutral'}>{r.active ? 'On' : 'Off'}</Badge> : <Badge>No key on the server</Badge>}
+              </p>
+              <p className="text-xs text-ink/60">{r.used_for}</p>
+              {!r.configured && <p className="text-xs text-ink/50">Add {r.name === 'groq' ? 'GROQ_API_KEY' : 'GEMINI_API_KEY'} to the server's .env, then restart it.</p>}
+            </div>
+            <Toggle checked={r.enabled} onChange={(v) => flip(r.name, v)} label={`Use ${r.label}`} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
 const ProvidersTab = ({ data, reload }) => (
   <div className="grid gap-4 xl:grid-cols-2">
     {Object.keys(CAPABILITY).map((cap) => {
       const row = data.providers.find((p) => p.capability === cap) || { key_set: false };
       return <ProviderCard key={cap} cap={cap} row={row} onSaved={reload} />;
     })}
+    <ServicesCard />
     <section className="card">
       <CardTitle sub="Agnes has no audio models">Speech</CardTitle>
       <p className="text-sm text-ink/65">Speech to text uses the browser microphone, or offline Vosk on this machine. Read-back uses the browser voice. Other speech providers are not connected yet.</p>
