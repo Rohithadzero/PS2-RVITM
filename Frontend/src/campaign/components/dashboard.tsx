@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError, getDashboard, getForecast, getPlan, optimize, predict } from "../lib/api";
+import { ApiError, getBoard, getDashboard, getForecast, getLearning, getPlan, optimize, predict, saveResults } from "../lib/api";
 import { channelLabel, humanize, langName, prettyText, when } from "../lib/format";
 import type { Route } from "../lib/route";
 import type { Forecast } from "../lib/types";
@@ -185,7 +185,7 @@ function ForecastPanel({ id }: { id: string }) {
       </p>
       <label className="row wrap small" style={{ marginTop: 8 }}>
         <span>People reached per asset</span>
-        <input className="input" style={{ maxWidth: 160, minHeight: 36 }} inputMode="numeric" placeholder="typical for the channel" value={reach} onChange={(e) => setReach(e.target.value.replace(/\D/g, ""))} aria-label="People reached per asset" />
+        <input className="input" style={{ maxWidth: 240, minHeight: 36 }} inputMode="numeric" placeholder="typical for the channel" value={reach} onChange={(e) => setReach(e.target.value.replace(/\D/g, ""))} aria-label="People reached per asset" />
       </label>
       {data.totals ? (
         <p className="panel-title" style={{ marginTop: 12 }}>
@@ -217,6 +217,79 @@ function ForecastPanel({ id }: { id: string }) {
         </div>
       )}
       {skipped.length ? <p className="muted small">No forecast for {Array.from(new Set(skipped.map((s) => channelLabel(s.channel)))).join(", ")}: {skipped[0].reason}</p> : null}
+    </>
+  );
+}
+
+
+const VERDICT: Record<string, { text: string; tone: "approved" | "flagged" | "blocked" | "neutral" }> = {
+  within: { text: "Inside the forecast", tone: "approved" },
+  above: { text: "Better than forecast", tone: "approved" },
+  below: { text: "Below forecast", tone: "blocked" },
+  no_forecast: { text: "No history to judge", tone: "neutral" },
+};
+
+function ResultsPanel({ id }: { id: string }) {
+  const [assets, setAssets] = useState<{ id: string; channel: string; lang: string; audience: string }[]>([]);
+  const [learn, setLearn] = useState<any>(null);
+  const [vals, setVals] = useState<Record<string, { reach: string; redeemed: string }>>({});
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    getBoard(id).then((b) => setAssets(b.assets.filter((a) => a.status === "approved"))).catch(() => undefined);
+    getLearning(id).then((l) => {
+      setLearn(l);
+      const v: Record<string, { reach: string; redeemed: string }> = {};
+      for (const i of l.items) v[i.asset_id] = { reach: String(i.reach), redeemed: String(i.redemptions) };
+      setVals(v);
+    }).catch(() => undefined);
+  }, [id]);
+  const num = (t: string) => t.replace(/\D/g, "");
+  async function save() {
+    const rows = assets
+      .filter((a) => vals[a.id]?.reach && vals[a.id]?.redeemed !== undefined && vals[a.id]?.redeemed !== "")
+      .map((a) => ({ asset_id: a.id, reach: Number(vals[a.id].reach), redemptions: Number(vals[a.id].redeemed) }));
+    if (!rows.length) { setMsg("Enter people reached and people who redeemed for at least one asset."); return; }
+    setBusy(true);
+    setMsg("");
+    try { setLearn(await saveResults(id, rows)); setMsg("Saved. The forecast now uses your numbers."); } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
+  }
+  const byAsset = new Map<string, any>((learn?.items ?? []).map((i: any) => [i.asset_id, i]));
+  return (
+    <>
+      <p className="muted small">After the offer has run, type what really happened for each approved asset. These are your numbers; the app does not guess them. Each saved result makes the next forecast lean a little more on your shop.</p>
+      {assets.length === 0 ? <Empty title="No approved assets yet">Approve assets and share them first.</Empty> : (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>Asset</th><th className="num">People reached</th><th className="num">Redeemed</th><th>Against the forecast</th></tr></thead>
+            <tbody>
+              {assets.map((a) => {
+                const r = byAsset.get(a.id);
+                const v = VERDICT[r?.verdict ?? ""];
+                return (
+                  <tr key={a.id}>
+                    <td>{channelLabel(a.channel)}, {langName(a.lang)}</td>
+                    <td className="num"><input className="input" style={{ maxWidth: 110, minHeight: 36 }} inputMode="numeric" aria-label={`People reached, ${channelLabel(a.channel)} ${langName(a.lang)}`} value={vals[a.id]?.reach ?? ""} onChange={(e) => setVals({ ...vals, [a.id]: { reach: num(e.target.value), redeemed: vals[a.id]?.redeemed ?? "" } })} /></td>
+                    <td className="num"><input className="input" style={{ maxWidth: 110, minHeight: 36 }} inputMode="numeric" aria-label={`People who redeemed, ${channelLabel(a.channel)} ${langName(a.lang)}`} value={vals[a.id]?.redeemed ?? ""} onChange={(e) => setVals({ ...vals, [a.id]: { reach: vals[a.id]?.reach ?? "", redeemed: num(e.target.value) } })} /></td>
+                    <td>{r && v ? <Badge tone={v.tone}>{v.text}{r.gap_points !== null ? `, ${r.gap_points > 0 ? "+" : ""}${r.gap_points} points` : ""}</Badge> : <span className="muted small">Not logged</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="row wrap" style={{ marginTop: 12 }}>
+        <Button variant="primary" onClick={save} disabled={busy || assets.length === 0}>{busy ? "Saving" : "Save results"}</Button>
+      </div>
+      {msg ? <p className="note" role="status">{msg}</p> : null}
+      {learn && learn.lessons.length ? (
+        <>
+          <h3 className="panel-title" style={{ marginTop: 16 }}>What the app learned</h3>
+          <ul className="lessons">{learn.lessons.map((l: string) => <li key={l} className="small" style={{ marginBottom: 6 }}>{l}</li>)}</ul>
+          {learn.summary.mean_abs_gap_points !== null ? <p className="muted small">{learn.summary.within} of {learn.summary.judged} assets landed inside the forecast range. Typical gap {learn.summary.mean_abs_gap_points} points.</p> : null}
+        </>
+      ) : null}
     </>
   );
 }
@@ -325,6 +398,11 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
         <section className="panel panel-wide" aria-labelledby="fc-h">
           <h2 id="fc-h" className="panel-title">Forecast from synthetic history</h2>
           <ForecastPanel id={id} />
+        </section>
+
+        <section className="panel panel-wide" aria-labelledby="rs-h">
+          <h2 id="rs-h" className="panel-title">What actually happened</h2>
+          <ResultsPanel id={id} />
         </section>
 
         <section className="panel panel-wide" aria-labelledby="pr-h">

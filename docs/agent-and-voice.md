@@ -24,6 +24,12 @@ Screen `Agent` (`#/agent`), API `apps/api/app/agent.py`.
   [8 Approve assets]  YOU
      |
   [9 Share it]        YOU   copy, WhatsApp, email, download; tracked links
+     |
+  [10 Log what happened] YOU   people reached and redeemed per asset, typed by the owner
+     |
+  [11 Learn from it]  code  actual vs forecast, lessons, owner's own rates blended into later forecasts
+     |
+  [12 Draft the next campaign] AI+you   next idea from locked facts, best channels first; starts a new run at its own gates
 ```
 
 Why this is agentic and not a script:
@@ -35,6 +41,9 @@ Why this is agentic and not a script:
 Routes: `POST /agent/runs`, `GET /agent/runs`, `POST /agent/runs/:id/tick`, `POST /agent/runs/:id/steps/optimize/confirm`, `POST /agent/runs/:id/steps/{optimize|send}/skip`. Steps call the app's own routes through an in-process client, so they obey the same rules as the screens.
 
 Verified live against Agnes on a café idea: 14 facts read, interview completed from the idea alone, stopped at the plan lock; after the lock it wrote, checked, forecast and tested the copy in about two minutes and stopped at the optimize gate. Tests: `tests/test_agent.py` (fake model, no network).
+
+### The learning loop (built)
+`app/learn.py`: `POST /campaign/:id/results`, `GET /campaign/:id/learning`. The owner types people reached and redeemed per approved asset. The app judges each against what the history alone predicted (above, inside or below the 80% range), writes plain lessons, and pools the owner's real rates per channel into later forecasts with weight n / (n + 5), so one result nudges and many results lead. The next idea is composed only from facts already locked, best channel first, and carries no dates, so the new run asks for them. Verified live: three assets logged, all inside the forecast, next run started and stopped at "When does it start?". Numbers used in that check were test inputs, not real sales. Tests: `tests/test_learn.py`.
 
 ## 2. Prediction fix (built)
 
@@ -64,7 +73,7 @@ Next, in order of value:
 
 ## 4. What else to add: agentic AI
 
-1. **Weekly campaign loop.** After a campaign ends the agent reads real clicks and redemptions, compares them with its own forecast, says what it got wrong, and drafts next week's campaign for approval. Closes the learning loop and refits the forecast on the owner's own data.
+1. **Weekly campaign loop (built, see above).** Still to add: read clicks and email opens automatically as extra signals, and run it on a weekly schedule instead of when the owner opens the screen.
 2. **Competitor and local-event scout.** Before planning, the agent looks at public Google Business posts and a local events feed (festival, exam week, match) and suggests timing. Cited sources, owner approves.
 3. **Customer reply agent.** Drafts replies to WhatsApp and Instagram questions from the locked facts only ("is it dine-in only?"); anything outside the facts is escalated to the owner, never improvised.
 4. **Multi-agent review.** Separate reviewers for facts, tone, Kannada naturalness and legal claims, with a referee that only reports disagreements to a human.

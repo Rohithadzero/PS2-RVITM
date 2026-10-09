@@ -164,7 +164,16 @@ def _logit_for(f: dict[str, Any], channel: str, x: np.ndarray) -> float:
     return f["chan_logit"][channel]
 
 
-def forecast_asset(asset: dict[str, Any], offer: str | None, reach: float | None = None) -> dict[str, Any]:
+def _blend(z: float, channel: str, owner: dict[str, dict[str, float]] | None) -> float:
+    """Pull the history estimate toward the owner's own pooled rate for the channel, by how many results exist."""
+    s = (owner or {}).get(channel)
+    if not s or s["rate"] <= 0:
+        return z
+    return (1 - s["weight"]) * z + s["weight"] * _logit(s["rate"])
+
+
+def forecast_asset(asset: dict[str, Any], offer: str | None, reach: float | None = None,
+                   owner: dict[str, dict[str, float]] | None = None) -> dict[str, Any]:
     f = fit()
     channel = CHANNEL_MAP.get(asset["channel"])
     base = {"asset_id": asset["id"], "channel": asset["channel"], "lang": asset["lang"]}
@@ -180,7 +189,7 @@ def forecast_asset(asset: dict[str, Any], offer: str | None, reach: float | None
     clear = bool(re.search(r"\d", text))
     used_reach = float(reach) if reach else f["reach_median"][channel]
     x = features(channel, asset["lang"], hist_offer, used_reach, emoji, words, clear, f["scale"])
-    z = _logit_for(f, channel, x)
+    z = _blend(_logit_for(f, channel, x), channel, owner)
     lo, hi = f["interval"]
     rates = [float(_sigmoid(z + lo)), float(_sigmoid(z)), float(_sigmoid(z + hi))]
     drivers = []
@@ -191,12 +200,15 @@ def forecast_asset(asset: dict[str, Any], offer: str | None, reach: float | None
                 drivers.append({"factor": NAMES[i], "effect": "raises" if contrib[i] > 0 else "lowers"})
     else:
         drivers.append({"factor": NAMES[CHANNELS.index(channel)], "effect": "sets the baseline"})
+    if owner and channel in owner and owner[channel]["rate"] > 0:
+        drivers.append({"factor": "your logged results", "effect": "pull it toward your shop"})
     others = {}
     for ch in CHANNELS:
         xc = features(ch, asset["lang"], hist_offer, f["reach_median"][ch], emoji, words, clear, f["scale"])
-        others[ch] = round(float(_sigmoid(_logit_for(f, ch, xc))), 4)
+        others[ch] = round(float(_sigmoid(_blend(_logit_for(f, ch, xc), ch, owner))), 4)
     return {
         **base, "comparable": True, "approximate": offer == "fixed_price",
+        "owner_adjusted": bool(owner and channel in owner and owner[channel]["rate"] > 0),
         "rate": {"low": round(rates[0], 4), "mid": round(rates[1], 4), "high": round(rates[2], 4)},
         "reach_assumed": round(used_reach), "reach_is_default": not reach,
         "redemptions": {k: round(r * used_reach) for k, r in zip(("low", "mid", "high"), rates)},
@@ -218,8 +230,11 @@ def offer_type(plan_data: dict[str, Any] | None) -> str | None:
 
 
 def campaign_forecast(db, campaign_id: str, reach: float | None = None) -> dict[str, Any]:
+    from app.learn import owner_channel_stats  # imported here: learn depends on this module
+
     offer = offer_type(plan.get_plan(db, campaign_id))
-    items = [forecast_asset(a, offer, reach) for a in db.assets_for(campaign_id)]
+    owner = owner_channel_stats(db)
+    items = [forecast_asset(a, offer, reach, owner) for a in db.assets_for(campaign_id)]
     comparable = [i for i in items if i["comparable"]]
     totals = {k: sum(i["redemptions"][k] for i in comparable) for k in ("low", "mid", "high")} if comparable else None
     notes = []
@@ -231,7 +246,11 @@ def campaign_forecast(db, campaign_id: str, reach: float | None = None) -> dict[
             notes.append(
                 f"Historically {top.replace('_', ' ')} redeemed about {table[top] * 100:.0f}% for a similar offer, "
                 f"against about {weakest['rate']['mid'] * 100:.0f}% expected for {weakest['channel'].replace('_', ' ')}.")
-    return {"label": LABEL, "model": model_card(), "offer_type": offer, "items": items, "totals": totals,
+    adjusted = {c: {"assets": int(v["n"]), "pooled_rate": round(v["rate"], 4), "weight": round(v["weight"], 2)} for c, v in owner.items()}
+    if adjusted:
+        notes.append("Adjusted with your own logged results: " + ", ".join(
+            f"{c.replace('_', ' ')} from {v['assets']} asset(s) at {v['weight'] * 100:.0f}% weight" for c, v in adjusted.items()) + ".")
+    return {"label": LABEL, "model": model_card(), "offer_type": offer, "owner_adjusted": adjusted, "items": items, "totals": totals,
             "best_asset_id": max(comparable, key=lambda i: i["rate"]["mid"])["asset_id"] if comparable else None,
             "notes": notes}
 

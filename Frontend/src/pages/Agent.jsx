@@ -67,11 +67,15 @@ const Step = ({ s, runId, onChange, busy }) => {
               <span className="text-[11px] font-medium text-ink/50">{st.label}</span>
             </p>
             {s.detail && <p className="mt-1 text-sm text-ink/70">{s.detail}</p>}
+            {s.next_idea && s.status === 'needs_you' && <p className="mt-2 rounded-xl bg-ink/5 px-3 py-2 text-sm text-ink/70">“{s.next_idea}”</p>}
+            {s.next_run_id && (
+              <button type="button" onClick={() => onChange(() => tickAgentRun(s.next_run_id))} className="mt-2 text-sm font-semibold text-accent hover:underline">Open the drafted campaign</button>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {s.gate === 'confirm' && s.status === 'needs_you' && (
-            <button type="button" disabled={busy} onClick={() => onChange(() => confirmAgentStep(runId, s.id))} className="btn-primary h-9 px-4 text-sm">Rewrite them</button>
+            <button type="button" disabled={busy} onClick={() => onChange(() => confirmAgentStep(runId, s.id))} className="btn-primary h-9 px-4 text-sm">{s.id === 'next' ? 'Draft it' : 'Rewrite them'}</button>
           )}
           {s.can_skip && s.status === 'needs_you' && (
             <button type="button" disabled={busy} onClick={() => onChange(() => skipAgentStep(runId, s.id))} className="btn-ghost h-9 px-4 text-sm">Skip</button>
@@ -164,7 +168,8 @@ const Agent = () => {
     setBusy(true);
     setError('');
     try {
-      const v = await fn();
+      const result = await fn();
+      const v = result.new_run || result; // confirming "next" starts a new run: follow it
       if (alive.current) {
         setRun(v);
         remember(v);

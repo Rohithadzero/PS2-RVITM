@@ -122,3 +122,8 @@ export const tickAgentRun = (id: string) => post<any>(`/agent/runs/${id}/tick`);
 export const listAgentRuns = () => api<{ runs: { id: string; idea: string; lang: string; created_at: string; campaign_id: string | null }[] }>("/agent/runs");
 export const confirmAgentStep = (id: string, step: string) => post<any>(`/agent/runs/${id}/steps/${step}/confirm`);
 export const skipAgentStep = (id: string, step: string) => post<any>(`/agent/runs/${id}/steps/${step}/skip`);
+
+// Learning loop: what actually happened
+export const getLearning = (id: string) => api<any>(`/campaign/${id}/learning`);
+export const saveResults = (id: string, results: { asset_id: string; reach: number; redemptions: number }[]) =>
+  post<any>(`/campaign/${id}/results`, { results });

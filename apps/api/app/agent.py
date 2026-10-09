@@ -24,6 +24,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from app import forecast as forecast_mod
+from app import learn as learn_mod
 from app import persona, plan
 from app.db import Database
 from app.media import fail
@@ -71,6 +72,12 @@ STEPS = (
      "You approve each asset. Only approved assets can be shared."),
     ("send", "Share it", "human", "outreach",
      "Copy, share to WhatsApp, send email, download. Tracked links count real clicks."),
+    ("results", "Log what happened", "human", "your numbers",
+     "After the offer runs, enter how many people each asset reached and how many redeemed. The app never guesses these."),
+    ("learn", "Learn from it", "rule", "forecast vs actual",
+     "Compares your numbers with its own forecast, says where it was wrong, and adjusts later forecasts with your real rates."),
+    ("next", "Draft the next campaign", "mixed", "agent",
+     "Writes the next idea from facts you already locked, best channels first. You approve it like any other."),
 )
 
 
@@ -329,9 +336,40 @@ async def tick(app, run: dict[str, Any]) -> dict[str, Any]:
         sent = dash["totals"]["distributed"]
         if sent:
             _set(steps, "send", "done", f"{sent} asset(s) shared, {dash['totals']['clicks']} click(s) so far.", action={"screen": "dashboard", "id": cid})
+        elif st.get("send_skipped"):
+            _set(steps, "send", "skipped", "You skipped it.")
         else:
             _set(steps, "send", "needs_you", "Copy, share or email the approved assets. Nothing is sent for you.",
                  action={"screen": "campaign", "id": cid}, can_skip=True)
+            return _view(run, steps)
+
+        # 10 results (human, optional): real numbers typed by the owner
+        learned = learn_mod.learning(db, cid)
+        n = learned["summary"]["assets_with_results"]
+        if not n:
+            if st.get("results_skipped"):
+                _set(steps, "results", "skipped", "You skipped it. The agent will not learn from this campaign.")
+                _set(steps, "learn", "skipped", "No results to learn from.")
+                _set(steps, "next", "skipped", "Needs results first.")
+                return _view(run, steps)
+            _set(steps, "results", "needs_you", "When the offer has run, enter people reached and redeemed per asset.",
+                 action={"screen": "dashboard", "id": cid}, can_skip=True)
+            return _view(run, steps)
+        _set(steps, "results", "done", f"{n} asset(s) logged: {learned['summary']['total_redemptions']} redeemed of {learned['summary']['total_reached']} reached.",
+             action={"screen": "dashboard", "id": cid})
+
+        # 11 learn
+        s = learned["summary"]
+        gap = f" Typical gap from the forecast: {s['mean_abs_gap_points']} points." if s["mean_abs_gap_points"] is not None else ""
+        head = f"{s['within']} of {s['judged']} assets landed inside the forecast range.{gap}" if s["judged"] else "No logged channel has history to judge against."
+        _set(steps, "learn", "done", head + (" " + learned["lessons"][0] if learned["lessons"] else ""), action={"screen": "dashboard", "id": cid})
+
+        # 12 next
+        if st.get("next_run_id"):
+            _set(steps, "next", "done", "Next campaign drafted. It waits at its own plan lock.", next_run_id=st["next_run_id"])
+        elif learned["next_idea"]:
+            _set(steps, "next", "needs_you", "Draft the next campaign from what worked? You still lock it, write it and approve it.",
+                 gate="confirm", can_skip=False, next_idea=learned["next_idea"])
         return _view(run, steps)
     finally:
         await client.aclose()
@@ -343,9 +381,6 @@ def _view(run: dict[str, Any], steps: dict[str, dict[str, Any]]) -> dict[str, An
     waiting = next((s for s in ordered if s["status"] == "needs_you"), None)
     failed = next((s for s in ordered if s["status"] == "failed"), None)
     live = next((s for s in ordered if s["status"] == "running"), None)
-    if st.get("send_skipped") and steps["send"]["status"] == "needs_you":
-        steps["send"].update({"status": "skipped", "detail": "You skipped it."})
-        waiting = next((s for s in ordered if s["status"] == "needs_you"), None)
     if failed:
         status = "failed"
     elif waiting:
@@ -410,14 +445,29 @@ async def tick_run(run_id: str, request: Request) -> dict:
 @router.post("/agent/runs/{run_id}/steps/{step}/confirm")
 async def confirm(run_id: str, step: str, request: Request) -> dict:
     """Owner says yes to a gated step the agent may then perform. Only 'optimize' has a confirm gate."""
-    if step != "optimize":
-        raise fail("not_confirmable", "Only the optimize step needs a confirmation.", 422)
+    if step not in ("optimize", "next"):
+        raise fail("not_confirmable", "Only the optimize and next steps need a confirmation.", 422)
     db: Database = request.app.state.db
     async with _lock(run_id):
         run = _load(db, run_id)
         cid = run["state"].get("campaign_id")
         if not cid:
             raise fail("too_early", "No campaign yet.", 409)
+        if step == "next":
+            idea = learn_mod.learning(db, cid)["next_idea"]
+            if not idea:
+                raise fail("too_early", "Log results first.", 409)
+            nid = uuid.uuid4().hex
+            db.execute("INSERT INTO agent_run (id, idea, lang, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                       (nid, idea, run["lang"], "{}", now(), now()))
+            new_run = _load(db, nid)
+            async with _lock(nid):
+                new_view = await tick(request.app, new_run)
+                _save(db, new_run)
+            run["state"]["next_run_id"] = nid
+            _save(db, run)
+            view = await tick(request.app, run)
+            return {**view, "new_run": new_view}
         client = _client(request.app)
         try:
             r = await client.post(f"/campaign/{cid}/optimize")
@@ -432,8 +482,8 @@ async def confirm(run_id: str, step: str, request: Request) -> dict:
 
 @router.post("/agent/runs/{run_id}/steps/{step}/skip")
 async def skip(run_id: str, step: str, request: Request) -> dict:
-    if step not in ("optimize", "send"):
-        raise fail("not_skippable", "Only optimize and send can be skipped.", 422)
+    if step not in ("optimize", "send", "results"):
+        raise fail("not_skippable", "Only optimize, send and results can be skipped.", 422)
     db: Database = request.app.state.db
     async with _lock(run_id):
         run = _load(db, run_id)
