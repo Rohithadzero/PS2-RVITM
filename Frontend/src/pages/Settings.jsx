@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic, Check, RotateCcw } from 'lucide-react';
+import ColorPicker from '../components/ColorPicker.jsx';
 import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
 import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
@@ -369,10 +370,7 @@ const AppearanceTab = () => {
               </button>
             );
           })}
-          <label className={`flex cursor-pointer items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-sm font-medium transition-colors ${preset ? 'border-ink/10 hover:bg-ink/5' : 'border-ink bg-ink/5'}`}>
-            <input type="color" value={look.accent} onChange={(e) => setLook({ accent: e.target.value })} className="size-7 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0" />
-            Custom <span className="font-mono text-xs text-ink/50">{look.accent}</span>
-          </label>
+          <ColorPicker value={look.accent} onChange={(accent) => setLook({ accent })} presets={ACCENTS} active={!preset} />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-ink/5 p-3">
           <span className="text-xs font-medium text-ink/50">Preview</span>
