@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import RightPanel from './components/dashboard/RightPanel';
 import Home from './pages/Home';
+import Agent from './pages/Agent';
 import Talk from './pages/Talk';
 import Plan from './pages/Plan';
 import Campaign from './pages/Campaign';
@@ -28,6 +29,7 @@ import { useStore } from './state/store';
 
 const SCREENS = {
   home: Home,
+  agent: Agent,
   voice: Talk,
   plan: Plan,
   planner: BudgetPlanner,

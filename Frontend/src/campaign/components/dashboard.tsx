@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError, getDashboard, getPlan, optimize, predict } from "../lib/api";
+import { ApiError, getDashboard, getForecast, getPlan, optimize, predict } from "../lib/api";
 import { channelLabel, humanize, langName, prettyText, when } from "../lib/format";
 import type { Route } from "../lib/route";
+import type { Forecast } from "../lib/types";
 import type { Dashboard } from "../lib/types";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
 
@@ -156,6 +157,70 @@ function Breakdown({ rows, kind }: { rows: Row[]; kind: "channel" | "lang" }) {
   );
 }
 
+
+function pct(v: number) {
+  return `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
+}
+
+function ForecastPanel({ id }: { id: string }) {
+  const [data, setData] = useState<Forecast | null>(null);
+  const [error, setError] = useState("");
+  const [reach, setReach] = useState("");
+  useEffect(() => {
+    const n = Number(reach);
+    getForecast(id, n > 0 ? n : undefined).then((f) => { setData(f); setError(""); }).catch((e: Error) => setError(e.message));
+  }, [id, reach]);
+  if (error) return <ErrorNote>{error}</ErrorNote>;
+  if (!data) return <p className="muted">Working out the forecast.</p>;
+  const rows = data.items.filter((i) => i.comparable);
+  const skipped = data.items.filter((i) => !i.comparable);
+  const top = Math.max(0.01, ...rows.map((r) => r.rate?.high ?? 0));
+  const mae = data.model.leave_one_out_mae;
+  return (
+    <>
+      <p className="muted small">
+        Expected share of people reached who redeem, from {data.model.n} synthetic past campaigns. Checked by leaving each one out:
+        typical error {pct(mae.channel_mean)} points for the channel average against {pct(mae.global_mean)} for a single overall average.
+        Channel explains most of the difference; the wording of the copy is not modelled.
+      </p>
+      <label className="row wrap small" style={{ marginTop: 8 }}>
+        <span>People reached per asset</span>
+        <input className="input" style={{ maxWidth: 160, minHeight: 36 }} inputMode="numeric" placeholder="typical for the channel" value={reach} onChange={(e) => setReach(e.target.value.replace(/\D/g, ""))} aria-label="People reached per asset" />
+      </label>
+      {data.totals ? (
+        <p className="panel-title" style={{ marginTop: 12 }}>
+          About {data.totals.mid} redemptions across these assets <span className="muted small">(likely {data.totals.low} to {data.totals.high})</span>
+        </p>
+      ) : null}
+      {data.notes.map((n) => <p key={n} className="note">{n}</p>)}
+      {rows.length === 0 ? <Empty title="Nothing to forecast yet">Write assets for Instagram, WhatsApp or poster first. Other channels have no history.</Empty> : (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>Asset</th><th>Expected redemption</th><th className="num">Per asset</th><th>Because</th></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.asset_id}>
+                  <td>{channelLabel(r.channel)}, {langName(r.lang)}</td>
+                  <td>
+                    <div style={{ position: "relative", height: 14, background: "var(--paper-2)", borderRadius: 7, minWidth: 140 }} role="img" aria-label={`${pct(r.rate!.low)} to ${pct(r.rate!.high)}, most likely ${pct(r.rate!.mid)}`}>
+                      <span style={{ position: "absolute", left: `${(r.rate!.low / top) * 100}%`, width: `${((r.rate!.high - r.rate!.low) / top) * 100}%`, top: 4, height: 6, background: "var(--approved-bg)", borderRadius: 3 }} />
+                      <span style={{ position: "absolute", left: `calc(${(r.rate!.mid / top) * 100}% - 3px)`, top: 0, width: 6, height: 14, background: "var(--accent)", borderRadius: 3 }} />
+                    </div>
+                    <span className="small">{pct(r.rate!.mid)} <span className="muted">({pct(r.rate!.low)} to {pct(r.rate!.high)})</span></span>
+                  </td>
+                  <td className="num">{r.redemptions!.mid} <span className="muted small">of {r.reach_assumed}{r.reach_is_default ? " typical" : ""}</span></td>
+                  <td className="small">{(r.drivers ?? []).map((d) => `${d.factor} ${d.effect}`).join(", ")}{r.approximate ? " (price offers compared with combos)" : ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {skipped.length ? <p className="muted small">No forecast for {Array.from(new Set(skipped.map((s) => channelLabel(s.channel)))).join(", ")}: {skipped[0].reason}</p> : null}
+    </>
+  );
+}
+
 const KIND_LABEL: Record<string, string> = { click: "Click", email_sent: "Email sent", email_open: "Email opened" };
 
 export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Route) => void; onBusiness: (b: string) => void }) {
@@ -257,9 +322,14 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
           </div>
         </section>
 
+        <section className="panel panel-wide" aria-labelledby="fc-h">
+          <h2 id="fc-h" className="panel-title">Forecast from synthetic history</h2>
+          <ForecastPanel id={id} />
+        </section>
+
         <section className="panel panel-wide" aria-labelledby="pr-h">
-          <h2 id="pr-h" className="panel-title">Pre-launch prediction from synthetic personas</h2>
-          <p className="muted small">Scores 1 to 10 from synthetic personas matched to your audiences. A proxy before launch, not a measurement of real customers.</p>
+          <h2 id="pr-h" className="panel-title">Persona opinions (qualitative)</h2>
+          <p className="muted small">An AI playing synthetic customers reads each asset and says what works and what does not. The 1 to 10 scores are opinions, not a forecast. Kannada and Hindi opinions are unverified until a native speaker checks them.</p>
           <div className="row wrap">
             <Button onClick={() => act("predict")} disabled={Boolean(busy)}>{busy === "predict" ? "Starting" : "Run prediction"}</Button>
             {pred ? <Button onClick={() => act("optimize")} disabled={Boolean(busy)}>{busy === "optimize" ? "Starting" : "Optimize weak assets"}</Button> : null}

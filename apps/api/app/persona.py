@@ -161,7 +161,8 @@ def score_messages(asset: dict[str, Any], personas: list[dict[str, Any]], busine
                 "traits or pet peeves. Judge as that person reading the text in the asset's language_code: use their language_pref "
                 "to decide how natural, readable and trustworthy it feels to them. Be critical: 7 means good, 10 is rare, and a message that ignores a persona's "
                 "pet peeve or language preference scores low. Judge only the text given; do not assume anything about the "
-                "business that is not in the input. Return one JSON object only, exactly in the shape: "
+                "business that is not in the input. If you cannot judge a Kannada or Hindi phrase or dialect, say that in the reason "
+                "and score it 5; never name a dialect or invent word meanings. Return one JSON object only, exactly in the shape: "
                 + json.dumps(shape)
             ),
         },
@@ -231,8 +232,15 @@ async def run_predict_job(app: FastAPI, job_id: str) -> bool:
         personas = [everyone[pid] for pid in payload["persona_ids"]]
         campaign_plan = plan.get_plan(db, job["campaign_id"]) or {}
         business = campaign_plan.get("business") or {}
-        raw = await app.state.agnes.chat(score_messages(asset, personas, business), cache_kind="predict", max_tokens=2500)
-        results = parse_scores(raw, personas, payload.get("matches"))
+        messages = score_messages(asset, personas, business)
+        try:
+            raw = await app.state.agnes.chat(messages, cache_kind="predict", max_tokens=4000)
+            results = parse_scores(raw, personas, payload.get("matches"))
+        except (ValueError, json.JSONDecodeError):
+            # Malformed JSON happens now and then: ask once more with a stricter reminder before giving up.
+            retry = messages + [{"role": "user", "content": "Your last reply was not valid JSON. Reply again with one JSON object only, short reasons, no line breaks inside strings."}]
+            raw = await app.state.agnes.chat(retry, cache_kind="predict_retry", max_tokens=4000)
+            results = parse_scores(raw, personas, payload.get("matches"))
         mean, dimensions = summarize(results)
         db.execute("DELETE FROM prediction WHERE asset_id = ? AND seq = ?", (asset["id"], payload["seq"]))
         db.execute(

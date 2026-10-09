@@ -281,3 +281,28 @@ export type OverviewRow = {
   status: string;
   totals: Partial<Dashboard["totals"]>;
 };
+
+// Forecast from synthetic history
+export type ForecastItem = {
+  asset_id: string;
+  channel: string;
+  lang: string;
+  comparable: boolean;
+  reason?: string;
+  approximate?: boolean;
+  rate?: { low: number; mid: number; high: number };
+  reach_assumed?: number;
+  reach_is_default?: boolean;
+  redemptions?: { low: number; mid: number; high: number };
+  drivers?: { factor: string; effect: string }[];
+};
+
+export type Forecast = {
+  label: string;
+  model: { n: number; model: string; leave_one_out_mae: Record<string, number>; interval: string; caveat: string };
+  offer_type: string | null;
+  items: ForecastItem[];
+  totals: { low: number; mid: number; high: number } | null;
+  best_asset_id: string | null;
+  notes: string[];
+};

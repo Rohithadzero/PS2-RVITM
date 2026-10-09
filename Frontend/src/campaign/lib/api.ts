@@ -1,6 +1,6 @@
 import type {
   Asset, AssetStateMap, AnswerBody, Board, ChangeProposal, Dashboard, Health, Lang,
-  OutreachAction, OverviewRow, Plan, Campaign, Session,
+  OutreachAction, OverviewRow, Plan, Campaign, Session, Forecast,
 } from "./types";
 
 export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -112,3 +112,13 @@ export async function listOverview(): Promise<OverviewRow[] | { legacy: Campaign
 }
 
 export const health = () => api<Health>("/health");
+
+export const getForecast = (id: string, reach?: number) =>
+  api<Forecast>(`/campaign/${id}/forecast${reach ? `?reach=${reach}` : ""}`);
+
+// Agent: describe an idea, watch the workflow, step in at the gates
+export const createAgentRun = (idea: string, lang: Lang) => post<any>("/agent/runs", { idea, lang });
+export const tickAgentRun = (id: string) => post<any>(`/agent/runs/${id}/tick`);
+export const listAgentRuns = () => api<{ runs: { id: string; idea: string; lang: string; created_at: string; campaign_id: string | null }[] }>("/agent/runs");
+export const confirmAgentStep = (id: string, step: string) => post<any>(`/agent/runs/${id}/steps/${step}/confirm`);
+export const skipAgentStep = (id: string, step: string) => post<any>(`/agent/runs/${id}/steps/${step}/skip`);

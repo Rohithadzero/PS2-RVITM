@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Mic, Sparkles, Rocket, Store } from 'lucide-react';
+import { Mic, Sparkles, Rocket, Store, Bot } from 'lucide-react';
 import StatCards from '../components/dashboard/StatCards';
 import { SectionTitle } from '../components/ui';
 import { listOverview, startInterview, getDashboard } from '../campaign/lib/api';
@@ -77,6 +77,9 @@ const Home = () => {
             </button>
           ))}
         </div>
+        <button type="button" onClick={() => navigate('agent')} className="mt-3 flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+          <Bot size={16} /> Or describe it once and let the agent plan the work
+        </button>
         {error && (
           <p role="alert" className="mt-3 text-sm text-bad">
             {error}

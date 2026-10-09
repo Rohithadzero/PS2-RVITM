@@ -4,6 +4,7 @@
 
 | Doc | What it defines |
 |---|---|
+| [agent-and-voice.md](agent-and-voice.md) | The agent workflow, the prediction fix, and what to add next in voice and agentic AI |
 | [merge.md](merge.md) | **Read first.** What the merged app kept from each build, screen to API map, known gaps |
 | [prd.md](prd.md) | Problem, user, decisions, scope, P0/P1/P2, success metrics, risks |
 | [frontend.prd.md](frontend.prd.md) | Every screen with wireframes, components, states, a11y, build order |

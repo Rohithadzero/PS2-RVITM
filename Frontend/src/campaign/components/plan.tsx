@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { approvePlan, generate, getPlan } from "../lib/api";
 import { PURPOSE_RULE, channelLabel, choiceLabels, formatIsoDate, humanize, langName, money, optionLabel } from "../lib/format";
 import type { Route } from "../lib/route";
+import { useSpeaker } from "../lib/speech";
 import type { Answer, Plan } from "../lib/types";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
 
@@ -27,6 +28,7 @@ function Line({ label, value, quote }: { label: string; value: string; quote?: A
 
 export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) => void; onBusiness: (b: string) => void }) {
   const [plan, setPlan] = useState<Plan | null>(null);
+  const speaker = useSpeaker("en");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [fatal, setFatal] = useState(false);
@@ -98,6 +100,11 @@ export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) =>
           <p className="kicker" id="offer-h">The offer</p>
           <p className="offer-big">{offerBig || f.item}</p>
           {offerBig ? <p className="offer-item">on {f.item}</p> : null}
+          {speaker.available && speaker.hasVoice ? (
+            <Button variant="secondary" onClick={() => speaker.speak([`${offerBig ? offerBig + " on " : ""}${f.item}.`, f.timings ? `${f.timings}.` : "", dateText ? `${dateText}.` : "", f.terms ? `${f.terms}.` : "", "Is that right?"].filter(Boolean).join(" "), true)}>
+              Read it back to me
+            </Button>
+          ) : null}
           {(() => { const a = src("discount_percent", "price_amount", "offer_type"); return a?.raw_text ? <p className="quote">You said {"\u201C"}{a.raw_text}{"\u201D"}</p> : null; })()}
           <Line label="Item" value={f.item} quote={src("offer_item", "item")} />
           <Line label="Dates" value={dateText} quote={src("start_date", "dates", "end_date")} />

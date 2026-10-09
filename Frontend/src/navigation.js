@@ -8,6 +8,7 @@ import {
   FileText,
   MessageSquareDiff,
   ChartNoAxesColumn,
+  Bot,
   History,
   Users,
   Store,
@@ -24,6 +25,7 @@ import {
 // Screens from docs/screen-flow.md. `slug` is the URL hash (#/board).
 export const pages = {
   home: { slug: 'home', screen: 'S2', label: 'Home', icon: House, description: 'Your campaigns and what needs you next.' },
+  agent: { slug: 'agent', screen: 'S20', label: 'Agent', icon: Bot, description: 'Describe your idea once. The agent plans the work, does what it can and stops at the steps that need you.' },
   voice: { slug: 'voice', screen: 'S3', label: 'Talk', icon: Mic, description: 'Answer a few questions by voice or tap. Every answer is kept with your own words.' },
   plan: { slug: 'plan', screen: 'S4', label: 'Plan', icon: ShieldCheck, description: 'What you said, as a plan. Each line shows its source and the schedule is worked out by rule.' },
   campaign: { slug: 'campaign', screen: 'S7', label: 'Campaign 0', icon: LayoutGrid, description: 'Every asset shown as the surface it will appear on, with its fact and meaning checks.' },
@@ -45,7 +47,7 @@ export const pages = {
 export const sidebarGroups = [
   { title: 'Overview', items: [pages.home] },
   { title: 'Studio', items: [pages.studio, pages.launch, pages.identity, pages.website, pages.video] },
-  { title: 'Campaign', items: [pages.voice, pages.plan, pages.planner, pages.campaign, pages.dashboard] },
+  { title: 'Campaign', items: [pages.agent, pages.voice, pages.plan, pages.planner, pages.campaign, pages.dashboard] },
   { title: 'Manage', items: [pages.change, pages.log, pages.customers] },
   { title: 'Setup', items: [pages.brand, pages.settings, pages.bakeoff] },
 ];
