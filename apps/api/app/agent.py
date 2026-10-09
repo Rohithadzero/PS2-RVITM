@@ -25,6 +25,8 @@ from pydantic import BaseModel, Field
 
 from app import forecast as forecast_mod
 from app import learn as learn_mod
+from app import panel as panel_mod
+from app import scout as scout_mod
 from app import persona, plan
 from app.db import Database
 from app.media import fail
@@ -58,12 +60,16 @@ STEPS = (
      "Turns your words into a brief. Every field must be an exact phrase you said; anything else is thrown away."),
     ("interview", "Fill the gaps", "mixed", "interview + grounding",
      "Answers the standard questions from your phrases. Whatever you did not say, it asks you."),
+    ("scout", "Check the timing", "rule", "occasion calendar",
+     "Looks for fixed-date occasions and events you added near your offer dates. It does not look at competitors or the web."),
     ("plan_lock", "Lock the plan", "human", "plan",
      "You read the plan with your own quotes under each line and lock it. Nothing is written before this."),
     ("budget", "Check it fits", "rule", "knapsack planner",
      "Works out whether your channels and languages fit the time, money and review limits."),
     ("write", "Write Campaign 0", "ai", "copy, validator, meaning check",
      "Writes every channel and language, then checks prices, dates and weekdays against the lock and the meaning in back-translation."),
+    ("panel", "Review panel", "mixed", "facts, meaning, tone, claims + referee",
+     "Four reviewers read each asset on their own. A code referee shows you only what needs a human."),
     ("forecast", "Forecast and test", "rule", "history forecast + personas",
      "Expected redemptions from past campaigns, plus synthetic customers saying what works."),
     ("optimize", "Improve weak copy", "mixed", "persona feedback",
@@ -239,8 +245,21 @@ async def tick(app, run: dict[str, Any]) -> dict[str, Any]:
         _set(steps, "interview", "done", "Interview complete.", action={"screen": "voice", "id": st.get("session_id")})
         cid = st["campaign_id"]
 
-        # 3 plan lock (human)
+        # 3 timing notes (information only)
         plan_data = plan.get_plan(db, cid)
+        try:
+            from datetime import date as _date
+            ds = [d for d in (scout_mod._parse(x) for x in (plan_data["offer_facts"]["dates"] if plan_data else [])) if d]
+            win = (min(ds), max(ds)) if ds else None
+            today = _date.today()
+            notes = scout_mod.advise(win, plan_data["audiences"] if plan_data else [],
+                                     scout_mod.occasions(today) + scout_mod._owner_events(db), today)
+            _set(steps, "scout", "done", notes[0]["note"] if notes else "No fixed-date occasion near your dates. Add local events on the Plan screen.",
+                 action={"screen": "plan", "id": cid})
+        except Exception as exc:  # noqa: BLE001 timing notes must never stop the run
+            _set(steps, "scout", "skipped", f"Timing notes were not available: {str(exc)[:80]}")
+
+        # 3b plan lock (human)
         if not plan_data or plan_data["status"] != "locked":
             _set(steps, "plan_lock", "needs_you", "Read the plan and lock it. Nothing is written until you do.",
                  action={"screen": "plan", "id": cid})
@@ -287,6 +306,22 @@ async def tick(app, run: dict[str, Any]) -> dict[str, Any]:
              f"{len(assets)} assets written and checked." + (f" {blocked} blocked by a check and rewritten or held for you." if blocked else ""),
              action={"screen": "campaign", "id": cid})
 
+        # 5b review panel
+        if not st.get("panel_started"):
+            await client.post(f"/campaign/{cid}/panel")
+            st["panel_started"] = True
+            _save(db, run)
+        pv = panel_mod.panel_for(db, cid)
+        ps = pv["summary"]
+        if ps["reviewed"] < ps["assets"]:
+            _set(steps, "panel", "running", f"{ps['reviewed']} of {ps['assets']} assets reviewed by the panel.", action={"screen": "dashboard", "id": cid})
+            return _view(run, steps)
+        flagged = [i for i in pv["items"] if i["needs_human"]]
+        st["panel_flagged"] = len(flagged)
+        _set(steps, "panel", "done", f"{ps['clear']} of {ps['assets']} assets clear." + (f" {len(flagged)} need your eyes: "
+             + "; ".join(f"{i['channel'].replace('_', ' ')} ({i['lang']}) {next((v['reason'] for v in i['verdicts'] if v['verdict'] in ('block', 'concern')), i['status'])[:70]}" for i in flagged[:2]) + "." if flagged else ""),
+             action={"screen": "dashboard", "id": cid})
+
         # 6 forecast and personas
         fc = forecast_mod.campaign_forecast(db, cid)
         if not st.get("predict_started"):
@@ -326,7 +361,8 @@ async def tick(app, run: dict[str, Any]) -> dict[str, Any]:
         approvable = [a for a in db.assets_for(cid) if a["status"] != "blocked"]
         pending = [a for a in approvable if a["status"] != "approved"]
         if pending:
-            _set(steps, "approve", "needs_you", f"{len(pending)} of {len(approvable)} assets wait for your approval.",
+            _set(steps, "approve", "needs_you", f"{len(pending)} of {len(approvable)} assets wait for your approval."
+                 + (f" The panel flagged {st['panel_flagged']}." if st.get("panel_flagged") else ""),
                  action={"screen": "campaign", "id": cid})
             return _view(run, steps)
         _set(steps, "approve", "done", f"All {len(approvable)} assets approved.", action={"screen": "campaign", "id": cid})

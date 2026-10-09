@@ -1,0 +1,82 @@
+[
+  {
+    "id": "L1",
+    "offer": "Weekend Brunch Combo",
+    "items": [
+      "Avocado Toast",
+      "Cold Brew"
+    ],
+    "price_inr": 299,
+    "regular_price_inr": 360,
+    "valid_days": [
+      "Sat",
+      "Sun"
+    ],
+    "valid_time": "9am-1pm",
+    "start": "2026-10-10",
+    "end": "2026-10-11",
+    "conditions": [
+      "dine-in only",
+      "one combo per person",
+      "not combinable with other offers"
+    ],
+    "status": "locked"
+  },
+  {
+    "id": "L2",
+    "offer": "Filter Coffee BOGO",
+    "items": [
+      "Filter Coffee"
+    ],
+    "type": "buy1get1",
+    "valid_days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri"
+    ],
+    "valid_time": "3pm-5pm",
+    "start": "2026-10-12",
+    "end": "2026-10-16",
+    "conditions": [
+      "dine-in and takeaway",
+      "free item is equal or lesser value"
+    ],
+    "status": "locked"
+  },
+  {
+    "id": "L3",
+    "offer": "Student Wednesday",
+    "discount_pct": 15,
+    "applies_to": "all items",
+    "valid_days": [
+      "Wed"
+    ],
+    "valid_time": "all day",
+    "start": "2026-10-14",
+    "end": "2026-10-28",
+    "conditions": [
+      "valid college ID required",
+      "max discount INR 100 per bill"
+    ],
+    "status": "locked"
+  },
+  {
+    "id": "L4",
+    "offer": "Kids Sunday Banana Bread",
+    "items": [
+      "Banana Bread"
+    ],
+    "price_inr": 0,
+    "valid_days": [
+      "Sun"
+    ],
+    "valid_time": "10am-12pm",
+    "conditions": [
+      "free with any family order above INR 500",
+      "one per child under 12"
+    ],
+    "status": "draft"
+  }
+]

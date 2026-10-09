@@ -4,7 +4,7 @@
 
 // Screens with no backend behind them yet. The sidebar greys these out (they stay clickable so the team can build
 // against them). Remove a slug from this list when its backend is wired.
-export const NO_BACKEND = ['customers', 'brand', 'bakeoff', 'launch', 'identity', 'website', 'video'];
+export const NO_BACKEND = ['customers', 'brand', 'bakeoff', 'identity', 'website', 'video'];
 
 // What the studio can make. `pipeline` says which flow produces it.
 export const DELIVERABLES = [
@@ -24,7 +24,7 @@ export const PIPELINES = {
   identity: { label: 'Names and brand look', backend: false },
   website: { label: 'Website', backend: false },
   video: { label: 'Reels and video', backend: false },
-  launch: { label: 'Build my business', backend: false },
+  launch: { label: 'Build my business', backend: true },
 };
 
 // ---- Business builder (no business yet) -----------------------------------------------------------------------

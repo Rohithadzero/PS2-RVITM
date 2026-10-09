@@ -45,6 +45,19 @@ Verified live against Agnes on a café idea: 14 facts read, interview completed 
 ### The learning loop (built)
 `app/learn.py`: `POST /campaign/:id/results`, `GET /campaign/:id/learning`. The owner types people reached and redeemed per approved asset. The app judges each against what the history alone predicted (above, inside or below the 80% range), writes plain lessons, and pools the owner's real rates per channel into later forecasts with weight n / (n + 5), so one result nudges and many results lead. The next idea is composed only from facts already locked, best channel first, and carries no dates, so the new run asks for them. Verified live: three assets logged, all inside the forecast, next run started and stopped at "When does it start?". Numbers used in that check were test inputs, not real sales. Tests: `tests/test_learn.py`.
 
+
+### Also built: the rest of the agentic list
+| Item | Where | What it does and where it stops |
+|---|---|---|
+| Customer reply agent | `app/reply.py`, screen Replies | Drafts a reply only from the locked facts, in the customer's language. Refunds, allergies, complaints, legal and bulk orders always go to the owner without calling the model. The draft must name real fact keys and pass the fact validator, or it becomes an escalation with a holding reply. Edits are re-checked. Never sends. |
+| Review panel | `app/panel.py`, Dashboard | Facts (code), meaning (back-translation), tone and claims (model) review each asset alone. A concern counts only if its quote is really in the copy. A code referee says clear, review, blocked or incomplete; unchecked is never approval. Live check found a real Kannada repetition the validator let through. |
+| Budget autopilot | `app/autopilot.py`, Agent page | Exact knapsack over channels and languages for a money, time and review budget, weighted by historical redemption. Returns a sentence the owner adds to the idea, so the choice becomes the owner's words. |
+| Build my business | `app/launch.py`, screen Build my business | Ideas, names and taglines from the assistant (suggestions, estimates, not advice). Hindi and Kannada lines with stray scripts are withheld. The hand-off sentence is composed by code and goes to the agent, which still stops at the plan lock. Brand look and logos stay local previews. |
+| Local-event scout | `app/scout.py`, Plan page | Fixed-date occasions plus events the owner adds, compared with the offer dates. Moving festivals are not built in. Not connected: competitors, web search, a live events feed. |
+| Guardrail checks | `app/evals.py`, Settings, `python -m app.evals` | Seven offline checks (audit cases, spoken-brief traps, agent grounding, reply guard, forecast validation, planner limits, referee over 256 combinations). The tests prove the harness fails when a guard is broken. |
+
+The agent workflow gained two steps: Check the timing (scout) and Review panel.
+
 ## 2. Prediction fix (built)
 
 What was wrong:

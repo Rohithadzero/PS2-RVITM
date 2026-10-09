@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Brain, Cog, UserRound, Check, Loader2, CircleAlert, SkipForward, ArrowRight, Mic, Square, ChevronDown } from 'lucide-react';
-import { createAgentRun, tickAgentRun, listAgentRuns, confirmAgentStep, skipAgentStep } from '../campaign/lib/api';
+import { Gauge, Bot, Brain, Cog, UserRound, Check, Loader2, CircleAlert, SkipForward, ArrowRight, Mic, Square, ChevronDown } from 'lucide-react';
+import { createAgentRun, tickAgentRun, listAgentRuns, confirmAgentStep, skipAgentStep, runAutopilot } from '../campaign/lib/api';
 import { LANGS, FIELD_LABEL } from '../campaign/lib/format';
 import { useRecognizer } from '../campaign/lib/speech';
 import { go, setCurrent } from '../campaign/lib/current';
@@ -26,6 +26,73 @@ const STATE = {
 };
 const StateIcon = ({ s }) =>
   s === 'done' ? <Check size={14} /> : s === 'running' ? <Loader2 size={14} className="animate-spin" /> : s === 'needs_you' ? <UserRound size={14} /> : s === 'failed' ? <CircleAlert size={14} /> : s === 'skipped' ? <SkipForward size={14} /> : <span className="size-2 rounded-full bg-current opacity-40" />;
+
+
+const AUTO_CHANNELS = [{ id: 'whatsapp', label: 'WhatsApp' }, { id: 'poster', label: 'Poster' }, { id: 'instagram_post', label: 'Instagram post' }, { id: 'instagram_story', label: 'Instagram story' }];
+const AUTO_LANGS = [{ id: 'en', label: 'English' }, { id: 'kn', label: 'Kannada' }, { id: 'hi', label: 'Hindi' }];
+
+// Budget autopilot: give limits, get the channels and languages that fit, as a sentence you can add to your idea.
+const Autopilot = ({ onUse }) => {
+  const [open, setOpen] = useState(false);
+  const [money, setMoney] = useState(50);
+  const [minutes, setMinutes] = useState(5);
+  const [review, setReview] = useState(5);
+  const [channels, setChannels] = useState(AUTO_CHANNELS.map((c) => c.id));
+  const [langs, setLangs] = useState(['en', 'kn']);
+  const [out, setOut] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const toggle = (list, setList, id) => setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+  const go_ = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      setOut(await runAutopilot({ money_inr: Number(money), time_s: Number(minutes) * 60, review_s: Number(review) * 60, channels, languages: langs }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-4 rounded-2xl border border-ink/10 p-4">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold">
+        <Gauge size={16} className="text-accent" /> Pick channels and languages for my budget
+        <ChevronDown size={14} className={open ? 'rotate-180' : ''} />
+      </button>
+      {open && (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="text-xs text-ink/55">The planner solves your limits exactly and weights channels by how much they redeemed in past campaigns (synthetic history).</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="text-sm">Money (Rs)<input type="number" min={0} className="field mt-1" value={money} onChange={(e) => setMoney(e.target.value)} /></label>
+            <label className="text-sm">Waiting time (minutes)<input type="number" min={1} className="field mt-1" value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
+            <label className="text-sm">Your review time (minutes)<input type="number" min={1} className="field mt-1" value={review} onChange={(e) => setReview(e.target.value)} /></label>
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Channels to consider">
+            {AUTO_CHANNELS.map((c) => <button key={c.id} type="button" aria-pressed={channels.includes(c.id)} onClick={() => toggle(channels, setChannels, c.id)} className={channels.includes(c.id) ? 'btn-dark h-8 px-3 text-xs' : 'btn-ghost h-8 px-3 text-xs'}>{c.label}</button>)}
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Languages to consider">
+            {AUTO_LANGS.map((c) => <button key={c.id} type="button" aria-pressed={langs.includes(c.id)} onClick={() => toggle(langs, setLangs, c.id)} className={langs.includes(c.id) ? 'btn-dark h-8 px-3 text-xs' : 'btn-ghost h-8 px-3 text-xs'}>{c.label}</button>)}
+          </div>
+          <button type="button" disabled={busy || !channels.length || !langs.length} onClick={go_} className="btn-primary w-fit">{busy ? <Loader2 size={15} className="animate-spin" /> : <Gauge size={15} />} Work it out</button>
+          {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+          {out && !out.feasible && <p role="status" className="text-sm text-bad">{out.message}</p>}
+          {out?.feasible && (
+            <div role="status" className="rounded-xl bg-ink/5 p-3 text-sm">
+              <p className="font-semibold">{out.assets} assets: {out.channels.join(', ').replace(/_/g, ' ')} in {out.languages.join(', ')}</p>
+              <p className="text-ink/65">About {Math.round(out.cost.time_s)} s, Rs {out.cost.money_inr}, {(out.cost.review_s / 60).toFixed(1)} min of your review.</p>
+              <ul className="mt-1 text-xs text-ink/60">{out.why.map((w) => <li key={w}>{w}</li>)}</ul>
+              {(out.dropped_channels.length > 0 || out.dropped_languages.length > 0) && (
+                <p className="mt-1 text-xs text-ink/60">Left out to fit: {[...out.dropped_channels, ...out.dropped_languages].join(', ').replace(/_/g, ' ')}.</p>
+              )}
+              <button type="button" onClick={() => onUse(out.sentence)} className="btn-dark mt-2 h-8 px-3 text-xs">Add this to my idea</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Flow = ({ steps }) => (
   <ol className="flex flex-wrap items-center gap-y-2" aria-label="Workflow">
@@ -150,6 +217,16 @@ const Agent = () => {
     } catch {
       // Storage blocked: start with an empty page.
     }
+    try {
+      const draft = localStorage.getItem('ll-agent-draft');
+      if (draft) {
+        setIdea(draft);
+        localStorage.removeItem('ll-agent-draft');
+        saved = null; // a new idea from Build my business replaces the remembered run
+      }
+    } catch {
+      // ignore
+    }
     if (saved) tickAgentRun(saved).then((v) => alive.current && setRun(v)).catch(() => undefined);
     return () => {
       alive.current = false;
@@ -233,6 +310,7 @@ const Agent = () => {
             <button type="button" onClick={() => setIdea(EXAMPLE)} className="text-sm text-ink/55 underline hover:text-ink">Use an example</button>
           </div>
           {mic.error && <p role="alert" className="mt-2 text-sm text-bad">{mic.error}</p>}
+          <Autopilot onUse={(sentence) => setIdea((cur) => `${cur} ${sentence}`.trim())} />
           {error && <p role="alert" className="mt-2 text-sm text-bad">{error}</p>}
           {runs.length > 0 && (
             <div className="mt-5">

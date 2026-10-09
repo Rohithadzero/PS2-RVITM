@@ -127,3 +127,19 @@ export const skipAgentStep = (id: string, step: string) => post<any>(`/agent/run
 export const getLearning = (id: string) => api<any>(`/campaign/${id}/learning`);
 export const saveResults = (id: string, results: { asset_id: string; reach: number; redemptions: number }[]) =>
   post<any>(`/campaign/${id}/results`, { results });
+
+// Reply agent, review panel, autopilot, scout, launch, guardrails
+export const draftReply = (id: string, message: string, channel: string, lang: Lang) => post<any>(`/campaign/${id}/replies`, { message, channel, lang });
+export const listReplies = (id: string) => api<{ replies: any[] }>(`/campaign/${id}/replies`);
+export const approveReply = (rid: string, text?: string) => post<any>(`/replies/${rid}/approve`, { text });
+export const dismissReply = (rid: string) => post<any>(`/replies/${rid}/dismiss`);
+export const startPanel = (id: string) => post<any>(`/campaign/${id}/panel`);
+export const getPanel = (id: string) => api<any>(`/campaign/${id}/panel`);
+export const runAutopilot = (body: unknown) => post<any>("/autopilot", body);
+export const getScout = (id: string) => api<any>(`/campaign/${id}/scout`);
+export const addLocalEvent = (name: string, start: string, end?: string) => post<any>("/scout/events", { name, start, end: end || undefined });
+export const deleteLocalEvent = (eid: string) => api<any>(`/scout/events/${eid}`, { method: "DELETE" });
+export const launchIdeas = (body: unknown) => post<any>("/launch/ideas", body);
+export const launchNames = (idea: string, city: string) => post<any>("/launch/names", { idea, city });
+export const launchHandoff = (body: unknown) => post<any>("/launch/handoff", body);
+export const runEvals = () => api<any>("/evals");

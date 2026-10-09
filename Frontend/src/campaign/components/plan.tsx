@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { approvePlan, generate, getPlan } from "../lib/api";
+import { addLocalEvent, approvePlan, deleteLocalEvent, generate, getPlan, getScout } from "../lib/api";
 import { PURPOSE_RULE, channelLabel, choiceLabels, formatIsoDate, humanize, langName, money, optionLabel } from "../lib/format";
 import type { Route } from "../lib/route";
 import { useSpeaker } from "../lib/speech";
@@ -23,6 +23,43 @@ function Line({ label, value, quote }: { label: string; value: string; quote?: A
       <p className="plan-value">{value}</p>
       {list.map((a) => <Quote key={a.id} a={a} />)}
     </div>
+  );
+}
+
+
+function ScoutPanel({ id }: { id: string }) {
+  const [data, setData] = useState<any>(null);
+  const [name, setName] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [error, setError] = useState("");
+  const load = () => { getScout(id).then(setData).catch(() => undefined); };
+  useEffect(load, [id]);
+  async function add() {
+    setError("");
+    try { await addLocalEvent(name.trim(), start, end || undefined); setName(""); setStart(""); setEnd(""); load(); } catch (e) { setError((e as Error).message); }
+  }
+  if (!data) return null;
+  return (
+    <section className="plan-section" aria-labelledby="scout-h">
+      <h2 id="scout-h" className="section-title">Timing</h2>
+      {data.notes.length === 0 ? <p className="muted small">No fixed-date occasion near your dates.</p> : (
+        <ul>{data.notes.map((n: any) => <li key={n.name + n.start} className="small" style={{ marginBottom: 6 }}><strong>{n.name}</strong>, {n.start}. {n.note}{n.suits_audience ? "" : " (may not suit your audience)"}</li>)}</ul>
+      )}
+      <p className="muted small">{data.sources} Not connected: {data.not_connected.join(", ")}.</p>
+      <div className="row wrap" style={{ marginTop: 8 }}>
+        <input className="input" style={{ maxWidth: 220, minHeight: 40 }} placeholder="Event, for example Diwali or college fest" aria-label="Local event name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input" style={{ maxWidth: 160, minHeight: 40 }} type="date" aria-label="Event start" value={start} onChange={(e) => setStart(e.target.value)} />
+        <input className="input" style={{ maxWidth: 160, minHeight: 40 }} type="date" aria-label="Event end, optional" value={end} onChange={(e) => setEnd(e.target.value)} />
+        <Button onClick={add} disabled={name.trim().length < 2 || !start}>Add event</Button>
+      </div>
+      {error ? <p className="note" role="alert">{error}</p> : null}
+      {data.owner_events.length ? (
+        <ul className="small" style={{ marginTop: 8 }}>{data.owner_events.map((e: any) => (
+          <li key={e.id}>{e.name}, {e.start}{e.end !== e.start ? ` to ${e.end}` : ""} <Button variant="quiet" onClick={() => deleteLocalEvent(e.id).then(load)} aria-label={`Remove ${e.name}`}>Remove</Button></li>
+        ))}</ul>
+      ) : null}
+    </section>
   );
 }
 
@@ -125,6 +162,8 @@ export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) =>
             <Line label="Email recipients" value={plan.email_recipients.map((r) => r.name || r.email).join(", ")} quote={src("email_recipients")} />
           </div>
         </section>
+
+        <ScoutPanel id={id} />
 
         <section className="plan-section" aria-labelledby="sched-h">
           <h2 id="sched-h" className="section-title">Schedule</h2>

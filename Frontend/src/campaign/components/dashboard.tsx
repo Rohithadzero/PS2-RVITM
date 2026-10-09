@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError, getBoard, getDashboard, getForecast, getLearning, getPlan, optimize, predict, saveResults } from "../lib/api";
+import { ApiError, getBoard, getDashboard, getForecast, getLearning, getPanel, getPlan, optimize, predict, saveResults, startPanel } from "../lib/api";
 import { channelLabel, humanize, langName, prettyText, when } from "../lib/format";
 import type { Route } from "../lib/route";
 import type { Forecast } from "../lib/types";
@@ -294,6 +294,57 @@ function ResultsPanel({ id }: { id: string }) {
   );
 }
 
+
+const PANEL_TONE: Record<string, "approved" | "flagged" | "blocked" | "neutral"> = { clear: "approved", review: "flagged", blocked: "blocked", incomplete: "neutral", not_run: "neutral" };
+const PANEL_TEXT: Record<string, string> = { clear: "All clear", review: "Needs a look", blocked: "Blocked", incomplete: "Not fully checked", not_run: "Not reviewed yet" };
+const VERDICT_MARK: Record<string, string> = { ok: "ok", concern: "concern", block: "blocked", unchecked: "not checked" };
+
+function PanelSection({ id }: { id: string }) {
+  const [data, setData] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const load = useCallback(() => { getPanel(id).then(setData).catch((e: Error) => setMsg(e.message)); }, [id]);
+  useEffect(() => { load(); const t = setInterval(load, 5000); return () => clearInterval(t); }, [load]);
+  async function run() {
+    setBusy(true);
+    setMsg("");
+    try { await startPanel(id); setMsg("The panel is reading each asset. Verdicts appear as they finish."); load(); } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
+  }
+  const items: any[] = data?.items ?? [];
+  return (
+    <>
+      <p className="muted small">Four reviewers read each asset on their own: facts (code against your locked offer), meaning (back-translation), tone and risky claims. A code referee shows only what needs a human. A concern from a model counts only if it quotes words that are really in the copy.</p>
+      <div className="row wrap"><Button onClick={run} disabled={busy || items.length === 0}>{busy ? "Starting" : items.some((i) => i.reviewed) ? "Review again" : "Run the panel"}</Button></div>
+      {msg ? <p className="note" role="status">{msg}</p> : null}
+      {items.length === 0 ? <Empty title="No written assets yet">Write Campaign 0 first.</Empty> : (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>Asset</th><th>Referee</th><th>Reviewers</th></tr></thead>
+            <tbody>
+              {items.map((i) => (
+                <tr key={i.asset_id}>
+                  <td>{channelLabel(i.channel)}, {langName(i.lang)}</td>
+                  <td><Badge tone={PANEL_TONE[i.status] ?? "neutral"}>{i.stale ? "Edited since review" : PANEL_TEXT[i.status] ?? i.status}</Badge></td>
+                  <td className="small">
+                    {i.verdicts.length === 0 ? <span className="muted">Not reviewed</span> : (
+                      <ul>
+                        {i.verdicts.map((v: any) => (
+                          <li key={v.reviewer}><strong>{v.reviewer}</strong> {VERDICT_MARK[v.verdict] ?? v.verdict}{v.verdict !== "ok" && v.reason ? `: ${v.reason}` : ""}{v.quote ? ` (“${v.quote}”)` : ""}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {i.disagreements?.length ? <p className="muted">{i.disagreements.join("; ")}</p> : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
 const KIND_LABEL: Record<string, string> = { click: "Click", email_sent: "Email sent", email_open: "Email opened" };
 
 export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Route) => void; onBusiness: (b: string) => void }) {
@@ -393,6 +444,11 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
             <Kpi label="Meaning flags" value={q.meaning_flags} note="Back-translation did not match" />
             <Kpi label="Repairs" value={q.repairs} note={`${q.repairs_succeeded} succeeded`} />
           </div>
+        </section>
+
+        <section className="panel panel-wide" aria-labelledby="pn-h">
+          <h2 id="pn-h" className="panel-title">Review panel</h2>
+          <PanelSection id={id} />
         </section>
 
         <section className="panel panel-wide" aria-labelledby="fc-h">

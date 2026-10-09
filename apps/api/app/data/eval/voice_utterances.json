@@ -1,0 +1,61 @@
+[
+  {
+    "text": "ok so this weekend, saturday sunday, brunch combo, avocado toast plus cold brew, two ninety nine only, morning nine to one",
+    "expect": {
+      "price_inr": 299,
+      "days": [
+        "Sat",
+        "Sun"
+      ],
+      "time": "9am-1pm"
+    },
+    "trap": null
+  },
+  {
+    "text": "illi weekend ge combo offer, avocado toast mattu cold brew, mooru nooru ge",
+    "expect": {
+      "price_inr": 300,
+      "days": [
+        "Sat",
+        "Sun"
+      ]
+    },
+    "trap": "kn-en; 'mooru nooru'=300 vs earlier 299 -> must ask"
+  },
+  {
+    "text": "arre 20 percent off rakh do students ko... nahi nahi, buy one get one, coffee pe",
+    "expect": {
+      "type": "buy1get1"
+    },
+    "trap": "self-correction; 20% must be dropped and flagged"
+  },
+  {
+    "text": "offer is till sunday, wait, no, next sunday",
+    "expect": {
+      "end": "ambiguous"
+    },
+    "trap": "ambiguous date -> agent must ask which Sunday"
+  },
+  {
+    "text": "make the hindi one funnier and add a small chai emoji, don't touch the price",
+    "expect": {
+      "ledger_change": false,
+      "tone_change": true
+    },
+    "trap": "tone-only edit must not alter locked ledger"
+  },
+  {
+    "text": "free banana bread for kids on sunday, with order above five hundred",
+    "expect": {
+      "threshold_inr": 500
+    },
+    "trap": "'five hundred' vs 'fifty' STT confusion"
+  },
+  {
+    "text": "change price to one ninety nine",
+    "expect": {
+      "ledger_change": true
+    },
+    "trap": "locked ledger -> must require explicit voice confirmation 'unlock and change'"
+  }
+]

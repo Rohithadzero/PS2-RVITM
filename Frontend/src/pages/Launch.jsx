@@ -1,66 +1,94 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Loader2, Lightbulb, Check, Plus, Trash2, WandSparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Loader2, Lightbulb, Check, Plus, Trash2 } from 'lucide-react';
 import { CardTitle, ChipToggle, Field } from '../components/ui';
 import { LogoMark, contrast, grade } from '../lib/brand';
 import { expectedPrice } from '../lib/facts';
-import {
-  LAUNCH_STEPS, SKILLS, BUDGETS, IDEAS, NAME_IDEAS, TAGLINES, MORE_TAGLINES, PALETTES, LAUNCH_PACK, DELIVERABLES, PIPELINES,
-} from '../data/studio';
-import { LANGS } from '../data/mock';
+import { LAUNCH_STEPS, SKILLS, BUDGETS, PALETTES, LAUNCH_PACK, DELIVERABLES, PIPELINES } from '../data/studio';
+import { launchIdeas, launchNames, launchHandoff } from '../campaign/lib/api';
 import { useStore } from '../state/store';
 import { navigate } from '../lib/router';
-
-// Starter menus per idea. Prices are examples the owner edits; the owner decides every price.
-const STARTER_ITEMS = {
-  tiffin: [{ name: 'Weekly thali plan (6 days)', price: 600 }, { name: 'Single meal box', price: 110 }, { name: 'Evening snack box', price: 70 }],
-  kiosk: [{ name: 'Filter coffee', price: 30 }, { name: 'Masala chai', price: 20 }, { name: 'Bun maska', price: 40 }],
-  craft: [{ name: 'Festival hamper (small)', price: 799 }, { name: 'Custom gift box', price: 499 }, { name: 'Handmade card set', price: 199 }],
-};
 
 const DAYS = [
   { id: 'mon', label: 'Mon' }, { id: 'tue', label: 'Tue' }, { id: 'wed', label: 'Wed' }, { id: 'thu', label: 'Thu' },
   { id: 'fri', label: 'Fri' }, { id: 'sat', label: 'Sat' }, { id: 'sun', label: 'Sun' },
 ];
 
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// S16: for someone with no business yet. Six steps from a few answers to a launch pack. All suggestions are example
-// content; the planner and identity services will generate them (docs/screen-flow.md S16).
+// S16: for someone with no business yet. Ideas, names and taglines come from the assistant (suggestions, not advice; costs are
+// estimates; Hindi and Kannada lines are drafts). The last step hands the choices to the agent, which still stops at the plan lock.
 const Launch = () => {
   const { state, dispatch } = useStore();
   const L = state.launch;
   const [busy, setBusy] = useState(false);
-  const [extra, setExtra] = useState([]);
+  const [error, setError] = useState('');
   const set = (patch) => dispatch({ type: 'SET_LAUNCH', patch });
   const setAnswers = (patch) => set({ answers: { ...L.answers, ...patch } });
   const step = L.step;
-  const idea = IDEAS.find((i) => i.id === L.chosenIdea);
+  const idea = (L.ideasData ?? []).find((i) => i.id === L.chosenIdea);
   const palette = PALETTES.find((p) => p.id === state.identity.palette) ?? PALETTES[0];
   const name = L.name || 'Your business';
-  const taglines = [...TAGLINES, ...extra];
+  const taglines = L.namesData?.taglines ?? [];
 
   const findIdeas = async () => {
     setBusy(true);
-    await wait(900);
-    const ranked = [...IDEAS].sort((a, b) => b.fit.filter((s) => L.answers.skills.includes(s)).length - a.fit.filter((s) => L.answers.skills.includes(s)).length);
-    set({ ideas: ranked.map((i) => i.id), step: 1 });
-    setBusy(false);
+    setError('');
+    try {
+      const out = await launchIdeas({
+        city: L.answers.city,
+        skills: L.answers.skills.map((id) => SKILLS.find((x) => x.id === id)?.label ?? id),
+        budget: BUDGETS.find((b) => b.id === L.answers.budget)?.label ?? L.answers.budget,
+        hours_per_week: L.answers.hours,
+        avoid: L.answers.avoid,
+      });
+      set({ ideasData: out.ideas, disclaimer: out.disclaimer, chosenIdea: null, namesData: null, step: 1 });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const pickIdea = (id) => set({ chosenIdea: id, name: '', tagline: null, items: STARTER_ITEMS[id].map((i, n) => ({ id: `i${n}`, ...i })) });
+  const pickIdea = (id) => {
+    const picked = L.ideasData.find((i) => i.id === id);
+    set({ chosenIdea: id, name: '', tagline: null, namesData: null, items: picked.items.map((i, n) => ({ id: `i${n}`, ...i })) });
+  };
 
-  const moreTaglines = async () => {
+  // Names and taglines are fetched when the owner reaches that step for the chosen idea.
+  useEffect(() => {
+    if (step !== 2 || !idea || L.namesData) return undefined;
+    let live = true;
     setBusy(true);
-    await wait(700);
-    setExtra(MORE_TAGLINES);
-    setBusy(false);
-  };
+    setError('');
+    launchNames(idea.title, L.answers.city)
+      .then((out) => live && set({ namesData: out }))
+      .catch((e) => live && setError(e.message))
+      .finally(() => live && setBusy(false));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, L.chosenIdea]);
 
-  const finish = () => {
-    dispatch({ type: 'SET_IDENTITY', patch: { name, tagline: L.tagline ?? TAGLINES[0].id } });
-    dispatch({ type: 'SET_STUDIO', patch: { mode: 'have', selected: ['post', 'whatsapp', 'poster'] } });
-    dispatch({ type: 'LOG', actor: 'Priya', kind: 'scope', action: `Business plan ready: ${idea?.title}`, why: `Name: ${name}` });
-    navigate('voice');
+  const finish = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const item = L.items?.[0]?.name || idea?.title || 'our product';
+      const out = await launchHandoff({
+        name, business_type: idea?.business_type ?? 'other', city: L.answers.city, item,
+        discount_percent: L.offer.discount_pct, days: L.offer.days,
+      });
+      dispatch({ type: 'SET_IDENTITY', patch: { name } });
+      try {
+        localStorage.setItem('ll-agent-draft', out.idea);
+      } catch {
+        // Storage blocked: the agent page opens empty and the owner types the idea.
+      }
+      navigate('agent');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const setItem = (id, patch) => set({ items: L.items.map((i) => (i.id === id ? { ...i, ...patch } : i)) });
@@ -116,20 +144,19 @@ const Launch = () => {
 
         {step === 1 && (
           <>
-            <CardTitle sub="Ranked by how well they match your skills. Pick one to continue.">Ideas for you</CardTitle>
+            <CardTitle sub={L.disclaimer ?? 'Pick one to continue.'}>Ideas for you</CardTitle>
             <div className="grid gap-3 lg:grid-cols-3">
-              {(L.ideas ?? IDEAS.map((i) => i.id)).map((id) => {
-                const i = IDEAS.find((x) => x.id === id);
+              {(L.ideasData ?? []).map((i) => {
+                const id = i.id;
                 const on = L.chosenIdea === id;
-                const fit = i.fit.filter((s) => L.answers.skills.includes(s)).length;
                 return (
                   <button key={id} type="button" aria-pressed={on} onClick={() => pickIdea(id)} className={`flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors ${on ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
                     <span className="flex items-start justify-between gap-2"><span className="font-semibold">{i.title}</span>{on && <Check size={18} className="text-accent" />}</span>
                     <span className="text-sm text-ink/70">{i.why}</span>
-                    <span className="text-xs"><strong>Start-up cost (example):</strong> {i.startup}</span>
-                    <span className="text-xs"><strong>First month:</strong> {i.firstMonth}</span>
+                    <span className="text-xs"><strong>Start-up cost (estimate):</strong> {i.startup}</span>
+                    <span className="text-xs"><strong>First month:</strong> {i.first_month}</span>
                     <span className="text-xs"><strong>Watch out:</strong> {i.risks.join('; ')}</span>
-                    <span className="mt-1 text-xs text-ink/50">Skill match: {fit} of {i.fit.length}. Sells on {i.channels.join(', ')}.</span>
+                    <span className="mt-1 text-xs text-ink/50">Sells on {i.channels.join(', ')}.</span>
                   </button>
                 );
               })}
@@ -139,30 +166,27 @@ const Launch = () => {
 
         {step === 2 && idea && (
           <>
-            <CardTitle sub="Pick a name and a tagline, or write your own. Hindi and Kannada lines are drafts until a native speaker checks them.">Name and tagline</CardTitle>
+            <CardTitle sub="Pick a name and a tagline, or write your own. Hindi and Kannada lines are drafts until a native speaker checks them. Check that a name is free before you print anything.">Name and tagline</CardTitle>
             <div className="flex flex-col gap-5">
               <Field label="Business name">
                 <div className="flex flex-wrap gap-2">
-                  {NAME_IDEAS[idea.id].map((n) => (
+                  {(L.namesData?.names ?? []).map((n) => (
                     <button key={n} type="button" aria-pressed={L.name === n} onClick={() => set({ name: n })} className={`h-9 rounded-full px-3.5 text-sm font-medium ${L.name === n ? 'bg-ink text-white' : 'bg-ink/5 hover:bg-ink/10'}`}>{n}</button>
                   ))}
                 </div>
                 <input className="field mt-2" placeholder="Or type your own name" value={L.name} onChange={(e) => set({ name: e.target.value })} />
               </Field>
               <div>
-                <p className="mb-2 flex items-center justify-between text-sm font-medium">
-                  Tagline
-                  <button type="button" disabled={busy || extra.length > 0} onClick={moreTaglines} className="btn-ghost h-8 px-3 text-xs">
-                    {busy ? <Loader2 size={13} className="animate-spin" /> : <WandSparkles size={13} />} More ideas
-                  </button>
+                <p className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  Tagline {busy && <Loader2 size={13} className="animate-spin" />}
                 </p>
                 <ul className="flex flex-col gap-2">
                   {taglines.map((t) => (
                     <li key={t.id}>
                       <button type="button" aria-pressed={L.tagline === t.id} onClick={() => set({ tagline: t.id })} className={`grid w-full gap-1 rounded-xl border p-3 text-left sm:grid-cols-3 ${L.tagline === t.id ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
                         <span lang="en" className="text-sm">{t.en}</span>
-                        <span lang="hi" className="text-sm">{t.hi} <em className="text-[11px] not-italic text-warn">draft</em></span>
-                        <span lang="kn" className="text-sm">{t.kn} <em className="text-[11px] not-italic text-warn">draft</em></span>
+                        <span lang="hi" className="text-sm">{t.hi || 'withheld: not clean Hindi'} <em className="text-[11px] not-italic text-warn">draft</em></span>
+                        <span lang="kn" className="text-sm">{t.kn || 'withheld: not clean Kannada'} <em className="text-[11px] not-italic text-warn">draft</em></span>
                       </button>
                     </li>
                   ))}
@@ -253,6 +277,7 @@ const Launch = () => {
         )}
       </section>
 
+      {error && <p role="alert" className="rounded-xl bg-bad/15 px-4 py-2 text-sm">{error}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" disabled={step === 0} onClick={() => set({ step: step - 1 })} className="btn-glass"><ArrowLeft size={16} /> Back</button>
         {step === 0 && (
@@ -261,7 +286,11 @@ const Launch = () => {
           </button>
         )}
         {step > 0 && step < 5 && <button type="button" disabled={!canNext} onClick={() => set({ step: step + 1 })} className="btn-primary">Next <ArrowRight size={16} /></button>}
-        {step === 5 && <button type="button" onClick={finish} className="btn-primary">Start my opening campaign <ArrowRight size={16} /></button>}
+        {step === 5 && (
+          <button type="button" disabled={busy} onClick={finish} className="btn-primary">
+            {busy ? <Loader2 size={16} className="animate-spin" /> : null} Hand it to the agent <ArrowRight size={16} />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,62 @@
+[
+  {
+    "ledger": "L1",
+    "lang": "en",
+    "label": "GOOD",
+    "text": "Sat & Sun, 9am-1pm: Avocado Toast + Cold Brew for just ₹299. Dine-in only, one per person."
+  },
+  {
+    "ledger": "L1",
+    "lang": "en",
+    "label": "BAD_PRICE",
+    "text": "Sat & Sun brunch: Avocado Toast + Cold Brew for ₹199!"
+  },
+  {
+    "ledger": "L1",
+    "lang": "en",
+    "label": "BAD_DAY",
+    "text": "Friday to Sunday brunch combo, ₹299, 9am-1pm."
+  },
+  {
+    "ledger": "L1",
+    "lang": "en",
+    "label": "BAD_CONDITION_DROPPED",
+    "text": "Brunch combo ₹299 Sat & Sun 9am-1pm. Takeaway available!"
+  },
+  {
+    "ledger": "L1",
+    "lang": "hi",
+    "label": "BAD_PRICE_HINDI",
+    "text": "शनिवार-रविवार सुबह 9 से 1: एवोकाडो टोस्ट + कोल्ड ब्रू सिर्फ़ ₹399!"
+  },
+  {
+    "ledger": "L1",
+    "lang": "kn",
+    "label": "GOOD_KN",
+    "text": "ಶನಿವಾರ-ಭಾನುವಾರ ಬೆಳಿಗ್ಗೆ 9 ರಿಂದ 1: ಅವಕಾಡೋ ಟೋಸ್ಟ್ + ಕೋಲ್ಡ್ ಬ್ರೂ ಕೇವಲ ₹299. ಇಲ್ಲೇ ಕುಳಿತು ಸವಿಯಲು ಮಾತ್ರ."
+  },
+  {
+    "ledger": "L2",
+    "lang": "en",
+    "label": "BAD_OVERPROMISE",
+    "text": "Buy 1 get 1 FREE on ALL drinks, weekdays 3-5pm!"
+  },
+  {
+    "ledger": "L3",
+    "lang": "en",
+    "label": "BAD_CAP_DROPPED",
+    "text": "Students get 15% off every Wednesday. No limit!"
+  },
+  {
+    "ledger": "L3",
+    "lang": "hi-en",
+    "label": "GOOD",
+    "text": "Wednesday ko students ke liye 15% off, valid college ID chahiye. Max ₹100 off per bill."
+  },
+  {
+    "ledger": "L2",
+    "lang": "en",
+    "label": "BAD_FAKE_URGENCY",
+    "text": "BOGO filter coffee, only 10 left, hurry!"
+  }
+]

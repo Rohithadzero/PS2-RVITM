@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic } from 'lucide-react';
 import { CardTitle, Field, Tabs, Banner } from '../components/ui';
-import { api, API_URL } from '../campaign/lib/api';
+import { api, API_URL, runEvals } from '../campaign/lib/api';
 
-const TABS = ['Providers', 'Voice', 'Calibration'];
+const TABS = ['Providers', 'Voice', 'Calibration', 'Guardrails'];
 
 const CAPABILITY = {
   text: { title: 'Text', model: 'agnes-3.0-flash', note: 'Copy, interview extraction, meaning check, change by voice.' },
@@ -182,6 +182,53 @@ const CalibrationTab = () => {
   );
 };
 
+
+const GuardrailsTab = () => {
+  const [out, setOut] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const run = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      setOut(await runEvals());
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  useEffect(() => {
+    run();
+  }, []);
+  return (
+    <section className="card">
+      <CardTitle sub="Offline replays of the guards on synthetic data. They need no key and no network." action={<button type="button" disabled={busy} onClick={run} className="btn-dark h-9 px-4 text-sm">{busy ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />} Run again</button>}>
+        Guardrail checks
+      </CardTitle>
+      {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+      {out && (
+        <>
+          <p role="status" className={`mb-3 rounded-xl px-3 py-2 text-sm font-medium ${out.ok ? 'bg-good/12' : 'bg-bad/12'}`}>{out.ok ? 'Every guard held.' : 'A guard failed. Read the failures below.'}</p>
+          <ul className="flex flex-col gap-2">
+            {out.checks.map((c) => (
+              <li key={c.id} className="rounded-xl bg-ink/5 px-3 py-2.5">
+                <p className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold">
+                  <span>{c.title}</span>
+                  <Badge tone={c.ok ? 'good' : 'accent'}>{c.passed} of {c.total}</Badge>
+                </p>
+                <p className="text-xs text-ink/60">{c.proves}</p>
+                {c.failures.map((f) => <p key={f} className="mt-1 text-xs font-medium text-bad">{f}</p>)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-ink/55">{out.note}</p>
+        </>
+      )}
+    </section>
+  );
+};
+
 // S13: bring your own Agnes key per capability, offline voice, and the numbers the planner uses (docs/settings.md).
 const Settings = () => {
   const [tab, setTab] = useState('Providers');
@@ -203,6 +250,7 @@ const Settings = () => {
       {data && tab === 'Providers' && <ProvidersTab data={data} reload={load} />}
       {data && tab === 'Voice' && <VoiceTab data={data} />}
       {tab === 'Calibration' && <CalibrationTab />}
+      {tab === 'Guardrails' && <GuardrailsTab />}
     </div>
   );
 };

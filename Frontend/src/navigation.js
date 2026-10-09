@@ -9,6 +9,7 @@ import {
   MessageSquareDiff,
   ChartNoAxesColumn,
   Bot,
+  MessageCircleReply,
   History,
   Users,
   Store,
@@ -25,6 +26,7 @@ import {
 // Screens from docs/screen-flow.md. `slug` is the URL hash (#/board).
 export const pages = {
   home: { slug: 'home', screen: 'S2', label: 'Home', icon: House, description: 'Your campaigns and what needs you next.' },
+  replies: { slug: 'replies', screen: 'S21', label: 'Replies', icon: MessageCircleReply, description: 'Paste a customer message. It answers only from your locked facts and hands the rest to you.' },
   agent: { slug: 'agent', screen: 'S20', label: 'Agent', icon: Bot, description: 'Describe your idea once. The agent plans the work, does what it can and stops at the steps that need you.' },
   voice: { slug: 'voice', screen: 'S3', label: 'Talk', icon: Mic, description: 'Answer a few questions by voice or tap. Every answer is kept with your own words.' },
   plan: { slug: 'plan', screen: 'S4', label: 'Plan', icon: ShieldCheck, description: 'What you said, as a plan. Each line shows its source and the schedule is worked out by rule.' },
@@ -35,7 +37,7 @@ export const pages = {
   log: { slug: 'log', screen: 'S11', label: 'Change Log', icon: History, description: 'What changed, who changed it, why, and what is still pending.' },
   customers: { slug: 'customers', screen: 'S12', label: 'Customers & Send', icon: Users, description: 'Consent per channel, language per customer, and a simulated send.' },
   brand: { slug: 'brand', screen: 'S1', label: 'Brand & Data', icon: Store, description: 'Menu, photos, sample posts, customers and your brand rules. Set once, used in every campaign.' },
-  settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Your own Agnes keys, offline voice and the numbers the planner uses.' },
+  settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Your own Agnes keys, offline voice, the planner numbers and the guardrail checks.' },
   studio: { slug: 'studio', screen: 'S15', label: 'Studio', icon: Sparkles, description: 'Posts, posters, taglines, a website, a reel. Pick what you want made.' },
   launch: { slug: 'launch', screen: 'S16', label: 'Build my business', icon: Rocket, description: 'No business yet? Answer a few questions and get ideas, a name, a brand and a launch pack.' },
   identity: { slug: 'identity', screen: 'S17', label: 'Names & Brand look', icon: Palette, description: 'Business names, taglines in each language, colours and starter logos.' },
@@ -48,7 +50,7 @@ export const sidebarGroups = [
   { title: 'Overview', items: [pages.home] },
   { title: 'Studio', items: [pages.studio, pages.launch, pages.identity, pages.website, pages.video] },
   { title: 'Campaign', items: [pages.agent, pages.voice, pages.plan, pages.planner, pages.campaign, pages.dashboard] },
-  { title: 'Manage', items: [pages.change, pages.log, pages.customers] },
+  { title: 'Manage', items: [pages.replies, pages.change, pages.log, pages.customers] },
   { title: 'Setup', items: [pages.brand, pages.settings, pages.bakeoff] },
 ];
 
