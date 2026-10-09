@@ -13,6 +13,7 @@ const BottomNav = ({ active, onSelect }) => (
             <button
               type="button"
               onClick={() => onSelect(slug)}
+              data-tour={`flow-${slug}`}
               aria-current={isActive ? 'step' : undefined}
               aria-label={label}
               className={`relative flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${isActive ? 'text-on-accent' : 'text-white/60 hover:text-white'}`}

@@ -28,11 +28,11 @@ const Tooltip = ({ children }) => (
 // Labels fade instead of mounting, so only the width animates. Fade-in waits for the panel to open up a little.
 const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
 
-const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId }) => {
+const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId, tour }) => {
   const Icon = item.icon;
   const dim = !accent && !hasBackend(item.slug) && !active;
   return (
-    <div className="group relative">
+    <div className="group relative" data-tour={tour}>
       {/* Outside the button: the button clips its overflow, which would hide the pill while it travels. */}
       {active && pillId && <Liquid layoutId={pillId} className="inset-0 rounded-xl" />}
       <button
@@ -153,14 +153,14 @@ const NavList = ({ active, onSelect, expanded, badges, pillId, onExpand }) => {
 
 const Footer = ({ expanded, onSelect, active }) => (
   <div className="flex flex-col gap-1">
-    <NavButton item={{ slug: 'voice', label: 'New campaign', icon: Plus }} expanded={expanded} onSelect={onSelect} accent />
+    <NavButton item={{ slug: 'voice', label: 'New campaign', icon: Plus }} expanded={expanded} onSelect={onSelect} accent tour="new" />
     <div className="mt-1 flex flex-col gap-1">
       <NavButton item={memoryItem} active={active === 'memory'} expanded={expanded} onSelect={onSelect} />
       <NavButton item={customersItem} active={active === 'customers'} expanded={expanded} onSelect={onSelect} />
       <NavButton item={connectionsItem} active={active === 'connections'} expanded={expanded} onSelect={onSelect} />
     </div>
     <div className="mt-1 flex flex-col gap-1">
-      <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
+      <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} tour="settings" />
       <NavButton item={logoutItem} expanded={expanded} onSelect={onSelect} />
     </div>
   </div>
@@ -216,6 +216,7 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     animate={{ width: expanded ? EXPANDED : RAIL }}
     transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
     style={{ willChange: 'width' }}
+    data-tour="sidebar"
     className="relative z-30 hidden shrink-0 flex-col gap-3 lg:flex"
   >
     {/* Two cards: the pages (which scroll) above, the always-there actions below. */}
