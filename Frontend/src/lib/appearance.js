@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-// How the app looks on this device: accent colour, surface style and background.
+// How the app looks on this device: accent colour, surface style, background and whether it reacts to the cursor.
 // Kept in localStorage, because it is a per-device preference and not campaign data.
 const KEY = 'appearance';
 
@@ -26,7 +26,7 @@ export const BACKDROPS = [
   { id: 'plain', label: 'Plain', hint: 'One soft gradient, no blobs.' },
 ];
 
-export const DEFAULTS = { accent: '#f0b429', surface: 'glass', backdrop: 'animated' };
+export const DEFAULTS = { accent: '#f0b429', surface: 'glass', backdrop: 'animated', reactive: true };
 
 const isHex = (v) => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
 
@@ -37,6 +37,7 @@ export const readAppearance = () => {
       accent: isHex(saved.accent) ? saved.accent : DEFAULTS.accent,
       surface: SURFACES.some((s) => s.id === saved.surface) ? saved.surface : DEFAULTS.surface,
       backdrop: BACKDROPS.some((b) => b.id === saved.backdrop) ? saved.backdrop : DEFAULTS.backdrop,
+      reactive: typeof saved.reactive === 'boolean' ? saved.reactive : DEFAULTS.reactive,
     };
   } catch {
     return { ...DEFAULTS };
@@ -62,12 +63,13 @@ export const onAccent = (hex) => {
 };
 
 // Hover, deep and soft accent shades are derived in index.css from --color-accent, so only two values are set here.
-export const applyAppearance = ({ accent, surface, backdrop }) => {
+export const applyAppearance = ({ accent, surface, backdrop, reactive }) => {
   const root = document.documentElement;
   root.style.setProperty('--color-accent', accent);
   root.style.setProperty('--color-on-accent', onAccent(accent));
   root.dataset.surface = surface;
   root.dataset.backdrop = backdrop;
+  root.dataset.reactive = reactive ? 'on' : 'off';
 };
 
 export const useAppearance = () => {

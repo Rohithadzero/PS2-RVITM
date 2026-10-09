@@ -336,7 +336,7 @@ const Choices = ({ name, options, value, onChange }) => (
 const AppearanceTab = () => {
   const [look, setLook] = useAppearance();
   const preset = ACCENTS.find((a) => a.hex === look.accent.toLowerCase());
-  const isDefault = look.accent === DEFAULTS.accent && look.surface === DEFAULTS.surface && look.backdrop === DEFAULTS.backdrop;
+  const isDefault = Object.keys(DEFAULTS).every((k) => look[k] === DEFAULTS[k]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
@@ -387,6 +387,15 @@ const AppearanceTab = () => {
       <section className="card">
         <CardTitle sub="What sits behind the glass.">Background</CardTitle>
         <Choices name="Background" options={BACKDROPS} value={look.backdrop} onChange={(backdrop) => setLook({ backdrop })} />
+        <div className={`mt-3 flex items-center justify-between gap-3 rounded-xl border border-ink/10 px-3 py-2.5 text-sm ${look.backdrop === 'animated' ? '' : 'opacity-50'}`}>
+          <span>
+            <span className="font-medium">Reacts to the cursor</span>
+            <span className="block text-xs text-ink/60">
+              {look.backdrop === 'animated' ? 'The gradient swirls and glows where you move the pointer.' : 'Only works with the moving gradient.'}
+            </span>
+          </span>
+          <Toggle checked={look.reactive} onChange={(reactive) => setLook({ reactive })} label="Background reacts to the cursor" />
+        </div>
       </section>
     </div>
   );

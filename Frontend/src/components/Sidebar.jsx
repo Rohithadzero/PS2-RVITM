@@ -28,7 +28,7 @@ const Tooltip = ({ children }) => (
 // Labels fade instead of mounting, so only the width animates. Fade-in waits for the panel to open up a little.
 const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
 
-const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId, iconOnly = false }) => {
+const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId }) => {
   const Icon = item.icon;
   const dim = !accent && !hasBackend(item.slug) && !active;
   return (
@@ -38,21 +38,20 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pi
       <button
         type="button"
         onClick={() => onSelect(item.slug)}
-        aria-label={iconOnly ? 'Log out' : expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
-        title={iconOnly ? 'Log out' : undefined}
+        aria-label={expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
         aria-current={active ? 'page' : undefined}
-                className={`rail-row relative flex ${iconOnly ? 'w-10 justify-center px-0' : 'w-full px-[11px]'} items-center gap-3 overflow-hidden text-sm font-medium transition-colors ${
+        className={`rail-row relative flex w-full px-[11px] items-center gap-3 overflow-hidden text-sm font-medium transition-colors ${
           dim ? 'opacity-40 hover:opacity-70' : ''
         } ${
           accent
-            ? 'rounded-full bg-accent text-on-accent hover:bg-accent-hover'
+            ? 'rounded-full border border-accent text-accent hover:bg-accent/10'
             : active
               ? `rounded-xl text-on-accent ${pillId ? '' : 'bg-accent'}`
               : 'rounded-xl text-white/60 hover:bg-white/10 hover:text-white'
         }`}
       >
         <Icon size={18} className="shrink-0" />
-        {!iconOnly && <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{item.label}</span>}
+        <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{item.label}</span>
         {badge && (
           <span className={`shrink-0 rounded-md px-1.5 text-xs font-semibold ${active ? 'bg-white/20' : 'bg-accent/20 text-accent'} ${fade(expanded)}`}>{badge}</span>
         )}
@@ -159,13 +158,9 @@ const Footer = ({ expanded, onSelect, active }) => (
       <NavButton item={customersItem} active={active === 'customers'} expanded={expanded} onSelect={onSelect} />
       <NavButton item={connectionsItem} active={active === 'connections'} expanded={expanded} onSelect={onSelect} />
     </div>
-    <div className={`mt-1 flex ${expanded ? 'flex-row gap-1' : 'flex-col gap-1'}`}>
-      <div className={expanded ? 'min-w-0 flex-1' : ''}>
-        <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
-      </div>
-      <div className={expanded ? 'shrink-0' : ''}>
-        <NavButton item={{ ...logoutItem, label: expanded ? '' : 'Log out' }} expanded={expanded} onSelect={onSelect} iconOnly={expanded} />
-      </div>
+    <div className="mt-1 flex flex-col gap-1">
+      <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
+      <NavButton item={logoutItem} expanded={expanded} onSelect={onSelect} />
     </div>
   </div>
 );
