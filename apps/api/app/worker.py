@@ -79,7 +79,12 @@ async def run_copy_job(app: FastAPI, job_id: str) -> None:
         if asset is None or facts_row is None:
             raise ValueError("asset or locked facts disappeared")
         facts = OfferFacts.model_validate_json(facts_row["json"])
-        messages = copy_messages(facts, asset, _payload(job).get("feedback"), plan.copy_context(db, job["campaign_id"]))
+        context = plan.copy_context(db, job["campaign_id"])
+        from app import memory  # imported here: memory reaches modules that import this one
+        notes = memory.prompt_notes(db)  # the owner's accepted voice and never-say notes; never prices
+        if notes:
+            context = {**(context or {}), "owner_notes": notes}
+        messages = copy_messages(facts, asset, _payload(job).get("feedback"), context)
         limit = COPY_MAX_TOKENS.get(asset["channel"], COPY_MAX_TOKENS_DEFAULT)
         raw = await app.state.agnes.chat(messages, cache_kind="copy", max_tokens=limit)
         try:

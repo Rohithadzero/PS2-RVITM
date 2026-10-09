@@ -136,6 +136,9 @@ def recipients(db: Database, owner: str, channel: str, *, ids: list[str] | None 
     col, field = ("consent_whatsapp", "phone") if channel == "whatsapp" else ("consent_email", "email")
     rows = db.query(f"SELECT * FROM customer WHERE owner = ? AND {col} = 1 AND {field} IS NOT NULL ORDER BY name LIMIT ?", (owner, limit))
     out = [_view(r) for r in rows]
+    if channel == "email":
+        from app import unsubscribe  # imported here to keep the module import order simple
+        out = [c for c in out if not unsubscribe.is_suppressed(db, c["email"])]
     if ids is not None:
         wanted = set(ids)
         out = [c for c in out if c["id"] in wanted]

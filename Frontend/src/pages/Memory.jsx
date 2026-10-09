@@ -1,0 +1,231 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Brain, Check, Download, Pencil, Pin, PinOff, Plus, RefreshCw, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { CardTitle, Field, Banner, Toggle } from '../components/ui';
+import { api } from '../campaign/lib/api';
+
+const send = (method, path, body) => api(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+
+// What to jot down first, by kind of business. Each chip fills the form; the owner writes the content.
+const TEMPLATES = {
+  'Cafe or restaurant': [['menu', 'Menu and prices'], ['hours', 'Opening hours'], ['offers', 'Regular specials'], ['rules', 'Allergen and diet notes']],
+  'Software company': [['pricing', 'Plans and pricing'], ['hours', 'Support hours'], ['about', 'What the product does'], ['rules', 'Claims we never make']],
+  Consultant: [['pricing', 'Services and rates'], ['hours', 'Availability and timings'], ['about', 'Who we work with'], ['rules', 'Booking and cancellation rules']],
+  'Salon or shop': [['menu', 'Services and prices'], ['hours', 'Opening hours'], ['voice', 'How we talk to customers']],
+};
+const EMPTY = { id: null, kind: 'other', title: '', body: '', use_ai: true, pinned: false };
+const WRITES = ['voice', 'rules'];
+
+const Source = ({ item }) => (
+  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.source === 'you' ? 'bg-ink/8 text-ink/70' : 'bg-accent-soft text-accent-deep'}`}>
+    {item.source === 'you' ? 'You wrote this' : item.status === 'suggested' ? 'Suggested by GrowIT' : 'GrowIT noticed, you accepted'}
+  </span>
+);
+
+const Editor = ({ value, kinds, onChange, onSave, onCancel, busy }) => (
+  <div className="rounded-2xl border border-ink/10 bg-ink/3 p-4">
+    <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
+      <Field label="About">
+        <select className="field" value={value.kind} onChange={(e) => onChange({ kind: e.target.value })}>
+          {Object.entries(kinds).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+        </select>
+      </Field>
+      <Field label="Title"><input className="field" value={value.title} maxLength={120} onChange={(e) => onChange({ title: e.target.value })} placeholder="Menu and prices" /></Field>
+    </div>
+    <div className="mt-3">
+      <Field label="What GrowIT should know" hint="Plain words, as you would tell a new helper. One item per line works well for menus and prices.">
+        <textarea className="field min-h-28" value={value.body} maxLength={2000} onChange={(e) => onChange({ body: e.target.value })} />
+      </Field>
+    </div>
+    {WRITES.includes(value.kind) && (
+      <label className="mt-3 flex items-center gap-3 text-sm">
+        <Toggle checked={value.use_ai} onChange={(v) => onChange({ use_ai: v })} label="Use when GrowIT writes for me" />
+        Use this when GrowIT writes for me
+      </label>
+    )}
+    <div className="mt-4 flex flex-wrap gap-2">
+      <button type="button" className="btn-primary" disabled={busy || !value.title.trim()} onClick={onSave}><Check size={15} /> Save</button>
+      <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
+    </div>
+  </div>
+);
+
+// S24: "How we remember you". What GrowIT knows about the business, written by you or proposed by GrowIT and waiting for your yes.
+const Memory = () => {
+  const [data, setData] = useState({ kinds: {}, items: [], suggested: [], note: '' });
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async (search = '') => {
+    try {
+      setData(await api(`/memory${search ? `?q=${encodeURIComponent(search)}` : ''}`));
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Look at the shop's data once on opening, so new suggestions are waiting.
+    send('POST', '/memory/refresh').catch(() => undefined).finally(() => load());
+  }, [load]);
+  useEffect(() => { const t = setTimeout(() => load(q.trim()), 250); return () => clearTimeout(t); }, [q, load]);
+
+  const act = async (fn, message) => {
+    setBusy(true);
+    setError('');
+    try { await fn(); if (message) setNotice(message); await load(q.trim()); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+
+  const save = () => act(async () => {
+    const { id, ...body } = editing;
+    await (id ? send('PUT', `/memory/${id}`, body) : send('POST', '/memory', body));
+    setEditing(null);
+  }, 'Saved.');
+
+  const refresh = () => act(async () => {
+    const r = await send('POST', '/memory/refresh');
+    setNotice(r.added ? `GrowIT found ${r.added} new thing${r.added === 1 ? '' : 's'} to suggest.` : 'Nothing new to suggest.');
+  });
+
+  const exportAll = async () => {
+    const out = await api('/memory/export');
+    const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'growit-memory.json' });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+
+  const forget = () => {
+    if (window.confirm('Forget everything GrowIT remembers about your business? Your menu and shop details in Brand & Data are not touched.')) {
+      act(() => send('DELETE', '/memory?confirm=true'), 'Everything was forgotten.');
+    }
+  };
+
+  const grouped = useMemo(() => {
+    const by = {};
+    data.items.forEach((i) => { (by[i.kind] ||= []).push(i); });
+    return Object.entries(by);
+  }, [data.items]);
+
+  if (loading) return <p className="text-sm text-white/60" role="status">Loading</p>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {error && <Banner tone="warn">{error}</Banner>}
+      <Banner tone="info">
+        This is what GrowIT knows about your business. Add things yourself, or accept what GrowIT suggests from your shop details, offers and customers.
+        {' '}{data.note}
+      </Banner>
+
+      <section className="card">
+        <CardTitle sub="Suggestions wait here. Nothing is used until you accept it." action={
+          <button type="button" className="btn-ghost" onClick={refresh} disabled={busy}><RefreshCw size={15} /> Look at my shop again</button>
+        }>Suggested by GrowIT</CardTitle>
+        {data.suggested.length === 0 ? (
+          <p className="text-sm text-ink/55">No suggestions right now. Save your shop details and approve an offer, and GrowIT will suggest what it noticed.</p>
+        ) : (
+          <ul className="grid gap-3 md:grid-cols-2">
+            {data.suggested.map((s) => (
+              <li key={s.id} className="flex flex-col gap-2 rounded-2xl border border-accent/40 bg-accent-soft/40 p-3.5">
+                <div className="flex flex-wrap items-center gap-2"><Sparkles size={15} className="text-accent-deep" /><strong className="text-sm">{s.title}</strong><span className="text-[11px] text-ink/50">{s.kind_label}</span></div>
+                <p className="whitespace-pre-wrap text-sm text-ink/80">{s.body}</p>
+                <p className="text-xs text-ink/55">{s.evidence}</p>
+                <div className="mt-auto flex flex-wrap gap-2">
+                  <button type="button" className="btn-primary h-9" disabled={busy} onClick={() => act(() => send('POST', `/memory/${s.id}/accept`), 'Added to what GrowIT remembers.')}><Check size={14} /> Accept</button>
+                  <button type="button" className="btn-ghost h-9" onClick={() => setEditing({ ...EMPTY, ...s })}><Pencil size={14} /> Edit first</button>
+                  <button type="button" className="btn-ghost h-9" disabled={busy} onClick={() => act(() => send('POST', `/memory/${s.id}/dismiss`))}><X size={14} /> Not right</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="card">
+        <CardTitle sub="Pick what fits your business, or start from a blank note." action={
+          <button type="button" className="btn-primary" onClick={() => setEditing({ ...EMPTY })}><Plus size={15} /> Add a note</button>
+        }>What GrowIT remembers</CardTitle>
+
+        <details className="mb-3 rounded-xl bg-ink/5 px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium">Not sure what to add? Ideas by kind of business</summary>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {Object.entries(TEMPLATES).map(([name, chips]) => (
+              <div key={name}>
+                <p className="mb-1 text-xs font-semibold text-ink/60">{name}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {chips.map(([kind, title]) => (
+                    <button key={title} type="button" onClick={() => setEditing({ ...EMPTY, kind, title })} className="rounded-full bg-white px-3 py-1 text-xs font-medium ring-1 ring-ink/10 hover:bg-ink/5">{title}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+
+        {editing && (!editing.id || !data.items.some((i) => i.id === editing.id)) && <div className="mb-4"><Editor value={editing} kinds={data.kinds} busy={busy} onChange={(p) => setEditing({ ...editing, ...p })} onSave={save} onCancel={() => setEditing(null)} /></div>}
+
+        <label className="relative mb-4 block">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+          <input className="field pl-9" aria-label="Search what GrowIT remembers" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+
+        {grouped.length === 0 && (
+          <div className="grid place-items-center gap-2 rounded-2xl border border-dashed border-ink/15 px-6 py-10 text-center">
+            <Brain size={26} className="text-ink/40" />
+            <p className="font-medium">{q ? 'Nothing matches that.' : 'GrowIT does not remember anything about your business yet.'}</p>
+            {!q && <p className="text-sm text-ink/55">Add your menu, prices, timings or how you like to sound, and GrowIT will keep it in mind.</p>}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-5">
+          {grouped.map(([kind, items]) => (
+            <div key={kind}>
+              <h3 className="mb-2 text-sm font-semibold text-ink/70">{data.kinds[kind] || kind}</h3>
+              <ul className="flex flex-col gap-2">
+                {items.map((m) => (
+                  <li key={m.id}>
+                    {editing?.id === m.id ? (
+                      <Editor value={editing} kinds={data.kinds} busy={busy} onChange={(p) => setEditing({ ...editing, ...p })} onSave={save} onCancel={() => setEditing(null)} />
+                    ) : (
+                      <div className="rounded-2xl border border-ink/10 p-3.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{m.title}</strong><Source item={m} />{WRITES.includes(m.kind) && !m.use_ai && <span className="text-[11px] text-ink/50">Not used for writing</span>}</div>
+                          <div className="flex gap-1">
+                            <button type="button" className="btn-ghost size-8 p-0" aria-label={m.pinned ? `Unpin ${m.title}` : `Pin ${m.title}`} aria-pressed={m.pinned} onClick={() => act(() => send('PUT', `/memory/${m.id}`, { kind: m.kind, title: m.title, body: m.body, use_ai: m.use_ai, pinned: !m.pinned }))}>{m.pinned ? <PinOff size={14} /> : <Pin size={14} />}</button>
+                            <button type="button" className="btn-ghost size-8 p-0" aria-label={`Edit ${m.title}`} onClick={() => setEditing({ ...EMPTY, ...m })}><Pencil size={14} /></button>
+                            <button type="button" className="btn-ghost size-8 p-0" aria-label={`Delete ${m.title}`} onClick={() => act(() => send('DELETE', `/memory/${m.id}`))}><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                        {m.body && <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink/80">{m.body}</p>}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold">Your memory, your call</p>
+          <p className="text-sm text-ink/60">Take a copy of everything, or have GrowIT forget it all. Only you can see it.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-ghost" onClick={exportAll}><Download size={15} /> Download a copy</button>
+          <button type="button" className="btn-ghost text-bad" onClick={forget} disabled={busy}><Trash2 size={15} /> Forget everything</button>
+        </div>
+      </section>
+      {notice && <p role="status" className="text-sm text-good">{notice}</p>}
+    </div>
+  );
+};
+
+export default Memory;

@@ -40,7 +40,7 @@ AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 ISSUERS = ("accounts.google.com", "https://accounts.google.com")
 # Paths that work without a session even when login is required (tracked links and email pixels are opened by customers).
-PUBLIC_PREFIXES = ("/auth/", "/health", "/r/", "/o/", "/media/", "/site/", "/docs", "/openapi.json", "/redoc")
+PUBLIC_PREFIXES = ("/auth/", "/health", "/r/", "/o/", "/u/", "/media/", "/site/", "/docs", "/openapi.json", "/redoc")
 
 
 def ensure_schema(db) -> None:

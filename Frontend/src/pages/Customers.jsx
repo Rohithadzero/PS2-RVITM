@@ -32,7 +32,7 @@ const ConsentFields = ({ value, onChange, idPrefix }) => (
         <input id={`${idPrefix}-src`} className="field" value={value.consent_source} onChange={(e) => onChange({ consent_source: e.target.value })} placeholder="Signed up at the counter" />
       </Field>
     )}
-    <p className="mt-1 text-xs text-ink/50">Leave both unticked if you are not sure. Nothing is sent to someone who has not agreed.</p>
+    <p className="mt-1 text-xs text-ink/50">Leave both unticked if you are not sure. Nothing is sent to someone who has not agreed. Every email has an unsubscribe link, and anyone who uses it is switched off and stays off.</p>
   </fieldset>
 );
 

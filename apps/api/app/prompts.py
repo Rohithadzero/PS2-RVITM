@@ -33,7 +33,7 @@ def copy_messages(
         "audiences": facts.audiences,
         "offer_facts": facts.model_dump(),
     }
-    for key in ("business_name", "area", "tone", "cta"):
+    for key in ("business_name", "area", "tone", "cta", "owner_notes"):
         if context.get(key):
             request[key] = context[key]
     names = day_names(facts, asset["lang"])
@@ -60,6 +60,8 @@ def copy_messages(
                 "If cta is a phone number, handle or map, you may state it as given; if it is a url, do not write the url, "
                 "a tracked link is added later. "
                 "Use plain, everyday words a local customer would use. Keep it short and never repeat a sentence. "
+                "If owner_notes is present, it holds the owner's own style notes and things to avoid: follow them for tone and wording only. "
+                "They are never a source for a price, number, date, discount or offer. "
                 "If rejected_attempt is present, it was rejected for problems_to_fix; write a new version that fixes all of them. "
                 "If owner_instruction is present, rewrite rejected_attempt to follow it and keep every offer fact unchanged. "
                 f"Channel: {asset['channel']}. {spec['write']} "

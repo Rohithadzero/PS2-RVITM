@@ -138,7 +138,7 @@ def test_send_email_fills_name_adds_link_and_pixel_and_logs(rig):
     text = first.get_body(("plain",)).get_content()
     assert text.startswith("Hi Ravi,") and "{name}" not in text
     link = client.post(f"/assets/{email}/link").json()["url"]
-    assert text.rstrip().endswith(link)
+    assert link in text and "Unsubscribe: http://lan.example:8000/u/" in text
     html = first.get_body(("html",)).get_content()
     sends = app.state.db.query("SELECT * FROM email_send ORDER BY id")
     assert len(sends) == 2 and f"http://lan.example:8000/o/{sends[0]['token']}.gif" in html and link in html

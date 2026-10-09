@@ -10,6 +10,7 @@ import Agent from './pages/Agent';
 import Replies from './pages/Replies';
 import Insights from './pages/Insights';
 import Connections from './pages/Connections';
+import Memory from './pages/Memory';
 import Talk from './pages/Talk';
 import Plan from './pages/Plan';
 import Campaign from './pages/Campaign';
@@ -37,6 +38,7 @@ const SCREENS = {
   replies: Replies,
   insights: Insights,
   connections: Connections,
+  memory: Memory,
   voice: Talk,
   plan: Plan,
   planner: BudgetPlanner,

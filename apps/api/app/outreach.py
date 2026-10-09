@@ -269,15 +269,23 @@ def build_message(
     subject: str,
     link_url: str | None,
     pixel_url: str,
+    unsubscribe_url: str | None = None,
 ) -> EmailMessage:
     body = _fill_name(asset["content"] or "", recipient["name"])
     text = body + (f"\n\n{link_url}" if link_url else "")
+    if unsubscribe_url:
+        text += f"\n\n--\nDo not want these emails? Unsubscribe: {unsubscribe_url}"
     paragraphs = "".join(f"<p>{html.escape(part).replace(chr(10), '<br>')}</p>" for part in body.split("\n\n") if part.strip())
     anchor = f'<p><a href="{html.escape(link_url, quote=True)}">{html.escape(link_url)}</a></p>' if link_url else ""
+    if unsubscribe_url:
+        anchor += f'<hr><p style="font-size:12px;color:#666">Do not want these emails? <a href="{html.escape(unsubscribe_url, quote=True)}">Unsubscribe</a></p>'
     message = EmailMessage()
     message["From"] = settings["SMTP_FROM"]
     message["To"] = f"{recipient['name']} <{recipient['email']}>" if recipient["name"] else str(recipient["email"])
     message["Subject"] = subject
+    if unsubscribe_url:
+        message["List-Unsubscribe"] = f"<{unsubscribe_url}>"
+        message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     message.set_content(text)
     message.add_alternative(
         f'<html><body>{paragraphs}{anchor}<img src="{html.escape(pixel_url, quote=True)}" width="1" height="1" alt="" style="display:none"></body></html>',
@@ -339,10 +347,14 @@ async def send_email_core(db, asset_id: str, body: SendEmailIn | None, owner: st
     if not wanted:
         raise fail("no_recipients", "No recipients were given and the plan has none.", 400)
 
+    from app import unsubscribe  # imported here: it needs the customer table, which another module creates
+
     failed: list[dict[str, str]] = []
     valid: list[Recipient] = []
     for recipient in wanted:
-        if EMAIL.match(recipient.email.strip()):
+        if unsubscribe.is_suppressed(db, recipient.email):
+            failed.append({"email": recipient.email, "error": "unsubscribed: this address asked not to be emailed"})
+        elif EMAIL.match(recipient.email.strip()):
             valid.append(recipient)
         else:
             failed.append({"email": recipient.email, "error": "invalid email address"})
@@ -363,6 +375,7 @@ async def send_email_core(db, asset_id: str, body: SendEmailIn | None, owner: st
             subject,
             link["url"] if link else None,
             f"{base}/o/{token}.gif",
+            f"{base}/u/{token}",
         )
         for r, token in zip(valid, tokens)
     ]
