@@ -227,8 +227,16 @@ class Recipient(BaseModel):
     email: str
 
 
+class CustomerPick(BaseModel):
+    """Send to people from the Customers list. Only those who agreed to email, with a valid address, are ever used."""
+    ids: list[str] | None = None
+    language: str | None = None
+    tag: str | None = None
+
+
 class SendEmailIn(BaseModel):
     recipients: list[Recipient] | None = None
+    customers: CustomerPick | None = None
 
 
 def smtp_settings() -> dict[str, str] | None:
@@ -304,7 +312,15 @@ def deliver(settings: dict[str, str], messages: list[EmailMessage]) -> list[str 
 
 @router.post("/assets/{asset_id}/send-email")
 async def send_email(asset_id: str, request: Request, body: SendEmailIn | None = None) -> dict:
-    db = request.app.state.db
+    owner = None
+    if body and body.customers is not None:
+        from app import connections  # imported here: it imports modules that import this one
+        owner = connections._require_owner(request)
+    return await send_email_core(request.app.state.db, asset_id, body, owner)
+
+
+async def send_email_core(db, asset_id: str, body: SendEmailIn | None, owner: str | None) -> dict:
+    """The send itself, shared by the button and the scheduler. `owner` is whose Customers list a customer pick reads from."""
     asset = asset_or_404(db, asset_id)
     if asset["channel"] != "cold_email":
         raise fail("not_email", "Only cold_email assets can be sent as email.", 400)
@@ -314,6 +330,12 @@ async def send_email(asset_id: str, request: Request, body: SendEmailIn | None =
         raise fail("smtp_not_configured", "SMTP is not configured. Open the email in the mail app instead.", 409)
     campaign_plan = plan.get_plan(db, asset["campaign_id"]) or {}
     wanted = body.recipients if body and body.recipients is not None else [Recipient(**r) for r in campaign_plan.get("email_recipients") or []]
+    if body and body.customers is not None:
+        from app import customers as people  # imported here: it imports modules that import this one
+        wanted = [Recipient(name=c["name"], email=c["email"]) for c in
+                  people.recipients(db, owner, "email", ids=body.customers.ids, language=body.customers.language, tag=body.customers.tag)]
+        if not wanted:
+            raise fail("no_consented_customers", "No customer who agreed to email matches. Check the list and each person's email consent.", 409)
     if not wanted:
         raise fail("no_recipients", "No recipients were given and the plan has none.", 400)
 

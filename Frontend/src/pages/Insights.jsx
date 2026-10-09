@@ -1,0 +1,148 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Eye, Heart, Ticket, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { BarChart, ChartCard, Donut, FunnelChart, Heatmap, Histogram, LineChart, bin } from '../components/charts';
+import { buildInsights } from '../data/insightsMock';
+import { api } from '../campaign/lib/api';
+import { navigate } from '../lib/router';
+
+const Kpi = ({ icon: Icon, label, value, note }) => (
+  <article className="rounded-2xl bg-white p-4 text-ink">
+    <div className="flex items-center justify-between gap-2">
+      <h3 className="text-sm font-semibold">{label}</h3>
+      <span className="grid size-7 place-items-center rounded-full bg-accent-soft text-accent-deep"><Icon size={14} strokeWidth={2.5} /></span>
+    </div>
+    <p className="mt-3 text-2xl font-bold tracking-tight tabular-nums">{value}</p>
+    <p className="text-xs text-ink/50">{note}</p>
+  </article>
+);
+
+const n = (v) => Math.round(v).toLocaleString('en-IN');
+
+// S22: how the campaigns turned out. Reach and the rest are SAMPLE DATA, because Instagram does not give this app reach numbers.
+// The strip at the top and the "recent posts" chart are live, and only appear once an Instagram account is connected.
+const Insights = () => {
+  const d = useMemo(buildInsights, []);
+  const [ig, setIg] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    api('/connections')
+      .then((r) => live && setIg(r.connections.find((c) => c.provider === 'instagram' && c.connected) || null))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const bins = useMemo(() => bin(d.posts.map((p) => p.reach), 10), [d]);
+  const mediaBars = (ig?.media ?? []).slice().reverse().map((m, i) => ({ label: `#${i + 1}`, value: (m.likes ?? 0) + (m.comments ?? 0) }));
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-white/80" role="note">
+        The charts below are <strong>sample data</strong>. Instagram does not let this app read reach, so these numbers are made up to show the screen. Nothing here is measured, so do not read them as results.
+      </p>
+
+      {ig ? (
+        <section className="card flex flex-wrap items-center gap-4" aria-label="Connected Instagram account">
+          {ig.profile.profile_picture_url ? <img src={ig.profile.profile_picture_url} alt="" referrerPolicy="no-referrer" className="size-12 rounded-full" /> : <span className="grid size-12 place-items-center rounded-full bg-accent text-on-accent font-semibold">{ig.profile.username?.[0]?.toUpperCase()}</span>}
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">@{ig.profile.username} <span className="rounded-full bg-good/12 px-2 py-0.5 text-[11px] font-semibold text-good">Live from Instagram</span></p>
+            <p className="text-sm text-ink/60">{n(ig.profile.followers_count ?? 0)} followers, {n(ig.profile.follows_count ?? 0)} following, {n(ig.profile.media_count ?? 0)} posts</p>
+          </div>
+        </section>
+      ) : (
+        <button type="button" onClick={() => navigate('connections')} className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-white/25 px-4 py-3 text-left text-sm text-white/80 hover:border-accent hover:text-white">
+          <span>Link your Instagram on <strong>Connections</strong> to see your real followers and recent posts here.</span>
+          <span className="shrink-0 font-semibold text-accent">Connect</span>
+        </button>
+      )}
+
+      <section aria-label="Totals" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi icon={Eye} label="People reached" value={n(d.kpis.totalReach)} note="last 30 days, all channels" />
+        <Kpi icon={Heart} label="Engagement rate" value={`${d.kpis.engagementRate.toFixed(1)}%`} note="likes, comments and saves per reach" />
+        <Kpi icon={Ticket} label="Redemptions" value={n(d.kpis.redemptions)} note="people who used the offer" />
+        <Kpi icon={ShieldCheck} label="Approved" value={`${Math.round(d.kpis.approvedShare)}%`} note={`${d.kpis.blocked} blocked, ${d.kpis.repaired} repaired`} />
+      </section>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ChartCard
+          className="xl:col-span-2"
+          title="Reach per day"
+          sub="People who saw a post or message each day, by channel. The bumps are the launch and the reminder."
+          table={{ head: ['Day', ...d.reach.map((s) => s.name)], rows: d.labels.map((l, i) => [l, ...d.reach.map((s) => n(s.values[i]))]) }}
+        >
+          <LineChart labels={d.labels} series={d.reach} label="Line chart of people reached each day over 30 days, for Instagram, WhatsApp and poster scans" />
+        </ChartCard>
+
+        <ChartCard
+          title="How far each post travelled"
+          sub="A histogram: how many posts reached how many people. Most posts are middling, a few do very well."
+          table={{ head: ['Reach from', 'to', 'Posts'], rows: bins.map((b) => [n(b.from), n(b.to), b.n]) }}
+        >
+          <Histogram bins={bins} label="Histogram of the number of posts by people reached" />
+        </ChartCard>
+
+        <ChartCard
+          title="Best time to post"
+          sub="Engagement by weekday and hour. Darker is better."
+          table={{ head: ['Day', 'Best hour', 'Engagement'], rows: d.weekdays.map((day, r) => { const best = d.grid[r].indexOf(Math.max(...d.grid[r])); return [day, d.hours[best], `${d.grid[r][best].toFixed(1)}%`]; }) }}
+        >
+          <Heatmap days={d.weekdays} hours={d.hours} grid={d.grid} label="Heat map of engagement by weekday and hour of day" />
+        </ChartCard>
+
+        <ChartCard
+          title="How the workflow turned out"
+          sub="Where the 18 planned assets ended up."
+          table={{ head: ['Step', 'Assets'], rows: d.funnel.map((f) => [f.label, f.value]) }}
+        >
+          <FunnelChart steps={d.funnel} label="Funnel from planned to redeemed assets" />
+        </ChartCard>
+
+        <ChartCard
+          title="Redemption rate by channel"
+          sub="Percent of people reached who used the offer. The forecast is the app's own earlier estimate."
+          table={{ head: ['Channel', 'Actual %', 'Forecast %'], rows: d.channels.map((c, i) => [c.label, c.value, d.forecast[i]]) }}
+        >
+          <BarChart items={d.channels} format={(v) => `${v.toFixed(1)}%`} label="Bar chart of redemption rate by channel" />
+          <p className="mt-2 text-xs text-ink/55">Forecast: {d.channels.map((c, i) => `${c.label} ${d.forecast[i]}%`).join(', ')}.</p>
+        </ChartCard>
+
+        <ChartCard
+          title="Time spent at each step"
+          sub="Minutes per step of an agent run. The long ones are the two that wait for you."
+          table={{ head: ['Step', 'Minutes'], rows: d.stepMinutes.map((s) => [s.label, s.value]) }}
+        >
+          <BarChart horizontal items={d.stepMinutes} format={(v) => `${v.toFixed(1)} min`} label="Bar chart of minutes spent at each workflow step" />
+        </ChartCard>
+
+        <ChartCard
+          title="Who it reached, by language"
+          sub="Share of people reached."
+          table={{ head: ['Language', 'Share %'], rows: d.languages.map((l) => [l.label, l.value]) }}
+        >
+          <Donut items={d.languages} label="Donut chart of people reached by language" />
+        </ChartCard>
+
+        {ig && mediaBars.length > 0 && (
+          <ChartCard
+            className="xl:col-span-2"
+            sample={false}
+            live
+            title="Likes and comments on your recent posts"
+            sub="Your last posts, oldest on the left. These two numbers are real; reach is not available."
+            table={{ head: ['Post', 'Likes', 'Comments'], rows: ig.media.slice().reverse().map((m, i) => [`#${i + 1}`, m.likes ?? 0, m.comments ?? 0]) }}
+          >
+            <BarChart items={mediaBars} label="Bar chart of likes plus comments for the most recent Instagram posts" />
+          </ChartCard>
+        )}
+      </div>
+
+      <p className="flex items-start gap-2 text-xs text-white/55">
+        <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Real reach and impressions need Instagram's insights permission, which this app does not ask for yet, and a reviewed Meta app.
+      </p>
+    </div>
+  );
+};
+
+export default Insights;

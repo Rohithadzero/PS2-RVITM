@@ -4,7 +4,7 @@
 
 // Screens with no backend behind them yet. The sidebar greys these out (they stay clickable so the team can build
 // against them). Remove a slug from this list when its backend is wired.
-export const NO_BACKEND = ['customers', 'brand', 'bakeoff', 'identity', 'website', 'video'];
+export const NO_BACKEND = ['brand', 'bakeoff', 'identity', 'website', 'video'];
 
 // What the studio can make. `pipeline` says which flow produces it.
 export const DELIVERABLES = [

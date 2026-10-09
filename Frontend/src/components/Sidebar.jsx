@@ -1,6 +1,7 @@
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AudioLines, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
-import { sidebarGroups, logoutItem, hasBackend } from '../navigation';
+import { AudioLines, ChevronDown, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
+import { sidebarGroups, homeItem, settingsItem, connectionsItem, customersItem, groupOf, logoutItem, hasBackend } from '../navigation';
 import Liquid from './ui/Liquid';
 
 const RAIL = 64;
@@ -27,7 +28,7 @@ const Tooltip = ({ children }) => (
 // Labels fade instead of mounting, so only the width animates. Fade-in waits for the panel to open up a little.
 const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
 
-const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId }) => {
+const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId, iconOnly = false }) => {
   const Icon = item.icon;
   const dim = !accent && !hasBackend(item.slug) && !active;
   return (
@@ -37,10 +38,10 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pi
       <button
         type="button"
         onClick={() => onSelect(item.slug)}
-        aria-label={expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
+        aria-label={iconOnly ? 'Log out' : expanded ? undefined : badge ? `${item.label}, ${badge} need you` : item.label}
+        title={iconOnly ? 'Log out' : undefined}
         aria-current={active ? 'page' : undefined}
-        title={!hasBackend(item.slug) ? 'No backend yet' : undefined}
-        className={`rail-row relative flex w-full items-center gap-3 overflow-hidden px-[11px] text-sm font-medium transition-colors ${
+                className={`rail-row relative flex ${iconOnly ? 'w-10 justify-center px-0' : 'w-full px-[11px]'} items-center gap-3 overflow-hidden text-sm font-medium transition-colors ${
           dim ? 'opacity-40 hover:opacity-70' : ''
         } ${
           accent
@@ -51,7 +52,7 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pi
         }`}
       >
         <Icon size={18} className="shrink-0" />
-        <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{item.label}</span>
+        {!iconOnly && <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{item.label}</span>}
         {badge && (
           <span className={`shrink-0 rounded-md px-1.5 text-xs font-semibold ${active ? 'bg-white/20' : 'bg-accent/20 text-accent'} ${fade(expanded)}`}>{badge}</span>
         )}
@@ -62,40 +63,110 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pi
   );
 };
 
-const NavList = ({ active, onSelect, expanded, badges, pillId }) => (
-  <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
-    {sidebarGroups.map((group, index) => (
-      <div key={group.title} className="flex flex-col gap-1">
-        {index > 0 && (
-          // Fixed height for both states, so rows don't jump when the title swaps for the divider.
-          <div className="relative mt-1 h-5 shrink-0">
-            <span aria-hidden="true" className={`absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 bg-white/10 ${fade(!expanded)}`} />
-            <p aria-hidden={!expanded} className={`absolute inset-x-0 bottom-0 truncate px-3 text-xs font-medium text-white/40 ${fade(expanded)}`}>
-              {group.title}
-            </p>
-          </div>
-        )}
-        {group.items.map((item) => (
-          <NavButton
-            key={item.slug}
-            item={item}
-            active={active === item.slug || (item.slug === 'board' && active === 'asset')}
-            expanded={expanded}
-            onSelect={onSelect}
-            badge={badges[item.slug]}
-            pillId={pillId}
-          />
-        ))}
-      </div>
-    ))}
-  </nav>
-);
+const GROUPS_KEY = 'nav-groups';
 
-const Footer = ({ expanded, onSelect }) => (
+// Which groups are folded open, remembered on this device. The group of the page you are on is always opened.
+const useGroups = (active) => {
+  const [open, setOpen] = useState(() => {
+    const base = Object.fromEntries(sidebarGroups.map((g) => [g.id, g.defaultOpen]));
+    try {
+      return { ...base, ...JSON.parse(localStorage.getItem(GROUPS_KEY) || '{}') };
+    } catch {
+      return base;
+    }
+  });
+  const save = (next) => {
+    try {
+      localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
+    } catch {
+      // Storage blocked: the folds hold until the page reloads.
+    }
+    return next;
+  };
+  const set = useCallback((id, value) => setOpen((cur) => (cur[id] === value ? cur : save({ ...cur, [id]: value }))), []);
+  useEffect(() => {
+    const id = groupOf(active);
+    if (id) set(id, true);
+  }, [active, set]);
+  return [open, set];
+};
+
+const GroupHeader = ({ group, open, onToggle, expanded, hasActive }) => {
+  const Icon = group.icon;
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`nav-group-${group.id}`}
+        aria-label={expanded ? undefined : `${group.title}, ${group.items.length} screens`}
+        className={`flex h-8 w-full items-center gap-3 rounded-lg px-[11px] text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-white/5 hover:text-white/80 ${hasActive && !open ? 'text-white/80' : 'text-white/40'}`}
+      >
+        <Icon size={16} className="shrink-0" />
+        <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{group.title}</span>
+        <span className={`flex shrink-0 items-center gap-1.5 ${fade(expanded)}`}>
+          {!open && <span className="rounded-md bg-white/10 px-1.5 py-px text-[10px] font-medium normal-case tracking-normal">{group.items.length}</span>}
+          <ChevronDown size={14} className={`transition-transform ${open ? '' : '-rotate-90'}`} />
+        </span>
+      </button>
+      {!expanded && <Tooltip>{`${group.title} (${group.items.length})`}</Tooltip>}
+    </div>
+  );
+};
+
+const NavList = ({ active, onSelect, expanded, badges, pillId, onExpand }) => {
+  const [open, setOpen] = useGroups(active);
+  const row = (item) => (
+    <NavButton key={item.slug} item={item} active={active === item.slug} expanded={expanded} onSelect={onSelect} badge={badges[item.slug]} pillId={pillId} />
+  );
+  return (
+    <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
+      {row(homeItem)}
+      {sidebarGroups.map((group) => {
+        const isOpen = open[group.id];
+        const hasActive = group.items.some((i) => i.slug === active);
+        // In the narrow rail a folded group is one icon. Clicking it widens the rail and opens the group.
+        const toggle = () => {
+          if (!expanded && !isOpen && onExpand) onExpand();
+          setOpen(group.id, expanded ? !isOpen : true);
+        };
+        return (
+          <div key={group.id} className="mt-1 flex flex-col gap-1">
+            <GroupHeader group={group} open={isOpen} onToggle={toggle} expanded={expanded} hasActive={hasActive} />
+            <motion.div
+              id={`nav-group-${group.id}`}
+              initial={false}
+              animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              style={{ overflow: isOpen ? 'visible' : 'hidden' }}
+              inert={!isOpen}
+              className="flex flex-col gap-1"
+            >
+              {group.items.map(row)}
+            </motion.div>
+          </div>
+        );
+      })}
+    </nav>
+  );
+};
+
+const Footer = ({ expanded, onSelect, active }) => (
   <div className="flex flex-col gap-1">
     <NavButton item={{ slug: 'voice', label: 'New campaign', icon: Plus }} expanded={expanded} onSelect={onSelect} accent />
-    <span aria-hidden="true" className="h-1" />
-    <NavButton item={logoutItem} expanded={expanded} onSelect={onSelect} />
+    <div className="mt-1 flex flex-col gap-1">
+      <NavButton item={customersItem} active={active === 'customers'} expanded={expanded} onSelect={onSelect} />
+      <NavButton item={connectionsItem} active={active === 'connections'} expanded={expanded} onSelect={onSelect} />
+    </div>
+    <div className={`mt-1 flex ${expanded ? 'flex-row gap-1' : 'flex-col gap-1'}`}>
+      <div className={expanded ? 'min-w-0 flex-1' : ''}>
+        <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
+      </div>
+      <div className={expanded ? 'shrink-0' : ''}>
+        <NavButton item={{ ...logoutItem, label: expanded ? '' : 'Log out' }} expanded={expanded} onSelect={onSelect} iconOnly={expanded} />
+      </div>
+    </div>
   </div>
 );
 
@@ -154,10 +225,10 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     <RailHeader expanded={expanded} onToggle={onToggle} />
 
     <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" />
+      <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
     </div>
     <div className="mt-3">
-      <Footer expanded={expanded} onSelect={onSelect} />
+      <Footer expanded={expanded} onSelect={onSelect} active={active} />
     </div>
   </motion.aside>
 );
@@ -183,7 +254,7 @@ const Drawer = ({ active, onSelect, onClose, badges }) => (
           <NavList active={active} onSelect={onSelect} expanded badges={badges} pillId="drawer-pill" />
         </div>
         <div className="border-t border-white/10 pt-3">
-          <Footer expanded onSelect={onSelect} />
+          <Footer expanded onSelect={onSelect} active={active} />
         </div>
       </div>
     </motion.aside>

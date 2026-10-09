@@ -4,7 +4,7 @@ import { PURPOSE_RULE, channelLabel, choiceLabels, formatIsoDate, humanize, lang
 import type { Route } from "../lib/route";
 import { useSpeaker } from "../lib/speech";
 import type { Answer, Plan } from "../lib/types";
-import { Badge, Button, Empty, ErrorNote } from "./ui";
+import { Badge, Button, Empty, ErrorNote, Fold } from "./ui";
 
 const PURPOSE: Record<string, string> = { teaser: "Teaser", launch: "Launch", reminder: "Reminder", last_day: "Last day" };
 
@@ -41,8 +41,7 @@ function ScoutPanel({ id }: { id: string }) {
   }
   if (!data) return null;
   return (
-    <section className="plan-section" aria-labelledby="scout-h">
-      <h2 id="scout-h" className="section-title">Timing</h2>
+    <Fold id="plan-scout" title="Timing" className="plan-section" titleClass="section-title" defaultOpen={false}>
       {data.notes.length === 0 ? <p className="muted small">No fixed-date occasion near your dates.</p> : (
         <ul>{data.notes.map((n: any) => <li key={n.name + n.start} className="small" style={{ marginBottom: 6 }}><strong>{n.name}</strong>, {n.start}. {n.note}{n.suits_audience ? "" : " (may not suit your audience)"}</li>)}</ul>
       )}
@@ -59,7 +58,7 @@ function ScoutPanel({ id }: { id: string }) {
           <li key={e.id}>{e.name}, {e.start}{e.end !== e.start ? ` to ${e.end}` : ""} <Button variant="quiet" onClick={() => deleteLocalEvent(e.id).then(load)} aria-label={`Remove ${e.name}`}>Remove</Button></li>
         ))}</ul>
       ) : null}
-    </section>
+    </Fold>
   );
 }
 
@@ -149,8 +148,7 @@ export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) =>
           <Line label="Terms" value={f.terms || ""} quote={src("terms")} />
         </section>
 
-        <section className="plan-section" aria-labelledby="who-h">
-          <h2 id="who-h" className="section-title">Who, where, how</h2>
+        <Fold id="plan-who" title="Who, where, how" className="plan-section" titleClass="section-title" defaultOpen>
           <div className="plan-lines">
             <Line label="Business" value={[plan.business.name, optionLabel("business_type", plan.business.type), plan.business.area].filter(Boolean).join(", ")} quote={src("business_name")} />
             <Line label="Goal" value={plan.goal.label || humanize(plan.goal.value)} quote={byId.get(plan.goal.source_answer_id) || src("goal")} />
@@ -161,12 +159,11 @@ export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) =>
             <Line label="Call to action" value={plan.cta?.value ? `${plan.cta.value}` : ""} quote={byId.get(plan.cta?.source_answer_id || "") || src("cta")} />
             <Line label="Email recipients" value={plan.email_recipients.map((r) => r.name || r.email).join(", ")} quote={src("email_recipients")} />
           </div>
-        </section>
+        </Fold>
 
         <ScoutPanel id={id} />
 
-        <section className="plan-section" aria-labelledby="sched-h">
-          <h2 id="sched-h" className="section-title">Schedule</h2>
+        <Fold id="plan-schedule" title="Schedule" className="plan-section" titleClass="section-title" defaultOpen>
           {days.length === 0 ? (
             <Empty title="No dated posts">The schedule is built from your start date, end date and offer days. None were set.</Empty>
           ) : (
@@ -190,7 +187,7 @@ export function PlanView({ id, go, onBusiness }: { id: string; go: (r: Route) =>
               ))}
             </ol>
           )}
-        </section>
+        </Fold>
       </div>
 
       <aside className="lock">

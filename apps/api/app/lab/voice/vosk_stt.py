@@ -45,7 +45,6 @@ def available_languages() -> dict:
 
 
 def _model(lang: str):
-    from vosk import Model  # imported lazily: the app starts without vosk installed
     if lang in ("kn", "hinglish", "hi-en", "kn-en"):
         raise Unsupported(f"Vosk has no model for '{lang}'. Use another STT provider or type the brief.")
     names = LANG_MODELS.get(lang)
@@ -54,6 +53,7 @@ def _model(lang: str):
     for n in names:
         path = MODELS_DIR / n
         if path.exists():
+            from vosk import Model  # imported lazily: the app starts without vosk installed
             with _lock:
                 if n not in _cache:
                     _cache[n] = Model(str(path))
@@ -85,8 +85,8 @@ def _to_16k_mono(wav_bytes: bytes) -> bytes:
 
 def transcribe(wav_bytes: bytes, lang: str = "en") -> dict:
     """Returns {text, segments:[{start,end,text,conf}], lang, provider, model, latency_ms}."""
-    from vosk import KaldiRecognizer
     model, name = _model(lang)
+    from vosk import KaldiRecognizer
     pcm = _to_16k_mono(wav_bytes)
     t0 = time.monotonic()
     rec = KaldiRecognizer(model, 16000)

@@ -1,0 +1,48 @@
+{
+  "retrieved": "2026-10-09",
+  "about": "What this app uses to advise on Instagram posts. Each rule says where it came from and how much to trust it. Instagram does not publish its ranking formula, so most numbers below come from third-party studies and articles that quote Instagram's head, Adam Mosseri. Re-check before relying on any of it.",
+  "sources": [
+    {"id": "ig-ranking", "type": "official", "title": "Instagram Ranking Explained (Instagram)", "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained"},
+    {"id": "buffer-times", "type": "study", "title": "Best Time to Post on Instagram in 2026: data from 9.6 million posts (Buffer)", "url": "https://buffer.com/resources/when-is-the-best-time-to-post-on-instagram"},
+    {"id": "posteverywhere", "type": "secondary", "title": "How the Instagram Algorithm Works in 2026 (PostEverywhere, 23 Mar 2026)", "url": "https://posteverywhere.ai/blog/how-the-instagram-algorithm-works"},
+    {"id": "postiz-tags", "type": "secondary", "title": "How many hashtags for Instagram: 2026 strategy guide (Postiz)", "url": "https://postiz.com/blog/how-many-hashtags-for-instagram"},
+    {"id": "wscube-india", "type": "secondary", "title": "Best Time for Instagram Post in India: by day and industry, 2026 (WSCube Tech)", "url": "https://www.wscubetech.com/blog/instagram-post-time/"}
+  ],
+  "rules": [
+    {"id": "signals-feed", "kind": "signal", "source": "ig-ranking", "confidence": "high",
+     "claim": "Feed ranking looks at your activity, information about the post, information about the poster, and your history with that poster. Stories lean on viewing history and closeness. Explore leans on likes, saves and shares. Reels aim at what people find worth their time.",
+     "use": "Posts reach existing followers through their relationship with you, so replies and DMs to your own audience matter."},
+    {"id": "signals-top3", "kind": "signal", "source": "posteverywhere", "confidence": "medium",
+     "claim": "Reported as confirmed by Adam Mosseri: watch time, sends per reach (shares in direct messages) and likes per reach are the three most important signals. Sends are reported to count 3 to 5 times more than likes for reaching new people.",
+     "use": "Write copy people would send to a friend (a clear offer, a place, a day). Ask for a share in the call to action."},
+    {"id": "hook", "kind": "format", "source": "posteverywhere", "confidence": "medium",
+     "claim": "The first 3 seconds of a Reel and the first line of a caption decide whether people stay. Captions are cut off after about 125 characters in the feed.",
+     "use": "Put the item and the offer in the first 125 characters."},
+    {"id": "keywords", "kind": "caption", "source": "posteverywhere", "confidence": "low",
+     "claim": "Instagram search and recommendations read the caption text. Descriptive keywords (the item, the place) are reported to help more than a pile of hashtags. This is an article's analysis, not an Instagram statement.",
+     "use": "Name the item and the area in plain words in the caption."},
+    {"id": "hashtags-few", "kind": "hashtag", "source": "postiz-tags", "confidence": "medium",
+     "claim": "Reported guidance from Adam Mosseri: use 3 to 5 relevant hashtags, and hashtags are 'not a huge lever' for reach. Instagram allows up to 30 on a post. Some studies suggest more tags for very small accounts, which conflicts with this; the app follows the smaller number.",
+     "use": "Suggest at most 5 hashtags, all relevant, and say hashtags are a small lever."},
+    {"id": "hashtags-mix", "kind": "hashtag", "source": "postiz-tags", "confidence": "low",
+     "claim": "A mix of one brand tag, one or two tags for the item or niche, and one local tag is the common advice in strategy guides.",
+     "use": "Build the set as brand, item, local, community."},
+    {"id": "originality", "kind": "format", "source": "posteverywhere", "confidence": "low",
+     "claim": "Reposted or near-duplicate content is reported to be shown less. Original photos and videos are preferred.",
+     "use": "Use your own photos. Do not reuse the same poster across many posts."},
+    {"id": "consistency", "kind": "timing", "source": "posteverywhere", "confidence": "low",
+     "claim": "A steady rhythm works better than bursts, and the first 24 to 48 hours decide most of a post's reach.",
+     "use": "Space posts out and be ready to reply in the first day."},
+    {"id": "times-buffer", "kind": "timing", "source": "buffer-times", "confidence": "medium",
+     "claim": "Across 9.6 million posts from 200,000 accounts (Jan 2024 to Dec 2025), the best slots were Thursday 9 am, Wednesday 12 pm and Wednesday 6 pm, in the viewer's own time zone. Wednesday was best and Friday and Saturday weakest. The authors say timing varies by industry, 'timing can't save a weak post', and to use this as a starting point then lean on your own data.",
+     "use": "A general starting point only. Your own posts and your audience should override it."},
+    {"id": "times-india", "kind": "timing", "source": "wscube-india", "confidence": "low",
+     "claim": "For audiences in India the commonly quoted windows are 11 am to 1 pm and 7 pm to 9 pm IST (lunch break and after work), with Tuesday to Thursday strongest.",
+     "use": "A general prior for India when there is nothing better."}
+  ],
+  "general_windows": {
+    "weekday_weight": {"Mon": 0.8, "Tue": 1.0, "Wed": 1.0, "Thu": 1.0, "Fri": 0.7, "Sat": 0.7, "Sun": 0.8},
+    "hour_weight": {"9": 0.7, "11": 0.8, "12": 1.0, "13": 0.8, "18": 0.9, "19": 1.0, "20": 1.0, "21": 0.8},
+    "rules": ["times-buffer", "times-india"]
+  }
+}

@@ -146,3 +146,17 @@ export const launchIdeas = (body: unknown) => post<any>("/launch/ideas", body);
 export const launchNames = (idea: string, city: string) => post<any>("/launch/names", { idea, city });
 export const launchHandoff = (body: unknown) => post<any>("/launch/handoff", body);
 export const runEvals = () => api<any>("/evals");
+
+// Sending: WhatsApp click-to-chat and YouTube Shorts
+export const prepareWhatsApp = (assetId: string, numbers: string[], customers?: { language?: string; tag?: string }) =>
+  post<any>(`/assets/${assetId}/whatsapp`, customers ? { numbers, customers } : { numbers });
+export const customerRecipients = (channel: "whatsapp" | "email") => api<{ count: number; people: { id: string; name: string; language: string | null; tags: string[] }[] }>(`/customers/recipients?channel=${channel}`);
+export const sendEmailToCustomers = (assetId: string) => post<{ sent: number; failed: unknown[] }>(`/assets/${assetId}/send-email`, { customers: {} });
+export const uploadShort = (assetId: string, privacy: "private" | "unlisted" | "public" = "private") => post<any>(`/assets/${assetId}/youtube`, { privacy });
+export const getConnections = () => api<{ connections: any[] }>("/connections");
+
+export const getAdvice = (assetId: string, body: { brand?: string; area?: string; caption?: string }) => post<any>(`/assets/${assetId}/advice`, body);
+export const scheduleAsset = (assetId: string, body: { kind: "email" | "reminder"; at: string; note?: string; customers?: Record<string, unknown> }) => post<any>(`/assets/${assetId}/schedule`, body);
+export const listSchedule = () => api<{ items: any[]; counts: Record<string, number> }>("/schedule");
+export const cancelScheduled = (id: string) => api<any>(`/schedule/${id}`, { method: "DELETE" });
+export const markReminderDone = (id: string) => post<any>(`/schedule/${id}/done`);

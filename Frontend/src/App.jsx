@@ -7,6 +7,8 @@ import RightPanel from './components/dashboard/RightPanel';
 import Home from './pages/Home';
 import Agent from './pages/Agent';
 import Replies from './pages/Replies';
+import Insights from './pages/Insights';
+import Connections from './pages/Connections';
 import Talk from './pages/Talk';
 import Plan from './pages/Plan';
 import Campaign from './pages/Campaign';
@@ -32,6 +34,8 @@ const SCREENS = {
   home: Home,
   agent: Agent,
   replies: Replies,
+  insights: Insights,
+  connections: Connections,
   voice: Talk,
   plan: Plan,
   planner: BudgetPlanner,

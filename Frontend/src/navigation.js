@@ -21,11 +21,19 @@ import {
   Palette,
   Globe,
   Clapperboard,
+  Wrench,
+  Hourglass,
+  Compass,
+  Megaphone,
+  ChartSpline,
+  Plug,
 } from 'lucide-react';
 
 // Screens from docs/screen-flow.md. `slug` is the URL hash (#/board).
 export const pages = {
   home: { slug: 'home', screen: 'S2', label: 'Home', icon: House, description: 'Your campaigns and what needs you next.' },
+  insights: { slug: 'insights', screen: 'S22', label: 'Insights', icon: ChartSpline, description: 'How the campaigns turned out: reach, posts, redemptions and the workflow. Sample data for now.' },
+  connections: { slug: 'connections', screen: 'S23', label: 'Connections', icon: Plug, description: 'Link Instagram and YouTube, and see how WhatsApp sends. Facebook is not built yet.' },
   replies: { slug: 'replies', screen: 'S21', label: 'Replies', icon: MessageCircleReply, description: 'Paste a customer message. It answers only from your locked facts and hands the rest to you.' },
   agent: { slug: 'agent', screen: 'S20', label: 'Agent', icon: Bot, description: 'Describe your idea once. The agent plans the work, does what it can and stops at the steps that need you.' },
   voice: { slug: 'voice', screen: 'S3', label: 'Talk', icon: Mic, description: 'Answer a few questions by voice or tap. Every answer is kept with your own words.' },
@@ -35,7 +43,7 @@ export const pages = {
   planner: { slug: 'planner', screen: 'S5', label: 'Budget Planner', icon: Scale, description: 'Pick what you want. See what fits your time, money and review effort.' },
   change: { slug: 'change', screen: 'S10', label: 'Change by Voice', icon: MessageSquareDiff, description: 'Say a change. See exactly which assets it touches before it runs.' },
   log: { slug: 'log', screen: 'S11', label: 'Change Log', icon: History, description: 'What changed, who changed it, why, and what is still pending.' },
-  customers: { slug: 'customers', screen: 'S12', label: 'Customers & Send', icon: Users, description: 'Consent per channel, language per customer, and a simulated send.' },
+  customers: { slug: 'customers', screen: 'S12', label: 'Customers', icon: Users, description: 'Your own list of people, with who agreed to hear from you. Campaigns only reach people marked as agreed.' },
   brand: { slug: 'brand', screen: 'S1', label: 'Brand & Data', icon: Store, description: 'Menu, photos, sample posts, customers and your brand rules. Set once, used in every campaign.' },
   settings: { slug: 'settings', screen: 'S13', label: 'Settings', icon: Settings, description: 'Your own Agnes keys, offline voice, the planner numbers and the guardrail checks.' },
   studio: { slug: 'studio', screen: 'S15', label: 'Studio', icon: Sparkles, description: 'Posts, posters, taglines, a website, a reel. Pick what you want made.' },
@@ -46,13 +54,22 @@ export const pages = {
   bakeoff: { slug: 'bakeoff', screen: 'S14', label: 'Bake-off', icon: FlaskConical, description: 'Team tool: score speech-to-text and read-back voices per language.' },
 };
 
+// The rail shows Home, then a few groups the owner can fold away. A group holding the page you are on always opens.
+// Screens with no backend yet live together under "Coming soon", folded by default, so they do not crowd the real ones.
+// Settings and Log out sit in the footer.
+export const homeItem = pages.home;
 export const sidebarGroups = [
-  { title: 'Overview', items: [pages.home] },
-  { title: 'Studio', items: [pages.studio, pages.launch, pages.identity, pages.website, pages.video] },
-  { title: 'Campaign', items: [pages.agent, pages.voice, pages.plan, pages.planner, pages.campaign, pages.dashboard] },
-  { title: 'Manage', items: [pages.replies, pages.change, pages.log, pages.customers] },
-  { title: 'Setup', items: [pages.brand, pages.settings, pages.bakeoff] },
+  { id: 'start', title: 'Start', icon: Compass, defaultOpen: true, items: [pages.agent, pages.voice, pages.launch] },
+  { id: 'campaign', title: 'Campaign', icon: Megaphone, defaultOpen: true, items: [pages.plan, pages.campaign, pages.dashboard, pages.insights] },
+  { id: 'tools', title: 'Tools', icon: Wrench, defaultOpen: false, items: [pages.planner, pages.replies, pages.change, pages.log] },
+  { id: 'soon', title: 'Coming soon', icon: Hourglass, defaultOpen: false, items: [pages.studio, pages.identity, pages.website, pages.video, pages.brand, pages.bakeoff] },
 ];
+
+export const groupOf = (slug) => sidebarGroups.find((g) => g.items.some((i) => i.slug === slug))?.id;
+
+export const settingsItem = pages.settings;
+export const connectionsItem = pages.connections;
+export const customersItem = pages.customers;
 
 export const logoutItem = { slug: 'logout', label: 'Log out', icon: LogOut };
 

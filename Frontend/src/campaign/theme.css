@@ -63,3 +63,13 @@
 .cv-bar .top-biz { font-size: 14px; color: var(--muted); font-weight: 600; }
 .cv.cv-portal { padding: 0; background: transparent; border: 0; border-radius: 0; }
 .cv .token, .cv .avatar { color: var(--on-accent); }
+
+/* Folding sections */
+.cv .fold-btn { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 44px; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }
+.cv .fold-btn:hover { color: var(--accent-deep, var(--ink)); }
+.cv .fold-btn:focus-visible { outline: 3px solid var(--approved); outline-offset: 3px; }
+.cv .fold-chev { flex: none; transition: transform 160ms ease-out; transform: rotate(-90deg); opacity: 0.6; }
+.cv .fold-open .fold-chev { transform: rotate(0deg); }
+.cv .fold:not(.fold-open) .panel-title, .cv .fold:not(.fold-open) .section-title { margin-bottom: 0; }
+.cv .fold-body { margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .cv .fold-chev { transition: none; } }

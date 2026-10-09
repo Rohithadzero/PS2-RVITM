@@ -6,7 +6,7 @@ import os
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import agent, auth, autopilot, changes, dashboard, evals, extras, forecast, launch, learn, panel, reply, scout, interview, media, outreach, persona, plan
+from app import advisor, agent, auth, scheduler, autopilot, changes, connections, customers, dashboard, evals, extras, forecast, launch, learn, panel, reply, scout, whatsapp, youtube, interview, media, outreach, persona, plan
 from app.agnes import Agnes
 from app.config import Settings, load_settings
 from app.db import Database
@@ -18,7 +18,7 @@ from app.worker import run_brief_job, start_jobs
 
 api = APIRouter()
 # Feature modules. Each owns its tables (ensure_schema) and its routes (router).
-MODULES = (interview, plan, changes, media, outreach, dashboard, persona, extras, forecast, agent, learn, reply, panel, autopilot, launch, scout, evals, auth)
+MODULES = (interview, plan, changes, media, outreach, dashboard, persona, extras, forecast, agent, learn, reply, panel, autopilot, launch, scout, evals, auth, connections, whatsapp, youtube, customers, advisor, scheduler)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -27,7 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings.assets_dir.mkdir(parents=True, exist_ok=True)
     db = Database(settings.database_path)
     db.migrate()
-    app = FastAPI(title="Campaign API", version="0.1.0")
+    app = FastAPI(title="Campaign API", version="0.1.0", lifespan=scheduler.lifespan)
     app.state.settings = settings
     app.state.db = db
     app.state.buckets = Buckets(settings)

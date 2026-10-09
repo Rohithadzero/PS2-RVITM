@@ -164,6 +164,9 @@ export type ScheduleRow = {
   rule: string;
 };
 
+import type { OfferWindow } from "./window";
+export type { OfferWindow };
+
 export type Plan = {
   campaign_id: string;
   status: "draft" | "locked";
@@ -178,6 +181,7 @@ export type Plan = {
   tone: string;
   cta: PlanCta;
   email_recipients: { name: string; email: string }[];
+  offer_window?: OfferWindow;
   schedule: ScheduleRow[];
   answers: Answer[];
 };

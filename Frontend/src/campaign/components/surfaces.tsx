@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { drawOverlay, loadImage } from "../lib/compose";
 import type { OverlayKind } from "../lib/compose";
 import { mediaUrl } from "../lib/api";
-import type { Asset, AssetState, MediaEntry, OfferFacts } from "../lib/types";
+import type { Asset, AssetState, MediaEntry, OfferFacts, OfferWindow } from "../lib/types";
 import { Button } from "./ui";
 
 export const OVERLAY_KIND: Record<string, OverlayKind | undefined> = {
@@ -27,11 +27,12 @@ export function mediaPhase(entry: MediaEntry | null): "none" | "pending" | "fail
   return entry.url ? "ready" : "pending";
 }
 
-function OverlayCanvas({ canvasRef, kind, asset, facts, business, imageUrl }: {
+function OverlayCanvas({ canvasRef, kind, asset, facts, window, business, imageUrl }: {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   kind: OverlayKind;
   asset: Asset;
   facts: OfferFacts;
+  window?: OfferWindow | null;
   business: string;
   imageUrl: string | null;
 }) {
@@ -44,14 +45,14 @@ function OverlayCanvas({ canvasRef, kind, asset, facts, business, imageUrl }: {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const paint = (img: HTMLImageElement | null) => {
-      if (alive && canvasRef.current) drawOverlay(canvasRef.current, img, { kind, headline, subline, business, facts, lang: asset.lang });
+      if (alive && canvasRef.current) drawOverlay(canvasRef.current, img, { kind, headline, subline, business, facts, window, lang: asset.lang });
     };
     paint(null);
     if (!imageUrl) return;
     setProblem("");
     loadImage(imageUrl).then(paint).catch((e: Error) => alive && setProblem(e.message));
     return () => { alive = false; };
-  }, [canvasRef, kind, headline, subline, business, facts, asset.lang, imageUrl]);
+  }, [canvasRef, kind, headline, subline, business, facts, window, asset.lang, imageUrl]);
 
   return (
     <>
@@ -97,10 +98,11 @@ function Paragraphs({ text, lang }: { text: string; lang: string }) {
   return <>{text.split(/\n{2,}/).map((p, i) => <p key={i} lang={lang}>{p}</p>)}</>;
 }
 
-export function AssetSurface({ asset, state, facts, business, area, recipients, canvasRef, onMakeImage, imageBusy }: {
+export function AssetSurface({ asset, state, facts, window, business, area, recipients, canvasRef, onMakeImage, imageBusy }: {
   asset: Asset;
   state: AssetState | undefined;
   facts: OfferFacts;
+  window?: OfferWindow | null;
   business: string;
   area: string;
   recipients: number;
@@ -147,7 +149,7 @@ export function AssetSurface({ asset, state, facts, business, area, recipients, 
     return (
       <div className="surf surf-ig">
         <div className="ig-head"><span className="avatar" aria-hidden="true">{business.slice(0, 1).toUpperCase()}</span><div><strong>{business}</strong><span className="small muted">{area}</span></div></div>
-        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="post" asset={asset} facts={facts} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="4 / 5" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
+        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="post" asset={asset} facts={facts} window={window} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="4 / 5" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
         <div className="ig-caption" lang={asset.lang}>
           <p><strong>{business}</strong> {text}</p>
           {x.hashtags?.length ? <p className="tags">{x.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}</p> : null}
@@ -160,7 +162,7 @@ export function AssetSurface({ asset, state, facts, business, area, recipients, 
   if (ch === "instagram_story" || ch === "story") {
     return (
       <div className="surf surf-story">
-        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="story" asset={asset} facts={facts} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="9 / 16" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
+        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="story" asset={asset} facts={facts} window={window} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="9 / 16" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
         {!imageUrl ? <p className="story-line" lang={asset.lang}><strong>{x.headline}</strong> {text}</p> : null}
       </div>
     );
@@ -169,7 +171,7 @@ export function AssetSurface({ asset, state, facts, business, area, recipients, 
   if (ch === "poster") {
     return (
       <div className="surf surf-poster">
-        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="poster" asset={asset} facts={facts} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="3 / 4" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
+        {imageUrl ? <OverlayCanvas canvasRef={canvasRef} kind="poster" asset={asset} facts={facts} window={window} business={business} imageUrl={imageUrl} /> : <MediaSlot ratio="3 / 4" phase={phase === "ready" ? "none" : phase} onMake={onMakeImage} busy={imageBusy} />}
         {!imageUrl ? <p className="story-line" lang={asset.lang}><strong>{x.headline}</strong> {x.subline}</p> : null}
       </div>
     );

@@ -2,10 +2,11 @@
 import pytest
 
 LOCAL_ONLY = ("REQUIRE_LOGIN", "ALLOWED_EMAILS", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "FRONTEND_URL", "SESSION_SECRET",
-              "CORS_ORIGINS", "GOOGLE_REDIRECT_URI", "COOKIE_SECURE", "TEXT_RPM", "IMAGE_RPM", "VIDEO_RPM", "TOKEN_PLAN_KEY")
+              "CORS_ORIGINS", "GOOGLE_REDIRECT_URI", "COOKIE_SECURE", "INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET", "INSTAGRAM_REDIRECT_URI", "YOUTUBE_REDIRECT_URI", "SMTP_HOST", "PUBLIC_BASE_URL", "TEXT_RPM", "IMAGE_RPM", "VIDEO_RPM", "TOKEN_PLAN_KEY")
 
 
 @pytest.fixture(autouse=True)
 def isolate_environment(monkeypatch):
     for name in LOCAL_ONLY:
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SCHEDULER", "off")  # the background loop must never send anything during a test

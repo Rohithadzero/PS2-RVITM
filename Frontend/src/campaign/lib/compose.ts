@@ -1,5 +1,6 @@
 import { formatIsoDate, offerHeadline } from "./format";
 import type { OfferFacts } from "./types";
+import { timingLine, type OfferWindow } from "./window";
 
 export type OverlayKind = "poster" | "post" | "story";
 
@@ -15,6 +16,7 @@ export type OverlaySpec = {
   subline: string;
   business: string;
   facts: OfferFacts;
+  window?: OfferWindow | null;
   lang: string;
 };
 
@@ -70,12 +72,14 @@ export function dateLine(dates: string[], lang: string) {
   return `${fmt(dates[0])} - ${fmt(dates[dates.length - 1])}`;
 }
 
-export function factLines(facts: OfferFacts, lang: string) {
+export function factLines(facts: OfferFacts, lang: string, window?: OfferWindow | null) {
   return {
     offer: offerHeadline(facts).toUpperCase(),
     item: facts.item,
     dates: dateLine(facts.dates, lang),
-    timings: facts.timings || "",
+    // The timing row comes from the parsed offer window, in the poster's language. If the times could not be parsed it keeps
+    // the owner's own words rather than guessing.
+    timings: timingLine(window, lang) || facts.timings || "",
     terms: facts.terms || "",
   };
 }
@@ -135,7 +139,7 @@ export function drawOverlay(canvas: HTMLCanvasElement, image: HTMLImageElement |
   ctx.fillStyle = INK;
   ctx.fillRect(0, imgH, w, 6);
 
-  const f = factLines(spec.facts, spec.lang);
+  const f = factLines(spec.facts, spec.lang, spec.window);
   let y = imgH + 40;
   ctx.textBaseline = "top";
   if (f.offer) {

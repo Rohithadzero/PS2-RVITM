@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ApiError, approveAsset, createLink, makeVideo, generate, getAssetState, getBoard, getPlan, logOutreach, makeImage,
-  mediaUrl, saveCopy, sendEmail, uploadRender,
-} from "../lib/api";
+import { ApiError, approveAsset, createLink, makeVideo, generate, getAssetState, getBoard, getPlan, logOutreach, makeImage, mediaUrl, saveCopy, sendEmail, uploadRender, prepareWhatsApp, uploadShort, customerRecipients, sendEmailToCustomers } from "../lib/api";
 import { canvasBlob } from "../lib/compose";
 import { CHANNEL_ORDER, MEANING_LABEL, channelLabel, langName } from "../lib/format";
 import type { Route } from "../lib/route";
 import type { Asset, AssetState, AssetStateMap, Board, OutreachAction, Plan } from "../lib/types";
+import { PostAdvice, SchedulePanel } from "./advice";
 import { ChangeByVoice } from "./change";
 import { AssetSurface, IMAGE_CHANNELS, OVERLAY_KIND, mediaPhase, pickBase } from "./surfaces";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
@@ -70,6 +68,13 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
   const [error, setError] = useState("");
   const [motion, setMotion] = useState(false);
   const [aspect, setAspect] = useState<"16:9" | "9:16">("16:9");
+  const [waOpen, setWaOpen] = useState(false);
+  const [waNumbers, setWaNumbers] = useState("");
+  const [wa, setWa] = useState<any>(null);
+  const [waOpened, setWaOpened] = useState<Record<number, boolean>>({});
+  const [ytPrivacy, setYtPrivacy] = useState<"private" | "unlisted" | "public">("private");
+  const [yt, setYt] = useState<any>(null);
+  const [pickedTime, setPickedTime] = useState("");
   const view = statusView(asset, openJob, failed);
   const approved = asset.status === "approved";
   const link = state?.link?.url;
@@ -105,10 +110,58 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
     setNote("Copied to the clipboard.");
   });
 
-  const whatsapp = () => run("wa", async () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(distributableText(asset, await ensureLink()))}`, "_blank", "noopener");
-    await log("shared_whatsapp");
-    setNote("WhatsApp opened with the message.");
+  // The server builds the message from the approved asset and checks the numbers; the browser only opens the chats.
+  const prepareChats = () => run("wa", async () => {
+    const numbers = waNumbers.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
+    setWa(await prepareWhatsApp(asset.id, numbers));
+    setWaOpened({});
+    onChanged();
+  });
+
+  // window.open runs straight from the click, so browsers do not block it. It is counted only when the chat really opens.
+  const openChat = (url: string, id: number | "any") => {
+    // Not "noopener" in the features string: that makes window.open return null even when it worked, so a blocked pop-up could not
+    // be told apart from an open one. The opener link is cut by hand instead.
+    const w = window.open(url, "_blank");
+    if (!w) { setError("Your browser blocked the WhatsApp window. Allow pop-ups for this page and press the button again."); return; }
+    try { w.opener = null; } catch { /* cross-origin already */ }
+    setError("");
+    if (id !== "any") setWaOpened((cur) => ({ ...cur, [id]: true }));
+    void log("shared_whatsapp");
+  };
+
+  const useCustomers = () => run("wa", async () => {
+    const list = await customerRecipients("whatsapp");
+    if (!list.count) { setNote("No customer has agreed to WhatsApp yet. Add people, and tick their consent, on the Customers screen."); return; }
+    setWa(await prepareWhatsApp(asset.id, [], {}));
+    setWaOpened({});
+    onChanged();
+  });
+
+  const emailCustomers = () => run("emailc", async () => {
+    const list = await customerRecipients("email");
+    if (!list.count) { setNote("No customer has agreed to email yet. Add people, and tick their consent, on the Customers screen."); return; }
+    if (!window.confirm(`Send this email to ${list.count} customer${list.count === 1 ? "" : "s"} who agreed to email?`)) return;
+    await ensureLink();
+    try {
+      const res = await sendEmailToCustomers(asset.id);
+      setNote(`Sent to ${res.sent}${res.failed?.length ? `, ${res.failed.length} failed` : ""}.`);
+      onChanged();
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "smtp_not_configured") { setNote("Email sending is not set up on the server (SMTP). Nothing was sent."); return; }
+      throw e;
+    }
+  });
+
+  const postShort = () => run("yt", async () => {
+    try {
+      const res = await uploadShort(asset.id, ytPrivacy);
+      setYt(res);
+      onChanged();
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "not_connected") { setYt({ connect: true }); return; }
+      throw e;
+    }
   });
 
   const email = () => run("email", async () => {
@@ -171,7 +224,7 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
   });
 
   const counts: [string, number][] = out
-    ? ([["copied", out.copied], ["shared on WhatsApp", out.shared_whatsapp], ["downloaded", out.downloaded], ["posted", out.posted_manually], ["emailed", out.email_sent], ["clicks", out.clicks], ["opens", out.opens]] as [string, number][]).filter(([, n]) => n > 0)
+    ? ([["copied", out.copied], ["opened in WhatsApp", out.shared_whatsapp], ["downloaded", out.downloaded], ["posted", out.posted_manually], ["emailed", out.email_sent], ["clicks", out.clicks], ["opens", out.opens]] as [string, number][]).filter(([, n]) => n > 0)
     : [];
 
   return (
@@ -186,6 +239,7 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
       <AssetSurface
         asset={asset}
         state={state}
+        window={plan?.offer_window}
         facts={plan?.offer_facts || ({ item: "", discount_percent: null, price_amount: null, currency: null, dates: [], timings: null, terms: null, audiences: [], languages: [], channels: [] })}
         business={business}
         area={plan?.business.area || ""}
@@ -269,15 +323,64 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
           <span className="label">Send it out</span>
           <div className="row wrap">
             <Button onClick={copy} disabled={Boolean(busy)}>Copy</Button>
-            <Button onClick={whatsapp} disabled={Boolean(busy)}>Share on WhatsApp</Button>
+            <Button onClick={() => setWaOpen((v) => !v)} aria-expanded={waOpen} disabled={Boolean(busy)}>Send on WhatsApp</Button>
             {emailCard ? <Button onClick={email} disabled={Boolean(busy)}>{busy === "email" ? "Sending" : "Send email"}</Button> : null}
+            {emailCard ? <Button onClick={emailCustomers} disabled={Boolean(busy)}>{busy === "emailc" ? "Sending" : "Email my customers"}</Button> : null}
             {hasImage && mediaPhase(base) === "ready" ? <Button onClick={downloadPng} disabled={Boolean(busy)}>Download PNG</Button> : null}
             {!emailCard ? <Button onClick={posted} disabled={Boolean(busy)}>Mark as posted</Button> : null}
           </div>
+          {waOpen ? (
+            <div className="wa-panel" style={{ display: "grid", gap: 8, marginTop: 8 }}>
+              <p className="muted small">Opens your own WhatsApp with the message ready, one chat at a time. You press send. Only message people who agreed to hear from you.</p>
+              <textarea className="input" rows={3} value={waNumbers} onChange={(e) => setWaNumbers(e.target.value)} aria-label="Phone numbers, one per line" placeholder={"98450 12345\n+91 99000 11122"} />
+              <div className="row wrap">
+                <Button variant="primary" onClick={prepareChats} disabled={Boolean(busy) || !waNumbers.trim()}>{busy === "wa" ? "Checking" : "Prepare chats"}</Button>
+                <Button onClick={useCustomers} disabled={Boolean(busy)}>Use my customers who agreed</Button>
+                <Button onClick={async () => { const r = wa ?? (await prepareWhatsApp(asset.id, [])); setWa(r); openChat(r.chat_url, "any"); }} disabled={Boolean(busy)}>Open WhatsApp and pick a chat</Button>
+              </div>
+              {wa ? (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {wa.has_link && !wa.link_reachable ? <p className="note" role="alert">The link in this message points at this computer, so customers cannot open it. Set PUBLIC_BASE_URL on the server to a public address first.</p> : null}
+                  {!wa.has_link ? <p className="muted small">The plan has no call to action, so this message goes without a link.</p> : null}
+                  {wa.image_note ? <p className="muted small">{wa.image_note}</p> : null}
+                  {wa.duplicates_dropped ? <p className="muted small">{wa.duplicates_dropped} repeated number{wa.duplicates_dropped === 1 ? "" : "s"} left out.</p> : null}
+                  <ul style={{ display: "grid", gap: 4 }}>
+                    {wa.recipients.map((r: any) => (
+                      <li key={r.id} className="row" style={{ justifyContent: "space-between", gap: 8 }}>
+                        <span className="small">{r.number}{r.valid ? "" : ` (${r.reason})`}</span>
+                        {r.valid ? <Button onClick={() => openChat(r.wa_url, r.id)}>{waOpened[r.id] ? "Opened, open again" : "Open chat"}</Button> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {asset.channel === "reel" ? (
+            <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+              <div className="row wrap">
+                <select className="input select" value={ytPrivacy} onChange={(e) => setYtPrivacy(e.target.value as "private" | "unlisted" | "public")} aria-label="YouTube visibility">
+                  <option value="private">Private (recommended)</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="public">Public</option>
+                </select>
+                <Button onClick={postShort} disabled={Boolean(busy)}>{busy === "yt" ? "Uploading" : "Post as a YouTube Short"}</Button>
+              </div>
+              {yt?.connect ? <p className="note" role="status">YouTube is not connected yet. <a href="#/connections">Connect it on the Connections screen.</a></p> : null}
+              {yt?.video_id ? (
+                <p className="note" role="status">
+                  Uploaded: <a href={yt.studio_url} target="_blank" rel="noopener noreferrer">open in YouTube Studio</a>. {yt.locked_private ? "You asked for " + yt.privacy_requested + ", but YouTube kept it private because this app has not been audited by Google. " : ""}{yt.note}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <SchedulePanel asset={asset} picked={pickedTime} onChanged={onChanged} />
         </div>
       ) : written && asset.status !== "blocked" ? (
         <p className="muted small">Approve to unlock copy, share and download.</p>
       ) : null}
+
+      {written && asset.status !== "blocked" && !emailCard ? <PostAdvice asset={asset} plan={plan} onPickTime={setPickedTime} /> : null}
 
       {counts.length ? <p className="counts mono">{counts.map(([k, n]) => `${n} ${k}`).join(" / ")}</p> : null}
       {note ? <p className="note" role="status">{note}</p> : null}

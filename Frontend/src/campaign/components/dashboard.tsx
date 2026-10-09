@@ -4,7 +4,7 @@ import { channelLabel, humanize, langName, prettyText, when } from "../lib/forma
 import type { Route } from "../lib/route";
 import type { Forecast } from "../lib/types";
 import type { Dashboard } from "../lib/types";
-import { Badge, Button, Empty, ErrorNote } from "./ui";
+import { Badge, Button, Empty, ErrorNote, Fold } from "./ui";
 
 const HOUR = 3600_000;
 
@@ -417,13 +417,12 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
       </section>
 
       <div className="dash-grid">
-        <section className="panel" aria-labelledby="fn-h"><h2 id="fn-h" className="panel-title">Funnel</h2><Funnel rows={data.funnel} /></section>
-        <section className="panel" aria-labelledby="ck-h"><h2 id="ck-h" className="panel-title">Clicks over time</h2><ClicksChart series={data.clicks_series} /></section>
-        <section className="panel" aria-labelledby="bc-h"><h2 id="bc-h" className="panel-title">By channel</h2><Breakdown kind="channel" rows={data.by_channel as unknown as Row[]} /></section>
-        <section className="panel" aria-labelledby="bl-h"><h2 id="bl-h" className="panel-title">By language</h2><Breakdown kind="lang" rows={data.by_language as unknown as Row[]} /></section>
+        <Fold id="dash-fn" title="Funnel" className="panel" defaultOpen={true}><Funnel rows={data.funnel} /></Fold>
+        <Fold id="dash-ck" title="Clicks over time" className="panel" defaultOpen={true}><ClicksChart series={data.clicks_series} /></Fold>
+        <Fold id="dash-bc" title="By channel" className="panel" defaultOpen={false}><Breakdown kind="channel" rows={data.by_channel as unknown as Row[]} /></Fold>
+        <Fold id="dash-bl" title="By language" className="panel" defaultOpen={false}><Breakdown kind="lang" rows={data.by_language as unknown as Row[]} /></Fold>
 
-        <section className="panel" aria-labelledby="ac-h">
-          <h2 id="ac-h" className="panel-title">Live activity</h2>
+        <Fold id="dash-ac" title="Live activity" className="panel" defaultOpen={false}>
           {data.activity.length === 0 ? <Empty title="No activity yet">Approvals, sends, clicks and opens show up here as they happen.</Empty> : (
             <ul className="feed">
               {data.activity.map((a, i) => (
@@ -435,34 +434,29 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
               ))}
             </ul>
           )}
-        </section>
+        </Fold>
 
-        <section className="panel" aria-labelledby="ql-h">
-          <h2 id="ql-h" className="panel-title">Quality</h2>
+        <Fold id="dash-ql" title="Quality" className="panel" defaultOpen={false}>
           <div className="quality">
             <Kpi label="Fact blocks" value={q.fact_blocks} note="Copy stopped for a wrong price, date or day" />
             <Kpi label="Meaning flags" value={q.meaning_flags} note="Back-translation did not match" />
             <Kpi label="Repairs" value={q.repairs} note={`${q.repairs_succeeded} succeeded`} />
           </div>
-        </section>
+        </Fold>
 
-        <section className="panel panel-wide" aria-labelledby="pn-h">
-          <h2 id="pn-h" className="panel-title">Review panel</h2>
+        <Fold id="dash-pn" title="Review panel" className="panel panel-wide" defaultOpen={false}>
           <PanelSection id={id} />
-        </section>
+        </Fold>
 
-        <section className="panel panel-wide" aria-labelledby="fc-h">
-          <h2 id="fc-h" className="panel-title">Forecast from synthetic history</h2>
+        <Fold id="dash-fc" title="Forecast from synthetic history" className="panel panel-wide" defaultOpen={true}>
           <ForecastPanel id={id} />
-        </section>
+        </Fold>
 
-        <section className="panel panel-wide" aria-labelledby="rs-h">
-          <h2 id="rs-h" className="panel-title">What actually happened</h2>
+        <Fold id="dash-rs" title="What actually happened" className="panel panel-wide" defaultOpen={false}>
           <ResultsPanel id={id} />
-        </section>
+        </Fold>
 
-        <section className="panel panel-wide" aria-labelledby="pr-h">
-          <h2 id="pr-h" className="panel-title">Persona opinions (qualitative)</h2>
+        <Fold id="dash-pr" title="Persona opinions (qualitative)" className="panel panel-wide" defaultOpen={false}>
           <p className="muted small">An AI playing synthetic customers reads each asset and says what works and what does not. The 1 to 10 scores are opinions, not a forecast. Kannada and Hindi opinions are unverified until a native speaker checks them.</p>
           <div className="row wrap">
             <Button onClick={() => act("predict")} disabled={Boolean(busy)}>{busy === "predict" ? "Starting" : "Run prediction"}</Button>
@@ -486,7 +480,7 @@ export function DashboardView({ id, go, onBusiness }: { id: string; go: (r: Rout
               </table>
             </div>
           )}
-        </section>
+        </Fold>
       </div>
     </div>
   );

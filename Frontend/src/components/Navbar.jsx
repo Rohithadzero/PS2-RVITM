@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, Menu, Mic, Lock, PanelRightOpen } from 'lucide-react';
+import { Menu, Mic, Lock, PanelRightOpen } from 'lucide-react';
 import { SyncDot, ProviderChip } from './ui';
 import { getPlan, health } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
@@ -59,7 +59,6 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
           <h1 className="text-2xl font-semibold tracking-tight">{isHome ? `${greeting()}${first ? `, ${first}` : business ? `, ${business}` : ''}` : page.label}</h1>
           <p className="mt-0.5 max-w-xl text-sm text-white/55">{isHome ? 'Your campaigns and what needs you next.' : page.description}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            {business && <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">{business}</span>}
             {locked !== null && page.slug !== 'voice' && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">
                 <Lock size={11} className="text-accent" /> {locked ? 'Facts locked' : 'Plan not locked yet'}
@@ -90,15 +89,6 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
           className="voice-mic voice-mic-dark voice-mic-sm grid size-10 place-items-center rounded-full"
         >
           <Mic size={18} />
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect('log')}
-          aria-label="Change log"
-          title="Change log"
-          className="relative grid size-10 place-items-center rounded-full bg-black/25 text-white/70 ring-1 ring-white/10 transition-colors hover:text-white"
-        >
-          <Bell size={18} />
         </button>
         <button
           type="button"

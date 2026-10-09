@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -64,4 +64,32 @@ export function Sheet({ open, title, onClose, children, wide }: { open: boolean;
 
 export function Kicker({ children }: { children: ReactNode }) {
   return <p className="kicker">{children}</p>;
+}
+
+const foldKey = (id: string) => `fold-${id}`;
+const readFold = (id: string, fallback: boolean) => {
+  try { const v = localStorage.getItem(foldKey(id)); return v === null ? fallback : v === "1"; } catch { return fallback; }
+};
+
+// A section the owner can fold away. The choice is remembered on this device. A folded section renders nothing inside, so a
+// panel that fetches or polls does not do that work while it is out of sight.
+export function Fold({ id, title, defaultOpen = false, className = "panel", titleClass = "panel-title", children }: {
+  id: string; title: string; defaultOpen?: boolean; className?: string; titleClass?: string; children: ReactNode;
+}) {
+  const [open, setOpen] = useState(() => readFold(id, defaultOpen));
+  const toggle = () => setOpen((v) => {
+    try { localStorage.setItem(foldKey(id), v ? "0" : "1"); } catch { /* storage blocked: it holds until reload */ }
+    return !v;
+  });
+  return (
+    <section className={`${className} fold${open ? " fold-open" : ""}`} aria-labelledby={`${id}-h`}>
+      <h2 id={`${id}-h`} className={titleClass}>
+        <button type="button" className="fold-btn" aria-expanded={open} aria-controls={`${id}-body`} onClick={toggle}>
+          <span>{title}</span>
+          <svg className="fold-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+      </h2>
+      {open ? <div id={`${id}-body`} className="fold-body">{children}</div> : null}
+    </section>
+  );
 }
