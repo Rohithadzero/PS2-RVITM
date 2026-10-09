@@ -3,15 +3,11 @@ import { ArrowRight, CircleMinus, Lightbulb } from 'lucide-react';
 import { CardTitle, ChipToggle, Field, BudgetMeter } from '../components/ui';
 import { formatDuration } from '../lib/planner';
 import { api } from '../campaign/lib/api';
-import { CHANNEL_ORDER, channelLabel } from '../campaign/lib/format';
+import { CHANNEL_ORDER, LANGS as ALL_LANGS, channelLabel } from '../campaign/lib/format';
 import { navigate } from '../lib/router';
 import { useCurrent } from '../campaign/lib/current';
 
-const LANGS = [
-  { id: 'en', label: 'English' },
-  { id: 'kn', label: 'Kannada' },
-  { id: 'hi', label: 'Hindi' },
-];
+const LANGS = ALL_LANGS.map((l) => ({ id: l.code, label: l.draft ? `${l.name} (draft)` : l.name }));
 const AUDIENCES = ['students', 'office_workers', 'families', 'regulars', 'tourists', 'nearby_residents'].map((id) => ({
   id,
   label: id.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()),

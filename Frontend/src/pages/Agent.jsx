@@ -29,7 +29,7 @@ const StateIcon = ({ s }) =>
 
 
 const AUTO_CHANNELS = [{ id: 'whatsapp', label: 'WhatsApp' }, { id: 'poster', label: 'Poster' }, { id: 'instagram_post', label: 'Instagram post' }, { id: 'instagram_story', label: 'Instagram story' }];
-const AUTO_LANGS = [{ id: 'en', label: 'English' }, { id: 'kn', label: 'Kannada' }, { id: 'hi', label: 'Hindi' }];
+const AUTO_LANGS = LANGS.map((l) => ({ id: l.code, label: l.draft ? `${l.name} (draft)` : l.name }));
 
 // Budget autopilot: give limits, get the channels and languages that fit, as a sentence you can add to your idea.
 const Autopilot = ({ onUse }) => {

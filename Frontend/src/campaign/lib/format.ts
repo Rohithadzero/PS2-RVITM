@@ -1,10 +1,20 @@
 import type { Lang } from "./types";
 
-export const LANGS: { code: Lang; name: string; native: string; speech: string }[] = [
+// draft: the words used to check this language have not been read by a native speaker yet (see apps/api/app/languages.py).
+export const LANGS: { code: Lang; name: string; native: string; speech: string; draft?: boolean }[] = [
   { code: "en", name: "English", native: "English", speech: "en-IN" },
   { code: "kn", name: "Kannada", native: "ಕನ್ನಡ", speech: "kn-IN" },
   { code: "hi", name: "Hindi", native: "हिन्दी", speech: "hi-IN" },
+  { code: "ta", name: "Tamil", native: "தமிழ்", speech: "ta-IN", draft: true },
+  { code: "te", name: "Telugu", native: "తెలుగు", speech: "te-IN", draft: true },
+  { code: "ml", name: "Malayalam", native: "മലയാളം", speech: "ml-IN", draft: true },
+  { code: "mr", name: "Marathi", native: "मराठी", speech: "mr-IN", draft: true },
+  { code: "bn", name: "Bengali", native: "বাংলা", speech: "bn-IN", draft: true },
+  { code: "gu", name: "Gujarati", native: "ગુજરાતી", speech: "gu-IN", draft: true },
+  { code: "pa", name: "Punjabi", native: "ਪੰਜਾਬੀ", speech: "pa-IN", draft: true },
 ];
+export const MAIN_LANGS = LANGS.slice(0, 3);
+export const MORE_LANGS = LANGS.slice(3);
 
 export const speechLang = (lang: string) => LANGS.find((l) => l.code === lang)?.speech || "en-IN";
 export const langName = (lang: string) => LANGS.find((l) => l.code === lang)?.name || lang;
@@ -147,7 +157,7 @@ export const MEANING_LABEL: Record<string, string> = {
 
 // Server detail strings can carry raw keys (lang codes, channel keys, field names). Show labels instead.
 export function prettyText(text: string): string {
-  let out = text.replace(/^(en|kn|hi)\b/, (m) => langName(m));
+  let out = text.replace(new RegExp(`^(${LANGS.map((l) => l.code).join("|")})\\b`), (m) => langName(m));
   for (const key of Object.keys(CHANNEL_LABEL)) out = out.replace(new RegExp(`\\b${key}\\b`, "g"), channelLabel(key));
   for (const [key, label] of Object.entries(FIELD_LABEL)) out = out.replace(new RegExp(`\\b${key}\\b`, "g"), label.toLowerCase());
   return out;

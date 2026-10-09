@@ -3,6 +3,7 @@ import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic, Check, Rotate
 import ColorPicker from '../components/ColorPicker.jsx';
 import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
+import { LANGS } from '../campaign/lib/format';
 import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
 import { ACCENTS, BACKDROPS, DEFAULTS, SURFACES, useAppearance } from '../lib/appearance';
 
@@ -163,14 +164,17 @@ const EnginesCard = () => {
       <CardTitle sub="What turns your voice into text, per language, right now.">Microphone engine</CardTitle>
       {map === false && <p role="alert" className="text-sm text-bad">The server did not answer.</p>}
       {map && (
-        <ul className="mb-4 grid gap-2 sm:grid-cols-3">
-          {['en', 'hi', 'kn'].map((l) => (
-            <li key={l} className="rounded-xl bg-ink/5 px-3 py-2.5 text-sm">
-              <span className="font-semibold">{{ en: 'English', hi: 'Hindi', kn: 'Kannada' }[l]}</span>
-              <span className="mt-0.5 block text-xs text-ink/60">{map.engines[l] ? ENGINE_LABEL[map.engines[l]] : l === 'kn' ? 'Needs Groq switched on' : 'Not installed'}</span>
+        <>
+        <ul className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {LANGS.map((l) => (
+            <li key={l.code} className="rounded-xl bg-ink/5 px-3 py-2.5 text-sm">
+              <span className="font-semibold">{l.name}</span>{l.draft && <span className="ml-1.5 text-[11px] text-warn">draft</span>}
+              <span className="mt-0.5 block text-xs text-ink/60">{map.engines[l.code] ? ENGINE_LABEL[map.engines[l.code]] : 'Browser mic, or switch Groq on'}</span>
             </li>
           ))}
         </ul>
+        <p className="mb-4 text-xs text-ink/55">Voice out (read-back): Gemini when it is switched on under Other services, otherwise your browser's own voice. Languages marked draft have fact-check words that a native speaker has not read yet.</p>
+        </>
       )}
       <div role="radiogroup" aria-label="Microphone engine" className="flex flex-col gap-2">
         {PREFS.map((p) => (
@@ -211,14 +215,14 @@ const VoiceTab = ({ data }) => {
       <section className="card">
         <CardTitle sub="Runs on this machine. No audio leaves it.">Offline speech to text (Vosk)</CardTitle>
         <ul className="flex flex-col gap-2 text-sm">
-          {['en', 'hi', 'kn'].map((l) => (
-            <li key={l} className="flex items-center justify-between rounded-xl bg-ink/5 px-3 py-2.5">
-              <span className="font-medium">{{ en: 'English', hi: 'Hindi', kn: 'Kannada' }[l]}</span>
-              {installed.includes(l) ? <Badge tone="good">installed</Badge> : <Badge>{l === 'kn' ? 'no Vosk model: use Groq (Other services) or the browser mic' : 'not installed'}</Badge>}
+          {LANGS.filter((l) => ['en', 'hi', 'gu', 'te'].includes(l.code)).map((l) => (
+            <li key={l.code} className="flex items-center justify-between rounded-xl bg-ink/5 px-3 py-2.5">
+              <span className="font-medium">{l.name}</span>
+              {installed.includes(l.code) ? <Badge tone="good">installed</Badge> : <Badge>not installed</Badge>}
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-ink/55">Install models with <code>python apps/api/scripts/get_vosk_models.py</code>. Vosk has no Kannada or Hinglish model.</p>
+        <p className="mt-3 text-xs text-ink/55">Install models with <code>python apps/api/scripts/get_vosk_models.py</code>. Vosk has models for English, Hindi, Gujarati and Telugu. Every other language uses Groq (when switched on) or your browser's mic.</p>
       </section>
       <section className="card">
         <CardTitle sub="Upload a 16-bit WAV to see what Vosk hears.">Try it</CardTitle>

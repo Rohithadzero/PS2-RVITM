@@ -9,7 +9,7 @@ export type OfferWindow = {
   time_end: string | null;
 };
 
-const LOCALE: Record<string, string> = { en: "en-IN-u-nu-latn", kn: "kn-IN-u-nu-latn", hi: "hi-IN-u-nu-latn" };
+const LOCALE: Record<string, string> = Object.fromEntries(["en", "kn", "hi", "ta", "te", "ml", "mr", "bn", "gu", "pa"].map((c) => [c, `${c}-IN-u-nu-latn`]));
 const DAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
 
 /** "Sat", "Sun" -> "ಶನಿ, ಭಾನು" in Kannada. Every day (all seven) says nothing: it is implied. */

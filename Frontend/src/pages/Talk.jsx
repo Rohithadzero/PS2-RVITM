@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Talk } from '../campaign/components/talk';
 import { startInterview } from '../campaign/lib/api';
-import { LANGS } from '../campaign/lib/format';
+import { MAIN_LANGS, MORE_LANGS } from '../campaign/lib/format';
 import { go } from '../campaign/lib/current';
 import { Button, ErrorNote } from '../campaign/components/ui';
 
@@ -26,11 +26,15 @@ const Start = () => {
       <h1 className="display">Say the offer. We write the campaign.</h1>
       <p className="lede">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>
       <div className="start-actions" role="group" aria-label="Start in a language">
-        {LANGS.map((l, i) => (
+        {MAIN_LANGS.map((l, i) => (
           <Button key={l.code} variant={i === 0 ? 'primary' : 'secondary'} onClick={() => start(l.code)} disabled={starting !== null}>
             {starting === l.code ? 'Starting' : `Start in ${l.native}`}
           </Button>
         ))}
+        <select aria-label="Start in another language" className="input select" value="" disabled={starting !== null} onChange={(e) => e.target.value && start(e.target.value)}>
+          <option value="">More languages</option>
+          {MORE_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native} ({l.name}, draft)</option>)}
+        </select>
       </div>
       {error ? <ErrorNote>{error}</ErrorNote> : null}
     </section>

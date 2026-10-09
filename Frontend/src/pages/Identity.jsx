@@ -4,7 +4,7 @@ import { CardTitle, Field, Banner } from '../components/ui';
 import ColorPicker from '../components/ColorPicker';
 import { LogoMark, contrast, grade, isHex } from '../lib/brand';
 import { PALETTES, FONT_PAIRS } from '../data/studio';
-import { LANG_LABEL, businessNames, useBusiness } from '../lib/business';
+import { LANG_LABEL, businessNames, shopLangs, useBusiness } from '../lib/business';
 
 const PAIRS = [
   ['Text on background', 'ink', 'bg'],
@@ -20,7 +20,7 @@ const COLOUR_LABEL = { bg: 'Background', soft: 'Soft panel', accent: 'Accent', i
 const Identity = () => {
   const { profile, loading, error, save } = useBusiness();
   const [name, setName] = useState('');
-  const [tagline, setTagline] = useState({ en: '', hi: '', kn: '' });
+  const [tagline, setTagline] = useState({});
   const [palette, setPalette] = useState(fromPalette(FIRST));
   const [fonts, setFonts] = useState('f1');
   const [logo, setLogo] = useState(0);
@@ -35,7 +35,7 @@ const Identity = () => {
   useEffect(() => {
     if (loading) return;
     setName(profile.name || '');
-    setTagline({ en: '', hi: '', kn: '', ...(profile.tagline || {}) });
+    setTagline({ ...(profile.tagline || {}) });
     setPalette({ ...fromPalette(FIRST), ...(profile.palette || {}) });
     setFonts(profile.fonts || 'f1');
     setLogo(profile.logo ?? 0);
@@ -102,8 +102,8 @@ const Identity = () => {
         <section className="card">
           <CardTitle sub="One line per language. Hindi and Kannada drafts from the assistant need a native speaker's check.">Tagline</CardTitle>
           <div className="flex flex-col gap-3">
-            {Object.keys(LANG_LABEL).map((l) => (
-              <Field key={l} label={LANG_LABEL[l]}><input className="field" lang={l} value={tagline[l]} maxLength={120} onChange={(e) => touch(setTagline)({ ...tagline, [l]: e.target.value })} /></Field>
+            {shopLangs(profile).map((l) => (
+              <Field key={l} label={LANG_LABEL[l]}><input className="field" lang={l} value={tagline[l] || ''} maxLength={120} onChange={(e) => touch(setTagline)({ ...tagline, [l]: e.target.value })} /></Field>
             ))}
           </div>
           {ideas?.taglines?.length > 0 && (
@@ -170,7 +170,7 @@ const Identity = () => {
           <Field label="Fonts"><select className="field mt-4" value={fonts} onChange={(e) => touch(setFonts)(e.target.value)}>{FONT_PAIRS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select></Field>
           <div className="mt-4 rounded-2xl p-4" style={{ background: palette.bg, color: palette.ink }}>
             <p className="text-xl font-semibold" style={{ color: palette.accent }}>{name || 'Your shop'}</p>
-            {['en', 'hi', 'kn'].map((l) => tagline[l] && <p key={l} lang={l} className="text-sm">{tagline[l]}</p>)}
+            {Object.entries(tagline).map(([l, t]) => t && <p key={l} lang={l} className="text-sm">{t}</p>)}
           </div>
         </section>
       </div>

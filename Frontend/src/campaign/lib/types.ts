@@ -1,6 +1,6 @@
 // Types mirror the API contract in PLAN.md exactly.
 
-export type Lang = "en" | "kn" | "hi";
+export type Lang = "en" | "kn" | "hi" | "ta" | "te" | "ml" | "mr" | "bn" | "gu" | "pa";
 
 export type OfferFacts = {
   item: string;

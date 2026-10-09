@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../campaign/lib/api';
+import { LANGS } from '../campaign/lib/format';
 
 // The owner's shop details (name, WhatsApp number, menu, colours, site settings), kept on the server.
 const send = (method, path, body) => api(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -38,4 +39,7 @@ export const useBusiness = () => {
   return { profile: data.profile, site: data.site, setSite: (site) => setData((d) => ({ ...d, site })), loading, error, reload, save };
 };
 
-export const LANG_LABEL = { en: 'English', hi: 'हिन्दी', kn: 'ಕನ್ನಡ' };
+export const LANG_LABEL = Object.fromEntries(LANGS.map((l) => [l.code, l.native]));
+
+// English, plus the languages the shop's site is set up for (Hindi and Kannada until it says otherwise).
+export const shopLangs = (profile) => ['en', ...(profile?.langs?.length ? profile.langs : ['kn', 'hi']).filter((l) => l !== 'en')];

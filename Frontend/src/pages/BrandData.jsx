@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Check, Loader2, Plus, Trash2, Users } from 'lucide-react';
 import { CardTitle, Field, Banner } from '../components/ui';
-import { LANG_LABEL, useBusiness } from '../lib/business';
+import { LANG_LABEL, shopLangs, useBusiness } from '../lib/business';
 import { navigate } from '../lib/router';
 
 // S12: the shop's own details, saved on the server. The WhatsApp number here is where website orders arrive.
-const EMPTY = { name: '', phone: '', address: '', maps_url: '', hours: '', about: { en: '', hi: '', kn: '' }, menu: [] };
+const EMPTY = { name: '', phone: '', address: '', maps_url: '', hours: '', about: {}, menu: [] };
 
 // "Filter coffee, 60" or "Filter coffee 60" per line, as pasted from a spreadsheet or a notebook.
 export const parseMenu = (text) => {
@@ -28,7 +28,7 @@ const BrandData = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading) setForm({ ...EMPTY, ...profile, about: { ...EMPTY.about, ...(profile.about || {}) }, menu: profile.menu || [], phone: profile.phone ? `+${profile.phone}` : '' });
+    if (!loading) setForm({ ...EMPTY, ...profile, about: { ...(profile.about || {}) }, menu: profile.menu || [], phone: profile.phone ? `+${profile.phone}` : '' });
   }, [loading, profile]);
 
   const set = (patch) => { setNote(''); setForm((f) => ({ ...f, ...patch })); };
@@ -76,11 +76,11 @@ const BrandData = () => {
         </section>
 
         <section className="card">
-          <CardTitle sub="A few lines about you, in each language you serve. Hindi and Kannada are best checked by a native speaker.">About</CardTitle>
+          <CardTitle sub="A few lines about you, in each language of your website (choose them on the Website screen). Anything but English is best checked by a native speaker.">About</CardTitle>
           <div className="flex flex-col gap-3">
-            {Object.keys(LANG_LABEL).map((l) => (
+            {shopLangs(profile).map((l) => (
               <Field key={l} label={LANG_LABEL[l]}>
-                <textarea className="field min-h-20" lang={l} value={form.about[l]} maxLength={400} onChange={(e) => set({ about: { ...form.about, [l]: e.target.value } })} />
+                <textarea className="field min-h-20" lang={l} value={form.about[l] || ''} maxLength={400} onChange={(e) => set({ about: { ...form.about, [l]: e.target.value } })} />
               </Field>
             ))}
           </div>

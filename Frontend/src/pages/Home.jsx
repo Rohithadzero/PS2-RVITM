@@ -3,7 +3,7 @@ import { Mic, Sparkles, Rocket, Store, Bot } from 'lucide-react';
 import StatCards from '../components/dashboard/StatCards';
 import { SectionTitle } from '../components/ui';
 import { listOverview, startInterview, getDashboard } from '../campaign/lib/api';
-import { LANGS, humanize } from '../campaign/lib/format';
+import { MAIN_LANGS, MORE_LANGS, humanize } from '../campaign/lib/format';
 import { go, setCurrent, useCurrent } from '../campaign/lib/current';
 import { navigate } from '../lib/router';
 
@@ -71,11 +71,15 @@ const Home = () => {
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Say the offer. We write the campaign.</h1>
         <p className="mt-2 max-w-xl text-sm text-ink/65">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>
         <div role="group" aria-label="Start in a language" className="mt-4 flex flex-wrap gap-2">
-          {LANGS.map((l, i) => (
+          {MAIN_LANGS.map((l, i) => (
             <button key={l.code} type="button" disabled={starting !== null} onClick={() => start(l.code)} className={i === 0 ? 'btn-primary' : 'btn-ghost'}>
               <Mic size={16} /> {starting === l.code ? 'Starting' : `Start in ${l.native}`}
             </button>
           ))}
+          <select aria-label="Start in another language" className="field h-10 w-auto" value="" disabled={starting !== null} onChange={(e) => e.target.value && start(e.target.value)}>
+            <option value="">More languages</option>
+            {MORE_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native} ({l.name}, draft)</option>)}
+          </select>
         </div>
         <button type="button" onClick={() => navigate('agent')} className="mt-3 flex items-center gap-2 text-sm font-semibold text-accent-deep hover:underline">
           <Bot size={16} /> Or describe it once and let the agent plan the work

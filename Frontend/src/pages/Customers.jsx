@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, FileUp, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, Upload, UserPlus, X } from 'lucide-react';
 import { API_URL, api } from '../campaign/lib/api';
 import { Field } from '../components/ui';
+import { LANGS as ALL_LANGS } from '../campaign/lib/format';
 
-const LANG = { en: 'English', kn: 'Kannada', hi: 'Hindi' };
+const LANG = Object.fromEntries(ALL_LANGS.map((l) => [l.code, l.name]));
 const EMPTY = { name: '', phone: '', email: '', language: '', tags: '', notes: '', consent_whatsapp: false, consent_email: false, consent_source: '' };
 const SAMPLE = 'name,phone,email,language,tags,notes\nAsha Rao,98450 12345,asha@example.com,kn,"students, regulars",likes filter coffee\nRavi,99000 11122,,hi,regulars,\n';
 const PAGE = 50;

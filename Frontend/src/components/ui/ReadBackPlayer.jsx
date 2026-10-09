@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Volume2 } from 'lucide-react';
 import { ProviderChip } from './index';
+import { API_URL } from '../../campaign/lib/api';
+import { speechLang } from '../../campaign/lib/format';
 
 // Plays the template-generated read-back and shows the exact words spoken.
 // Backend version: POST /tts/readback returns { audio_url, script_text } (docs/api-spec.md section 3).
@@ -9,22 +11,46 @@ const ReadBackPlayer = ({ script, lang = 'en', onPlayed }) => {
   const [playing, setPlaying] = useState(false);
   const [played, setPlayed] = useState(false);
   const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const audio = useRef(null);
 
-  useEffect(() => () => canSpeak && window.speechSynthesis.cancel(), [canSpeak]);
+  useEffect(() => () => { audio.current?.pause(); if (canSpeak) window.speechSynthesis.cancel(); }, [canSpeak]);
 
-  const toggle = () => {
+  const finished = () => { setPlaying(false); setPlayed(true); onPlayed?.(); };
+
+  // The server voice (Gemini, when switched on in Settings) speaks every language. Anything else falls back to the browser's voice.
+  const serverVoice = async () => {
+    try {
+      const r = await fetch(`${API_URL}/tts`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: script.slice(0, 600), lang }) });
+      if (!r.ok) return false;
+      const url = URL.createObjectURL(await r.blob());
+      const a = new Audio(url);
+      audio.current = a;
+      a.onended = () => { URL.revokeObjectURL(url); finished(); };
+      a.onerror = () => setPlaying(false);
+      await a.play();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const toggle = async () => {
+    if (playing) {
+      audio.current?.pause();
+      if (canSpeak) window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
+    setPlaying(true);
+    if (await serverVoice()) return;
     if (!canSpeak) {
+      setPlaying(false);
       setPlayed(true);
       onPlayed?.();
       return;
     }
-    if (playing) {
-      window.speechSynthesis.cancel();
-      setPlaying(false);
-      return;
-    }
     const u = new SpeechSynthesisUtterance(script);
-    u.lang = { en: 'en-IN', hi: 'hi-IN', kn: 'kn-IN' }[lang];
+    u.lang = speechLang(lang);
     u.rate = 0.95;
     u.onend = () => {
       setPlaying(false);

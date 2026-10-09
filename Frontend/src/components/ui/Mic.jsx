@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mic as MicIcon, Square, Loader2 } from 'lucide-react';
+import { LANGS } from '../../campaign/lib/format';
 
 const SpeechRecognition = typeof window !== 'undefined' ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
-const LOCALE = { en: 'en-IN', hi: 'hi-IN', kn: 'kn-IN' };
+const LOCALE = Object.fromEntries(LANGS.map((l) => [l.code, l.speech]));
 
 // Press and hold to talk, or tap to start and tap again to stop.
 // Uses the browser's speech recognition when available; otherwise returns `mockText`.
