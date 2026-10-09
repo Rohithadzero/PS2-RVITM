@@ -61,7 +61,7 @@ const Identity = () => {
             {taglines.map((t) => (
               <li key={t.id}>
                 <button type="button" aria-pressed={I.tagline === t.id} onClick={() => set({ tagline: t.id })} className={`grid w-full gap-1 rounded-xl border p-3 text-left ${I.tagline === t.id ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
-                  <span lang="en" className="flex items-center justify-between text-sm">{t.en}{I.tagline === t.id && <Check size={16} className="text-accent" />}</span>
+                  <span lang="en" className="flex items-center justify-between text-sm">{t.en}{I.tagline === t.id && <Check size={16} className="text-accent-deep" />}</span>
                   <span lang="hi" className="text-sm">{t.hi} <em className="text-[11px] not-italic text-warn">draft: needs native review</em></span>
                   <span lang="kn" className="text-sm">{t.kn} <em className="text-[11px] not-italic text-warn">draft: needs native review</em></span>
                 </button>

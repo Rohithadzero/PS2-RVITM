@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { channelLabel } from '../../campaign/lib/format';
+import Liquid from '../ui/Liquid';
 
 export const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -26,7 +28,7 @@ export const useDayModel = (plan, ownerEvents) =>
       return items;
     };
     const style = (d) => {
-      if (d === todayIso) return 'bg-accent text-white font-semibold';
+      if (d === todayIso) return 'bg-accent text-on-accent font-semibold';
       if (end && start !== end && d === end) return 'bg-rose text-white font-semibold';
       if (bySchedule[d] || (start && d >= start && d <= end)) return 'bg-good text-white font-semibold';
       if ((ownerEvents ?? []).some((e) => d >= e.start && d <= e.end)) return 'bg-info/80 text-white font-semibold';
@@ -84,16 +86,41 @@ const useHover = () => {
   return { hover, bind };
 };
 
+// A glass lens rests on today and glides to whichever date you point at or focus. useId keeps the lens of the
+// side panel and the drawer apart, since both can be mounted at once.
+// Leaving a date waits a moment before the lens goes home, so crossing the gap between two dates does not
+// send it back to today and out again.
+const useLens = (hover) => {
+  const id = useId();
+  const todayIso = iso(new Date());
+  const [at, setAt] = useState(todayIso);
+  const target = hover?.date;
+  useEffect(() => {
+    if (target) {
+      setAt(target);
+      return undefined;
+    }
+    const t = setTimeout(() => setAt(todayIso), 180);
+    return () => clearTimeout(t);
+  }, [target, todayIso]);
+  return { lensId: `lens${id}`, at };
+};
+
 export const Calendar = ({ model }) => {
   const today = new Date();
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [dir, setDir] = useState(0);
   const { hover, bind } = useHover();
+  const { lensId, at } = useLens(hover);
   const firstWeekday = month.getDay();
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
-  const shift = (delta) => setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
+  const shift = (delta) => {
+    setDir(delta);
+    setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
+  };
   return (
-    <div className="rounded-2xl bg-black/20 p-4">
+    <div className="liquid-well rounded-2xl p-4">
       <div className="flex items-center justify-between">
         <p className="font-semibold">{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
         <div className="flex gap-1">
@@ -101,18 +128,27 @@ export const Calendar = ({ model }) => {
           <button type="button" onClick={() => shift(1)} aria-label="Next month" className="grid size-7 place-items-center rounded-full bg-white/10 text-white/70 hover:text-white"><ChevronRight size={14} /></button>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-xs">
+      <div className="mt-3 grid grid-cols-7 text-center text-xs">
         {WEEKDAYS.map((d) => <span key={d} className="pb-1 text-white/40">{d}</span>)}
+      </div>
+      <motion.div
+        key={iso(month)}
+        initial={dir ? { opacity: 0, x: dir * 28, filter: 'blur(6px)' } : false}
+        animate={{ opacity: 1, x: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
+        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+        className="grid grid-cols-7 gap-y-1 text-center text-xs"
+      >
         {cells.map((date, i) =>
           date ? (
-            <button key={i} type="button" {...bind(iso(date))} aria-label={date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })} className={`mx-auto grid size-7 place-items-center rounded-full transition-colors ${model.style(iso(date))}`}>
-              {date.getDate()}
+            <button key={i} type="button" {...bind(iso(date))} aria-label={date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })} className={`relative mx-auto grid size-7 place-items-center rounded-full transition-colors ${model.style(iso(date))}`}>
+              {at === iso(date) && <Liquid layoutId={lensId} axis="both" className="-inset-1 rounded-full" fill="liquid-lens" />}
+              <span className="relative">{date.getDate()}</span>
             </button>
           ) : (
             <span key={i} />
           )
         )}
-      </div>
+      </motion.div>
       <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-accent" />Today</li>
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Scheduled</li>
@@ -129,6 +165,7 @@ export const DateRail = ({ model }) => {
   const today = new Date();
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const { hover, bind } = useHover();
+  const { lensId, at } = useLens(hover);
   const scroller = useRef(null);
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1));
@@ -142,7 +179,7 @@ export const DateRail = ({ model }) => {
     <div className="flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} role="group">
       <button type="button" onClick={() => shift(-1)} aria-label="Previous month" className="grid size-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70 hover:text-white"><ChevronLeft size={13} className="rotate-90" /></button>
       <p className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-white/50">{month.toLocaleDateString('en-IN', { month: 'short' })}</p>
-      <div ref={scroller} className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div ref={scroller} className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {days.map((date) => {
           const d = iso(date);
           const marked = model.info(d).length > 0;
@@ -153,9 +190,10 @@ export const DateRail = ({ model }) => {
               data-today={d === iso(today)}
               {...bind(d)}
               aria-label={`${date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}${marked ? ', has something scheduled' : ''}`}
-              className={`grid size-7 shrink-0 place-items-center rounded-full text-[11px] transition-colors ${model.style(d)}`}
+              className={`relative grid size-7 shrink-0 place-items-center rounded-full text-[11px] transition-colors ${model.style(d)}`}
             >
-              {date.getDate()}
+              {at === d && <Liquid layoutId={lensId} className="-inset-1 rounded-full" fill="liquid-lens" />}
+              <span className="relative">{date.getDate()}</span>
             </button>
           );
         })}

@@ -42,7 +42,7 @@ const ReadBackPlayer = ({ script, lang = 'en', onPlayed }) => {
         <button
           type="button"
           onClick={toggle}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-white hover:bg-accent/90"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-on-accent hover:bg-accent-hover"
           aria-label={playing ? 'Pause read-back' : 'Play read-back'}
         >
           {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="translate-x-px" />}

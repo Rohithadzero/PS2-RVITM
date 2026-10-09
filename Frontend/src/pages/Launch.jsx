@@ -112,7 +112,7 @@ const Launch = () => {
               onClick={() => set({ step: i })}
               aria-current={i === step ? 'step' : undefined}
               className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-sm font-medium transition-colors ${
-                i === step ? 'bg-accent text-white' : i < step ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40'
+                i === step ? 'bg-accent text-on-accent' : i < step ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40'
               }`}
             >
               <span className="grid size-5 place-items-center rounded-full bg-black/20 text-xs">{i < step ? <Check size={12} /> : i + 1}</span>
@@ -151,7 +151,7 @@ const Launch = () => {
                 const on = L.chosenIdea === id;
                 return (
                   <button key={id} type="button" aria-pressed={on} onClick={() => pickIdea(id)} className={`flex flex-col gap-2 rounded-2xl border p-4 text-left transition-colors ${on ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
-                    <span className="flex items-start justify-between gap-2"><span className="font-semibold">{i.title}</span>{on && <Check size={18} className="text-accent" />}</span>
+                    <span className="flex items-start justify-between gap-2"><span className="font-semibold">{i.title}</span>{on && <Check size={18} className="text-accent-deep" />}</span>
                     <span className="text-sm text-ink/70">{i.why}</span>
                     <span className="text-xs"><strong>Start-up cost (estimate):</strong> {i.startup}</span>
                     <span className="text-xs"><strong>First month:</strong> {i.first_month}</span>

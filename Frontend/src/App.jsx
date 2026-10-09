@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { MotionConfig, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
@@ -126,9 +126,15 @@ const App = () => {
         <div className="glass-panel relative flex min-w-0 flex-1 flex-col rounded-[28px]">
           <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
             <Navbar page={page} onSelect={select} onOpenMenu={() => setMobileOpen(true)} onOpenSummary={() => setSummaryOpen(true)} />
-            <div className="mt-6">
+            <motion.div
+              key={`${page.slug}/${param ?? ''}`}
+              className="mt-6"
+              initial={{ opacity: 0, y: 14, scale: 0.985, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
+              transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.9 }}
+            >
               <Screen key={param} id={param} />
-            </div>
+            </motion.div>
           </main>
           <BottomNav active={page.slug} onSelect={select} />
         </div>

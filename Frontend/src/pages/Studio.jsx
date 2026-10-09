@@ -34,14 +34,14 @@ const Studio = () => {
             type="button"
             aria-pressed={mode === p.id}
             onClick={() => set({ mode: p.id })}
-            className={`flex items-start gap-3 rounded-2xl p-5 text-left transition-colors ${mode === p.id ? 'bg-accent text-white' : 'bg-white text-ink hover:bg-white/90'}`}
+            className={`flex items-start gap-3 rounded-2xl p-5 text-left transition-colors ${mode === p.id ? 'bg-accent text-on-accent' : 'bg-card text-ink hover:bg-white'}`}
           >
-            <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${mode === p.id ? 'bg-white/20' : 'bg-accent-soft text-accent'}`}>
+            <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${mode === p.id ? 'bg-ink/10' : 'bg-accent-soft text-accent-deep'}`}>
               <p.icon size={22} />
             </span>
             <span>
               <span className="block font-semibold">{p.title}</span>
-              <span className={`mt-1 block text-sm ${mode === p.id ? 'text-white/85' : 'text-ink/60'}`}>{p.body}</span>
+              <span className={`mt-1 block text-sm ${mode === p.id ? 'opacity-75' : 'text-ink/60'}`}>{p.body}</span>
             </span>
           </button>
         ))}
@@ -75,7 +75,7 @@ const Studio = () => {
                     title={PIPELINES[d.pipeline].backend ? undefined : 'No backend yet'}
                     className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors ${PIPELINES[d.pipeline].backend ? '' : 'opacity-50'} ${on ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}
                   >
-                    <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border ${on ? 'border-accent bg-accent text-white' : 'border-ink/30'}`}>
+                    <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border ${on ? 'border-accent bg-accent text-on-accent' : 'border-ink/30'}`}>
                       {on && <Check size={13} />}
                     </span>
                     <span className="min-w-0">

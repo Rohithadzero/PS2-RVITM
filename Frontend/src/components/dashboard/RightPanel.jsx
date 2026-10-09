@@ -18,7 +18,7 @@ const Profile = ({ plan }) => {
   return (
     <div>
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-semibold">{plan ? initialsOf(plan.business.name) : '·'}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-semibold text-on-accent">{plan ? initialsOf(plan.business.name) : '·'}</span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{plan ? plan.business.name : 'No campaign yet'}</p>
           <p className="truncate text-xs text-white/50">{plan ? plan.business.area : 'Start one with Talk'}</p>

@@ -82,7 +82,7 @@ const Bakeoff = () => {
                       <span className="flex" role="radiogroup" aria-label={`Rate ${r.provider}`}>
                         {[1, 2, 3, 4, 5].map((n) => (
                           <button key={n} type="button" role="radio" aria-checked={ratings[r.provider] === n} aria-label={`${n} of 5`} onClick={() => setRatings({ ...ratings, [r.provider]: n })} className="p-0.5">
-                            <Star size={15} className={n <= (ratings[r.provider] ?? 0) ? 'fill-accent text-accent' : 'text-ink/25'} />
+                            <Star size={15} className={n <= (ratings[r.provider] ?? 0) ? 'fill-accent text-accent-deep' : 'text-ink/25'} />
                           </button>
                         ))}
                       </span>

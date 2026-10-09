@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic } from 'lucide-react';
+import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic, Check, RotateCcw } from 'lucide-react';
 import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
 import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
+import { ACCENTS, BACKDROPS, DEFAULTS, SURFACES, useAppearance } from '../lib/appearance';
 
-const TABS = ['Providers', 'Voice', 'Calibration', 'Guardrails'];
+const TABS = ['Appearance', 'Providers', 'Voice', 'Calibration', 'Guardrails'];
 
 const CAPABILITY = {
   text: { title: 'Text', model: 'agnes-3.0-flash', note: 'Copy, interview extraction, meaning check, change by voice.' },
@@ -13,7 +14,7 @@ const CAPABILITY = {
 };
 
 const Badge = ({ children, tone = 'neutral' }) => {
-  const cls = { neutral: 'bg-ink/5 text-ink/70', good: 'bg-good/12 text-good', accent: 'bg-accent-soft text-accent' }[tone];
+  const cls = { neutral: 'bg-ink/5 text-ink/70', good: 'bg-good/12 text-good', accent: 'bg-accent-soft text-accent-deep' }[tone];
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{children}</span>;
 };
 
@@ -319,9 +320,83 @@ const GuardrailsTab = () => {
   );
 };
 
+const Choices = ({ name, options, value, onChange }) => (
+  <div role="radiogroup" aria-label={name} className="flex flex-col gap-2">
+    {options.map((o) => (
+      <label key={o.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors ${value === o.id ? 'border-accent bg-accent-soft/60' : 'border-ink/10 hover:bg-ink/5'}`}>
+        <input type="radio" name={name} checked={value === o.id} onChange={() => onChange(o.id)} className="mt-1 accent-[var(--color-accent)]" />
+        <span><span className="font-medium">{o.label}</span><span className="block text-xs text-ink/60">{o.hint}</span></span>
+      </label>
+    ))}
+  </div>
+);
+
+// Saved on this device only. Changes show straight away across the whole app.
+const AppearanceTab = () => {
+  const [look, setLook] = useAppearance();
+  const preset = ACCENTS.find((a) => a.hex === look.accent.toLowerCase());
+  const isDefault = look.accent === DEFAULTS.accent && look.surface === DEFAULTS.surface && look.backdrop === DEFAULTS.backdrop;
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      <section className="card xl:col-span-2">
+        <CardTitle
+          sub="Buttons, the active page, the mic, toggles and highlights all use this colour."
+          action={
+            <button type="button" disabled={isDefault} onClick={() => setLook(DEFAULTS)} className="btn-ghost h-9 px-4 text-sm">
+              <RotateCcw size={14} /> Reset
+            </button>
+          }
+        >
+          Accent colour
+        </CardTitle>
+        <div role="radiogroup" aria-label="Accent colour" className="flex flex-wrap gap-2">
+          {ACCENTS.map((a) => {
+            const on = preset?.id === a.id;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setLook({ accent: a.hex })}
+                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-sm font-medium transition-colors ${on ? 'border-ink bg-ink/5' : 'border-ink/10 hover:bg-ink/5'}`}
+              >
+                <span className="grid size-7 place-items-center rounded-full ring-1 ring-ink/10" style={{ background: a.hex }}>
+                  {on && <Check size={15} strokeWidth={3} className="text-on-accent" />}
+                </span>
+                {a.label}
+              </button>
+            );
+          })}
+          <label className={`flex cursor-pointer items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-sm font-medium transition-colors ${preset ? 'border-ink/10 hover:bg-ink/5' : 'border-ink bg-ink/5'}`}>
+            <input type="color" value={look.accent} onChange={(e) => setLook({ accent: e.target.value })} className="size-7 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0" />
+            Custom <span className="font-mono text-xs text-ink/50">{look.accent}</span>
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-ink/5 p-3">
+          <span className="text-xs font-medium text-ink/50">Preview</span>
+          <span className="btn-primary pointer-events-none">Primary button</span>
+          <span className="voice-mic grid size-10 place-items-center rounded-full"><Mic size={18} /></span>
+          <Toggle checked onChange={() => {}} label="Preview toggle" />
+          <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent-deep">Highlight</span>
+        </div>
+      </section>
+      <section className="card">
+        <CardTitle sub="How see-through the panels and cards are.">Surfaces</CardTitle>
+        <Choices name="Surfaces" options={SURFACES} value={look.surface} onChange={(surface) => setLook({ surface })} />
+      </section>
+      <section className="card">
+        <CardTitle sub="What sits behind the glass.">Background</CardTitle>
+        <Choices name="Background" options={BACKDROPS} value={look.backdrop} onChange={(backdrop) => setLook({ backdrop })} />
+      </section>
+    </div>
+  );
+};
+
 // S13: bring your own Agnes key per capability, offline voice, and the numbers the planner uses (docs/settings.md).
 const Settings = () => {
-  const [tab, setTab] = useState('Providers');
+  const [tab, setTab] = useState('Appearance');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const load = useCallback(() => {
@@ -336,7 +411,8 @@ const Settings = () => {
       )}
       {error && <Banner tone="warn">{error}</Banner>}
       <Tabs tabs={TABS} active={tab} onChange={setTab} dark />
-      {!data && !error && <p className="text-sm text-white/60">Loading.</p>}
+      {tab === 'Appearance' && <AppearanceTab />}
+      {!data && !error && tab !== 'Appearance' && <p className="text-sm text-white/60">Loading.</p>}
       {data && tab === 'Providers' && <ProvidersTab data={data} reload={load} />}
       {data && tab === 'Voice' && <VoiceTab data={data} />}
       {tab === 'Calibration' && <CalibrationTab />}

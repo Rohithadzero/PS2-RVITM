@@ -67,7 +67,7 @@ const Home = () => {
   return (
     <div className="flex flex-col gap-5">
       <section className="rounded-2xl bg-white p-5 text-ink">
-        <p className="text-sm font-semibold text-accent">Campaign 0 for your shop</p>
+        <p className="text-sm font-semibold text-accent-deep">Campaign 0 for your shop</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Say the offer. We write the campaign.</h1>
         <p className="mt-2 max-w-xl text-sm text-ink/65">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>
         <div role="group" aria-label="Start in a language" className="mt-4 flex flex-wrap gap-2">
@@ -77,7 +77,7 @@ const Home = () => {
             </button>
           ))}
         </div>
-        <button type="button" onClick={() => navigate('agent')} className="mt-3 flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+        <button type="button" onClick={() => navigate('agent')} className="mt-3 flex items-center gap-2 text-sm font-semibold text-accent-deep hover:underline">
           <Bot size={16} /> Or describe it once and let the agent plan the work
         </button>
         {error && (
@@ -89,7 +89,7 @@ const Home = () => {
 
       <section className="grid gap-3 sm:grid-cols-2">
         <button type="button" onClick={() => navigate('studio')} className="flex items-center gap-3 rounded-2xl bg-white p-4 text-left text-ink hover:bg-white/90">
-          <span className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent">
+          <span className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent-deep">
             <Sparkles size={22} />
           </span>
           <span>
@@ -97,13 +97,13 @@ const Home = () => {
             <span className="text-sm text-ink/60">Posts, posters, taglines, a website or a reel.</span>
           </span>
         </button>
-        <button type="button" onClick={() => navigate('launch')} className="flex items-center gap-3 rounded-2xl bg-accent p-4 text-left text-white hover:bg-accent/90">
-          <span className="grid size-11 place-items-center rounded-xl bg-white/20">
+        <button type="button" onClick={() => navigate('launch')} className="flex items-center gap-3 rounded-2xl bg-accent p-4 text-left text-on-accent hover:bg-accent-hover">
+          <span className="grid size-11 place-items-center rounded-xl bg-ink/10">
             <Rocket size={22} />
           </span>
           <span>
             <span className="block font-semibold">No business yet? Build one</span>
-            <span className="text-sm text-white/85">Ideas, a name, a brand and a launch pack.</span>
+            <span className="text-sm opacity-75">Ideas, a name, a brand and a launch pack.</span>
           </span>
         </button>
       </section>
@@ -129,16 +129,16 @@ const Home = () => {
                   go({ name: nextStage(c.status), id: c.id });
                 }}
                 aria-pressed={on}
-                className={`flex items-start justify-between gap-3 rounded-2xl p-4 text-left transition-colors ${on ? 'bg-accent text-white' : 'bg-white text-ink hover:bg-white/90'}`}
+                className={`flex items-start justify-between gap-3 rounded-2xl p-4 text-left transition-colors ${on ? 'bg-accent text-on-accent' : 'bg-card text-ink hover:bg-white'}`}
               >
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">{c.name || `Campaign ${c.id.slice(0, 6)}`}</span>
-                  <span className={`mt-1 block text-xs ${on ? 'text-white/85' : 'text-ink/55'}`}>
+                  <span className={`mt-1 block text-xs ${on ? 'opacity-75' : 'text-ink/55'}`}>
                     {t.assets ?? 0} assets, {t.approved ?? 0} approved, {t.clicks ?? 0} clicks
                   </span>
-                  <span className={`mt-3 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${on ? 'bg-white text-accent' : 'bg-ink/5 text-ink/70'}`}>{humanize(c.status)}</span>
+                  <span className={`mt-3 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${on ? 'bg-ink text-accent' : 'bg-ink/5 text-ink/70'}`}>{humanize(c.status)}</span>
                 </span>
-                <span className={`grid size-12 shrink-0 place-items-center rounded-full ${on ? 'bg-white/20' : 'bg-accent-soft text-accent'}`}>
+                <span className={`grid size-12 shrink-0 place-items-center rounded-full ${on ? 'bg-ink/10' : 'bg-accent-soft text-accent-deep'}`}>
                   <Store size={22} />
                 </span>
               </button>

@@ -28,7 +28,7 @@ export const StatusChip = ({ status, detail, dark = false }) => {
 
 export const FactChip = ({ value, source, version }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-ink">
-    <Lock size={11} className="text-accent" />
+    <Lock size={11} className="text-accent-deep" />
     {value}
     {source && <span className="font-normal text-ink/55">{source}</span>}
     {version && <span className="font-normal text-ink/55">v{version}</span>}
@@ -200,7 +200,7 @@ export const Tabs = ({ tabs, active, onChange, dark = false }) => (
         aria-selected={active === t}
         onClick={() => onChange(t)}
         className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-          active === t ? 'bg-accent text-white' : dark ? 'text-white/60 hover:text-white' : 'text-ink/60 hover:text-ink'
+          active === t ? 'bg-accent text-on-accent' : dark ? 'text-white/60 hover:text-white' : 'text-ink/60 hover:text-ink'
         }`}
       >
         {t}

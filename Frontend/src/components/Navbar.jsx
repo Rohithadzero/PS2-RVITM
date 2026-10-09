@@ -77,7 +77,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
             {user.picture ? (
               <img src={user.picture} alt="" referrerPolicy="no-referrer" className="size-8 rounded-full" />
             ) : (
-              <span className="grid size-8 place-items-center rounded-full bg-accent text-sm font-semibold text-white">{first?.[0]}</span>
+              <span className="grid size-8 place-items-center rounded-full bg-accent text-sm font-semibold text-on-accent">{first?.[0]}</span>
             )}
             <span className="hidden max-w-32 truncate sm:inline">{user.name}</span>
           </span>
@@ -87,7 +87,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
           onClick={() => onSelect('change')}
           aria-label="Change something by voice"
           title="Change something by voice"
-          className="grid size-10 place-items-center rounded-full bg-accent text-white transition-transform hover:scale-105"
+          className="voice-mic voice-mic-dark voice-mic-sm grid size-10 place-items-center rounded-full"
         >
           <Mic size={18} />
         </button>

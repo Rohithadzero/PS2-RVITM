@@ -1,22 +1,27 @@
-/* LoudLaunch skin for the campaign screens: Rohith's palette and shapes over Francis's structure. */
+/* LoudLaunch skin for the campaign screens: Rohith's shapes, Francis's colour grading and voice button. */
 .cv {
-  --paper: #ffffff;
-  --card: #fbf8f4;
-  --paper-2: #f1ece6;
-  --ink: #1c1c1f;
-  --muted: #5f5a55;
-  --line: #e0d8cf;
-  --accent: #f26b1d;
-  --accent-hover: #ff7f35;
-  --approved: #1a5d8f;
-  --approved-bg: #e1eef7;
+  --paper: #f3efe6;
+  --card: #fbf8f1;
+  --paper-2: #e7e0d4;
+  --ink: #1f1a14;
+  --muted: #6d645b;
+  --line: #cfc4b4;
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --on-accent: var(--color-on-accent);
+  --approved: #1e4d6b;
+  --approved-bg: #dbe7ef;
   --flagged: #7a4b00;
-  --flagged-bg: #fbecc4;
-  --blocked: #a3201f;
-  --blocked-bg: #fbdcd9;
+  --flagged-bg: #f7e8b5;
+  --blocked: #9b1c1c;
+  --blocked-bg: #f5d3d0;
   --serif: var(--font-sans, 'Figtree', ui-sans-serif, system-ui, sans-serif);
   --mono: var(--font-sans, 'Figtree', ui-sans-serif, system-ui, sans-serif);
-  background: #fff;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.08) 45%, rgb(255 255 255 / 0) 70%),
+    rgb(243 239 230 / var(--card-alpha));
+  border: 1px solid rgb(255 255 255 / 0.5);
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.9), inset -1px -1px 0 rgb(255 255 255 / 0.35), 0 14px 34px -20px rgb(0 0 0 / 0.6);
   color: var(--ink);
   border-radius: 1.25rem;
   padding: 1.25rem;
@@ -28,30 +33,33 @@
 .cv :lang(kn), .cv :lang(hi) { line-height: 1.65; }
 .cv .label, .cv .kicker, .cv .chip, .cv .badge, .cv .cvb, .cv .step, .cv th, .cv time { letter-spacing: 0; }
 .cv .kicker, .cv .label { text-transform: none; font-size: 13px; font-weight: 600; }
-.cv .cvb { border: 0; border-radius: 999px; min-height: 44px; box-shadow: none; background: rgba(28,28,31,.07); font-weight: 600; font-size: 14px; }
-.cv .cvb:hover:not(:disabled) { transform: none; box-shadow: none; background: rgba(28,28,31,.13); }
-.cv .cvb:active:not(:disabled) { transform: none; background: rgba(28,28,31,.2); }
-.cv .cvb-primary { background: var(--accent); color: #fff; }
+.cv .cvb { border: 0; border-radius: 999px; min-height: 44px; box-shadow: none; background: rgba(31,26,20,.07); font-weight: 600; font-size: 14px; }
+.cv .cvb:hover:not(:disabled) { transform: none; box-shadow: none; background: rgba(31,26,20,.13); }
+.cv .cvb:active:not(:disabled) { transform: none; background: rgba(31,26,20,.2); }
+.cv .cvb-primary { background: var(--accent); color: var(--on-accent); }
 .cv .cvb-primary:hover:not(:disabled) { background: var(--accent-hover); }
 .cv .cvb-quiet { background: transparent; text-decoration: underline; }
 .cv .bubble { border: 1.5px solid var(--line); box-shadow: none; font-size: 16px; }
 .cv .bubble:hover:not(:disabled) { transform: none; background: var(--paper-2); }
 .cv .bubble[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.cv .input { border: 1.5px solid var(--line); border-radius: 12px; background: #fff; }
-.cv .mic { border: 0; background: var(--accent); color: #fff; box-shadow: 0 10px 24px -10px rgba(242,107,29,.8); }
-.cv .mic:hover:not(:disabled) { background: var(--accent-hover); transform: none; box-shadow: 0 12px 28px -10px rgba(242,107,29,.9); }
-.cv .mic:active:not(:disabled) { transform: scale(.98); box-shadow: none; }
-.cv .mic-live { background: var(--ink); color: #fff; }
+.cv .input { border: 1.5px solid var(--line); border-radius: 12px; background: var(--card); }
+/* Francis's voice button: marigold pill, 3px ink edge, hard ink shadow that presses in, ink core and marigold ring while live. */
+.cv .mic { border: 3px solid var(--ink); background: var(--accent); color: var(--on-accent); box-shadow: 4px 4px 0 var(--ink); }
+.cv .mic:hover:not(:disabled) { background: var(--accent-hover); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+.cv .mic:active:not(:disabled) { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.cv .mic-live, .cv .mic-live:hover:not(:disabled) { background: var(--ink); color: var(--paper); animation: cv-mic-ring 1.4s ease-out infinite; }
+@keyframes cv-mic-ring { 0% { box-shadow: 4px 4px 0 var(--ink), 0 0 0 0 color-mix(in srgb, var(--accent) 90%, transparent); } 100% { box-shadow: 4px 4px 0 var(--ink), 0 0 0 16px transparent; } }
 .cv .fab { border: 0; background: var(--ink); color: #fff; box-shadow: 0 10px 24px -10px rgba(0,0,0,.5); }
 .cv .step { border: 1.5px solid var(--line); border-radius: 999px; }
-.cv .step-now { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cv .step-now { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .cv .badge { border-width: 1px; border-radius: 999px; }
 .cv .chip { border-width: 1px; }
 .cv .empty { border-width: 1.5px; border-radius: 14px; background: var(--card); }
 .cv .error-note { border-width: 1.5px; border-radius: 12px; }
-.cv-portal .sheet { background: #fff; border-color: var(--line); color: #1c1c1f; }
+.cv-portal .sheet { background: var(--paper); border-color: var(--line); color: var(--ink); }
 .cv-portal .sheet-head { border-color: var(--line); }
 .cv-steps { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
 .cv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-bottom: 1rem; }
 .cv-bar .top-biz { font-size: 14px; color: var(--muted); font-weight: 600; }
-.cv.cv-portal { padding: 0; background: transparent; border-radius: 0; }
+.cv.cv-portal { padding: 0; background: transparent; border: 0; border-radius: 0; }
+.cv .token, .cv .avatar { color: var(--on-accent); }

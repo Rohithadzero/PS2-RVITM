@@ -13,7 +13,7 @@ const EXAMPLE =
 const KIND = {
   ai: { label: 'AI', icon: Brain, cls: 'bg-info/12 text-info' },
   rule: { label: 'Code', icon: Cog, cls: 'bg-ink/8 text-ink/70' },
-  human: { label: 'You', icon: UserRound, cls: 'bg-accent-soft text-accent' },
+  human: { label: 'You', icon: UserRound, cls: 'bg-accent-soft text-accent-deep' },
   mixed: { label: 'AI + you', icon: Bot, cls: 'bg-warn/15 text-warn' },
 };
 const STATE = {
@@ -57,7 +57,7 @@ const Autopilot = ({ onUse }) => {
   return (
     <div className="mt-4 rounded-2xl border border-ink/10 p-4">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold">
-        <Gauge size={16} className="text-accent" /> Pick channels and languages for my budget
+        <Gauge size={16} className="text-accent-deep" /> Pick channels and languages for my budget
         <ChevronDown size={14} className={open ? 'rotate-180' : ''} />
       </button>
       {open && (
@@ -136,7 +136,7 @@ const Step = ({ s, runId, onChange, busy }) => {
             {s.detail && <p className="mt-1 text-sm text-ink/70">{s.detail}</p>}
             {s.next_idea && s.status === 'needs_you' && <p className="mt-2 rounded-xl bg-ink/5 px-3 py-2 text-sm text-ink/70">“{s.next_idea}”</p>}
             {s.next_run_id && (
-              <button type="button" onClick={() => onChange(() => tickAgentRun(s.next_run_id))} className="mt-2 text-sm font-semibold text-accent hover:underline">Open the drafted campaign</button>
+              <button type="button" onClick={() => onChange(() => tickAgentRun(s.next_run_id))} className="mt-2 text-sm font-semibold text-accent-deep hover:underline">Open the drafted campaign</button>
             )}
           </div>
         </div>
@@ -185,7 +185,7 @@ const Brief = ({ brief }) => {
 const Banner = ({ run }) => {
   const m = {
     working: { cls: 'bg-info/12 text-ink', icon: <Loader2 size={16} className="animate-spin text-info" />, text: 'The agent is working. This page updates by itself.' },
-    needs_you: { cls: 'bg-accent-soft text-ink', icon: <UserRound size={16} className="text-accent" />, text: run.next ? run.next.message : 'It needs you.' },
+    needs_you: { cls: 'bg-accent-soft text-ink', icon: <UserRound size={16} className="text-accent-deep" />, text: run.next ? run.next.message : 'It needs you.' },
     done: { cls: 'bg-good/12 text-ink', icon: <Check size={16} className="text-good" />, text: 'Every step is finished.' },
     failed: { cls: 'bg-bad/12 text-ink', icon: <CircleAlert size={16} className="text-bad" />, text: 'A step stopped. Read it below, fix it, and the agent carries on.' },
   }[run.status];

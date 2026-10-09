@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AudioLines, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
 import { sidebarGroups, logoutItem, hasBackend } from '../navigation';
+import Liquid from './ui/Liquid';
 
 const RAIL = 64;
 const EXPANDED = 236;
@@ -26,11 +27,13 @@ const Tooltip = ({ children }) => (
 // Labels fade instead of mounting, so only the width animates. Fade-in waits for the panel to open up a little.
 const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
 
-const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) => {
+const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pillId }) => {
   const Icon = item.icon;
   const dim = !accent && !hasBackend(item.slug) && !active;
   return (
     <div className="group relative">
+      {/* Outside the button: the button clips its overflow, which would hide the pill while it travels. */}
+      {active && pillId && <Liquid layoutId={pillId} className="inset-0 rounded-xl" />}
       <button
         type="button"
         onClick={() => onSelect(item.slug)}
@@ -41,9 +44,9 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
           dim ? 'opacity-40 hover:opacity-70' : ''
         } ${
           accent
-            ? 'rounded-full bg-accent text-white hover:bg-accent/90'
+            ? 'rounded-full bg-accent text-on-accent hover:bg-accent-hover'
             : active
-              ? 'rounded-xl bg-accent text-white shadow-[0_8px_18px_-8px_rgb(242_107_29/0.9)]'
+              ? `rounded-xl text-on-accent ${pillId ? '' : 'bg-accent'}`
               : 'rounded-xl text-white/60 hover:bg-white/10 hover:text-white'
         }`}
       >
@@ -59,7 +62,7 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false }) 
   );
 };
 
-const NavList = ({ active, onSelect, expanded, badges }) => (
+const NavList = ({ active, onSelect, expanded, badges, pillId }) => (
   <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
     {sidebarGroups.map((group, index) => (
       <div key={group.title} className="flex flex-col gap-1">
@@ -80,6 +83,7 @@ const NavList = ({ active, onSelect, expanded, badges }) => (
             expanded={expanded}
             onSelect={onSelect}
             badge={badges[item.slug]}
+            pillId={pillId}
           />
         ))}
       </div>
@@ -150,7 +154,7 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     <RailHeader expanded={expanded} onToggle={onToggle} />
 
     <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} />
+      <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" />
     </div>
     <div className="mt-3">
       <Footer expanded={expanded} onSelect={onSelect} />
@@ -176,7 +180,7 @@ const Drawer = ({ active, onSelect, onClose, badges }) => (
           </button>
         </div>
         <div className="mt-3 flex-1 overflow-y-auto">
-          <NavList active={active} onSelect={onSelect} expanded badges={badges} />
+          <NavList active={active} onSelect={onSelect} expanded badges={badges} pillId="drawer-pill" />
         </div>
         <div className="border-t border-white/10 pt-3">
           <Footer expanded onSelect={onSelect} />

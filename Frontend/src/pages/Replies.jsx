@@ -37,7 +37,7 @@ const Card = ({ r, onChange }) => {
       <div className="flex flex-wrap items-center gap-2 text-xs text-ink/55">
         <span className="rounded-full bg-ink/5 px-2 py-0.5 font-semibold">{r.channel}</span>
         <span>{LANGS.find((l) => l.code === r.lang)?.name}</span>
-        <span className={`rounded-full px-2 py-0.5 font-semibold ${r.status === 'drafted' ? 'bg-info/12 text-info' : r.status === 'approved' ? 'bg-good/12 text-good' : r.status === 'escalated' ? 'bg-accent-soft text-accent' : 'bg-ink/5'}`}>
+        <span className={`rounded-full px-2 py-0.5 font-semibold ${r.status === 'drafted' ? 'bg-info/12 text-info' : r.status === 'approved' ? 'bg-good/12 text-good' : r.status === 'escalated' ? 'bg-accent-soft text-accent-deep' : 'bg-ink/5'}`}>
           {r.status === 'escalated' ? 'For you to answer' : r.status === 'drafted' ? 'Draft ready' : r.status === 'approved' ? 'Approved, ready to copy' : 'Dismissed'}
         </span>
       </div>
@@ -45,7 +45,7 @@ const Card = ({ r, onChange }) => {
 
       {r.status === 'escalated' && (
         <div className="mt-3 flex flex-col gap-2">
-          <p className="flex items-start gap-2 text-sm"><ShieldAlert size={16} className="mt-0.5 shrink-0 text-accent" />{r.reason}</p>
+          <p className="flex items-start gap-2 text-sm"><ShieldAlert size={16} className="mt-0.5 shrink-0 text-accent-deep" />{r.reason}</p>
           <p className="text-xs text-ink/55">You can send this holding reply while you write your own{r.holding_needs_native_review ? ' (draft: needs native review)' : ''}:</p>
           <p lang={r.lang} className="rounded-xl border border-ink/10 px-3 py-2 text-sm">{r.holding}</p>
           <div className="flex gap-2">
@@ -114,7 +114,7 @@ const Replies = () => {
   return (
     <div className="flex flex-col gap-4">
       <section className="card">
-        <h2 className="flex items-center gap-2 font-semibold"><MessageCircleReply size={18} className="text-accent" /> Paste a customer message</h2>
+        <h2 className="flex items-center gap-2 font-semibold"><MessageCircleReply size={18} className="text-accent-deep" /> Paste a customer message</h2>
         <p className="mt-1 text-sm text-ink/60">The agent answers only from your locked offer facts. Anything about refunds, allergies, complaints, legal matters or bulk orders always comes to you. It never sends anything.</p>
         <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1200} aria-label="Customer message" placeholder="For example: Is the 20% off valid on Sunday? Is it dine-in only?" className="field mt-3 h-auto py-2" />
         <div className="mt-3 flex flex-wrap items-center gap-2">

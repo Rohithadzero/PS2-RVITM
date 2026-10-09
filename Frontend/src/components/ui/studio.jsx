@@ -14,7 +14,7 @@ export const NotConnected = ({ service, owner, children }) => (
 // The request and response a service must implement, so the UI and the service can be built in parallel.
 export const ContractCard = ({ title, request, response }) => (
   <section className="card">
-    <h2 className="mb-1 flex items-center gap-2 font-semibold"><Code2 size={16} className="text-accent" /> {title}</h2>
+    <h2 className="mb-1 flex items-center gap-2 font-semibold"><Code2 size={16} className="text-accent-deep" /> {title}</h2>
     <p className="mb-3 text-xs text-ink/55">Contract for the service team. The UI already sends and reads exactly this.</p>
     <div className="grid gap-3 lg:grid-cols-2">
       <div>

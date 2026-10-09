@@ -112,11 +112,8 @@ const Mic = ({ lang = 'en', onResult, mockText, size = 'lg', label = 'Hold to ta
         onKeyDown={onKeyDown}
         aria-pressed={listening}
         aria-label={listening ? 'Stop recording' : label}
-        className={`relative grid ${dims} touch-none select-none place-items-center rounded-full text-white transition-transform ${
-          listening ? 'scale-105 bg-bad' : 'bg-accent hover:scale-105'
-        }`}
+        className={`voice-mic voice-mic-dark relative grid ${dims} touch-none select-none place-items-center rounded-full ${listening ? 'voice-mic-live' : ''}`}
       >
-        {listening && <span className="absolute inset-0 animate-ping rounded-full bg-bad/40" />}
         {state === 'processing' ? (
           <Loader2 size={size === 'lg' ? 36 : 28} className="animate-spin" />
         ) : listening ? (

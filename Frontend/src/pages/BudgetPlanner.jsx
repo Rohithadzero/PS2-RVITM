@@ -169,7 +169,7 @@ const BudgetPlanner = () => {
               {plan.alternatives.map((a) => (
                 <li key={a.label} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ink/5 px-3 py-2.5 text-sm">
                   <span className="flex items-center gap-2 font-medium">
-                    <Lightbulb size={15} className="text-accent" /> {a.label}
+                    <Lightbulb size={15} className="text-accent-deep" /> {a.label}
                   </span>
                   <span className={`text-xs ${a.fits ? 'text-good' : 'text-ink/50'}`}>
                     {formatDuration(a.cost.time_s)} time, {formatDuration(a.cost.review_s)} review{a.fits ? ', fits' : ', over a limit'}
