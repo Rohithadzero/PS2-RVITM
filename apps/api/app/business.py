@@ -347,6 +347,6 @@ def order_tap(slug: str, request: Request, lang: str = "en", i: int | None = Non
     text = UI.get(lang, UI["en"])["hello"].format(name=profile.get("name") or "") + (f" {what}" if what else "")
     from app import notifications  # imported here: notifications uses modules that import this one
     notifications.notify(db, row["owner"], "order", f"Order tapped on your website" + (f": {what}" if what else ""),
-                         "A visitor tapped Order on WhatsApp. GrowIT cannot see whether they sent the message, so check your WhatsApp.", "customers",
+                         "A visitor tapped Order on WhatsApp. GrowIt cannot see whether they sent the message, so check your WhatsApp.", "customers",
                          f"order:{slug}:{what}:{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}")  # taps within the same minute are one line
     return Response(status_code=302, headers={"Location": order_link(profile["phone"], text), "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})

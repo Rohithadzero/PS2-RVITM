@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Opening animation. Idea: a small business starts as scattered dots, ideas and customers everywhere, and GrowIT pulls them into a
+// Opening animation. Idea: a small business starts as scattered dots, ideas and customers everywhere, and GrowIt pulls them into a
 // rising arrow. The dots come from the logo itself: the PNG is read once, every coloured pixel on a coarse grid becomes a particle,
 // and each particle flies from a random place on the screen to its place in the logo. The arrow builds from the lower left to the
 // upper right (the way growth reads), the wordmark follows, the yellow full stop lands last, and the tagline settles under it.
@@ -228,7 +228,7 @@ export default function Intro({ onDone }) {
   }, []);
 
   return (
-    <div ref={root} role="img" aria-label="GrowIT, AI Marketing Studio" className="fixed inset-0 z-[300] overflow-hidden" style={{ backgroundColor: BG }}>
+    <div ref={root} role="img" aria-label="GrowIt, AI Marketing Studio" className="fixed inset-0 z-[300] overflow-hidden" style={{ backgroundColor: BG }}>
       <div ref={glow} aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-0" style={{ background: 'radial-gradient(60% 55% at 62% 40%, rgba(12,148,82,0.20), transparent 70%)' }} />
       <canvas ref={canvas} aria-hidden="true" className="absolute inset-0" />
       <img ref={logo} src="/growit-logo.svg" alt="" aria-hidden="true" draggable="false" className="pointer-events-none absolute select-none" style={{ opacity: 0, mixBlendMode: 'screen' }} />

@@ -1,10 +1,10 @@
-"""memory: "How we remember you". What GrowIT knows about the shop, in plain words the owner can read, edit and delete.
+"""memory: "How we remember you". What GrowIt knows about the shop, in plain words the owner can read, edit and delete.
 
 Two kinds of author:
   you      the owner types it (the menu, the pricing, the timings, how they like to sound)
-  growit   GrowIT proposes it after looking at the shop's own data: saved details, approved offers, the customer list
+  growit   GrowIt proposes it after looking at the shop's own data: saved details, approved offers, the customer list
 
-What GrowIT proposes is only ever SUGGESTED. A suggestion is shown with its evidence and is not used anywhere until the owner
+What GrowIt proposes is only ever SUGGESTED. A suggestion is shown with its evidence and is not used anywhere until the owner
 accepts it; dismissing it keeps it from coming back. Nothing here is a second source of truth for offers: prices, dates and discounts
 for a campaign still come from the locked Offer Facts. The only memory that reaches the copy prompt is the owner's own voice and
 "never say" notes, so a remembered price can never leak into a post.
@@ -91,7 +91,7 @@ def propose(db: Database, owner: str, *, kind: str, title: str, body: str, key: 
 
 
 def gather(db: Database, owner: str) -> list[dict[str, str]]:
-    """What GrowIT can tell about the shop from data it already holds. Plain code, no model, every item cites where it came from."""
+    """What GrowIt can tell about the shop from data it already holds. Plain code, no model, every item cites where it came from."""
     out: list[dict[str, str]] = []
     profile, _ = business._load(db, owner)
     if profile.get("menu"):

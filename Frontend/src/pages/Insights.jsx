@@ -81,7 +81,7 @@ const Results = () => {
           </p>
           <ul>{items.map((i) => <RangeRow key={i.asset_id} item={i} max={max} />)}</ul>
           {data.lessons.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink/75">{data.lessons.map((l) => <li key={l}>{l}</li>)}</ul>}
-          <p className="mt-3 text-xs text-ink/55">Entered by you, not measured by this app. GrowIT will offer to remember what worked on the Memory screen.</p>
+          <p className="mt-3 text-xs text-ink/55">Entered by you, not measured by this app. GrowIt will offer to remember what worked on the Memory screen.</p>
         </>
       )}
     </ChartCard>

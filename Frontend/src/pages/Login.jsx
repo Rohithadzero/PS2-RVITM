@@ -31,7 +31,7 @@ const Login = ({ reason }) => {
       <Backdrop />
       <main className="glass-panel w-full max-w-sm rounded-[28px] p-8 text-center">
         <Logo size={64} className="mx-auto rounded-2xl" />
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">GrowIT</h1>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight">GrowIt</h1>
         <p className="text-xs font-medium tracking-wide text-accent">AI Marketing Studio</p>
         <p className="mt-2 text-sm text-white/60">Your brand and campaigns sync to your phone and laptop.</p>
 

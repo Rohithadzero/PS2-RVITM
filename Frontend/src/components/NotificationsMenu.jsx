@@ -14,7 +14,7 @@ const ago = (iso) => {
   return `${Math.floor(s / 86400)} d ago`;
 };
 
-// The name chip at the top right. It opens what GrowIT wants a yes on, and what has happened: orders from the website, likes and
+// The name chip at the top right. It opens what GrowIt wants a yes on, and what has happened: orders from the website, likes and
 // shares on Instagram, scheduled emails, reminders, customers who unsubscribed.
 const NotificationsMenu = ({ user }) => {
   const [open, setOpen] = useState(false);
@@ -94,8 +94,8 @@ const NotificationsMenu = ({ user }) => {
             {error && <p role="alert" className="px-2 py-1.5 text-sm text-bad">{error}</p>}
 
             {feed?.suggestion_count > 0 && (
-              <section aria-label="Suggestions from GrowIT" className="mb-2">
-                <p className="flex items-center gap-1.5 px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/50"><Sparkles size={12} /> GrowIT suggests</p>
+              <section aria-label="Suggestions from GrowIt" className="mb-2">
+                <p className="flex items-center gap-1.5 px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/50"><Sparkles size={12} /> GrowIt suggests</p>
                 <ul className="flex flex-col gap-1.5">
                   {feed.suggestions.map((s) => (
                     <li key={s.id} className="rounded-xl bg-white/8 p-2.5">

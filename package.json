@@ -2,7 +2,7 @@
   "name": "growit",
   "private": true,
   "version": "1.0.0",
-  "description": "GrowIT: voice-first marketing campaigns for small businesses on Agnes models (HR26-AI-02).",
+  "description": "GrowIt: voice-first marketing campaigns for small businesses on Agnes models (HR26-AI-02).",
   "homepage": "https://github.com/Rohithadzero/PS2-RVITM#readme",
   "repository": { "type": "git", "url": "git+https://github.com/Rohithadzero/PS2-RVITM.git" },
   "scripts": {

@@ -78,8 +78,8 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
           type="button"
           onClick={() => openTalk('greet')}
           data-tour="mic"
-          aria-label="Talk to GrowIT"
-          title="Talk to GrowIT"
+          aria-label="Talk to GrowIt"
+          title="Talk to GrowIt"
           className="voice-mic voice-mic-dark voice-mic-sm grid size-10 place-items-center rounded-full"
         >
           <Mic size={18} />

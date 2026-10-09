@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { answerQuestion, applyChange, finishInterview, getBoard, getSession, proposeChange, startInterview, editAnswer } from '../../campaign/lib/api';
+import { api, answerQuestion, applyChange, finishInterview, getBoard, getSession, proposeChange, startInterview, editAnswer } from '../../campaign/lib/api';
 import { channelLabel, langName, prettyText } from '../../campaign/lib/format';
 import { go, useCurrent } from '../../campaign/lib/current';
 import { useVoiceInput } from '../../campaign/lib/voice';
 import { navigate } from '../../lib/router';
-import { understand } from './intent';
+import { looksLikeQuestion, understand } from './intent';
 import { getStrings } from './strings';
 import { useTalkVoice } from './voiceIO';
 
-// One conversation for everything spoken in the app: starting a campaign, changing one, opening a screen. GrowIT says every line out
+// One conversation for everything spoken in the app: starting a campaign, changing one, opening a screen. GrowIt says every line out
 // loud (when the voice is on) and, in hands-free mode, starts listening again as soon as it has finished, so it works like a
 // phone call. Tapping the orb while it speaks interrupts it. Nothing is changed without a spoken or tapped yes.
 
@@ -36,6 +36,7 @@ export function useTalk({ sessionId, user }) {
   const [assets, setAssets] = useState([]);
   const [mode, setMode] = useState('home'); // home | interview | change | confirm
   const [busy, setBusy] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [lastHeard, setLastHeard] = useState('');
   const voice = useTalkVoice();
 
@@ -161,7 +162,7 @@ export function useTalk({ sessionId, user }) {
     await sayT('changeIntro');
   }, [sayT, loadAssets]);
 
-  const proposeFor = useCallback(async (text) => {
+  const proposeFor = useCallback(async (text, { chatFallback = false } = {}) => {
     const id = live.current.cur?.id;
     if (!id) { await sayT('noCampaign'); setMode('home'); return; }
     setBusy(true);
@@ -179,12 +180,37 @@ export function useTalk({ sessionId, user }) {
       const names = p.affected_asset_ids.slice(0, 3).map((aid) => (byId.get(aid) ? `${channelLabel(byId.get(aid).channel)} ${langName(byId.get(aid).lang)}` : '')).filter(Boolean).join(', ');
       await say(t.proposal(prettyText(p.summary), p.affected_asset_ids.length, names), { spoken: l, extra: { kind: 'proposal' } });
     } catch (e) {
+      if (e.code === 'not_understood' && chatFallback) { setBusy(false); setMode(live.current.proposal ? 'confirm' : 'home'); return chatRef.current(text); }
       setMode('change');
       await say(e.code === 'not_understood' ? getStrings(live.current.lang).t.notUnderstood : getStrings(live.current.lang).t.error(e.message), { spoken: getStrings(live.current.lang).lang });
     } finally {
       setBusy(false);
     }
   }, [say, sayT, loadAssets]);
+
+  // The chat brain: anything that is not a plain command gets a short answer from Groq, Gemini or Agnes (the server picks the fastest that is on).
+  const chatRef = useRef(null);
+  const chatReply = useCallback(async (text) => {
+    const { lang: l, mode: m, session: s, cur: c } = live.current;
+    const past = (live.current.history || []).filter((x) => x.role === 'ai' || x.role === 'user').slice(-9).map((x) => ({ role: x.role === 'ai' ? 'assistant' : 'user', content: x.text.slice(0, 600) }));
+    if (past.length && past[past.length - 1].role === 'user' && past[past.length - 1].content === text.slice(0, 600)) past.pop();
+    setThinking(true);
+    try {
+      const out = await api('/talk/chat', { method: 'POST', body: JSON.stringify({ messages: [...past, { role: 'user', content: text.slice(0, 600) }], lang: l, campaign_id: c?.id || null, question: s?.question?.prompt || null, mode: m }) });
+      const act = out.action;
+      if (act?.type === 'new_campaign') { setThinking(false); return startNew(); }
+      if (act?.type === 'change') { setThinking(false); return proposeFor(act.text, { chatFallback: false }); }
+      setThinking(false);
+      const meta = { provider: out.provider, ms: out.latency_ms };
+      if (act?.type === 'navigate') { push(msg('ai', out.reply, meta)); navigate(act.slug); return; }
+      await say(out.reply, { spoken: l, extra: meta });
+    } catch (e) {
+      setThinking(false);
+      const { t, lang: tl } = getStrings(l);
+      await say(e.code === 'chat_unavailable' ? t.unknown : t.error(e.message), { spoken: tl });
+    }
+  }, [say, push, startNew, proposeFor]);
+  chatRef.current = chatReply;
 
   const applyNow = useCallback(async () => {
     const p = live.current.proposal;
@@ -224,7 +250,7 @@ export function useTalk({ sessionId, user }) {
     if (m === 'change') {
       const word = understand(text, 'confirm').intent;
       if (word === 'no') { setMode('home'); await sayT('discarded'); return; }
-      await proposeFor(text);
+      await proposeFor(text, { chatFallback: true });
       return;
     }
     const u = understand(text, m === 'confirm' ? 'confirm' : m === 'interview' ? 'interview' : 'home');
@@ -243,7 +269,7 @@ export function useTalk({ sessionId, user }) {
         return;
       }
       case 'change': {
-        if (hasDetail(u.text)) return proposeFor(u.text);
+        if (hasDetail(u.text)) return proposeFor(u.text, { chatFallback: true });
         return beginChange();
       }
       case 'finish': return s ? buildPlan() : sayT('unknown');
@@ -251,13 +277,13 @@ export function useTalk({ sessionId, user }) {
         if (s?.question && !s.question.required) return sendAnswer({ choices: ['skip'], source: 'tap' });
         return sayT('skipNotAllowed');
       }
-      case 'answer': return s ? sendAnswer({ text, source }) : undefined;
+      case 'answer': return s ? (looksLikeQuestion(text) ? chatReply(text) : sendAnswer({ text, source })) : undefined;
       case 'empty': return undefined;
       default:
         if (m === 'confirm') return sayT('confirmHint');
-        return sayT('unknown');
+        return chatReply(text); // not a command: let the chat brain answer it
     }
-  }, [push, voice, say, sayT, startNew, proposeFor, applyNow, discard, beginChange, buildPlan, sendAnswer]);
+  }, [push, voice, say, sayT, startNew, proposeFor, applyNow, discard, beginChange, buildPlan, sendAnswer, chatReply]);
 
   // kept for "repeat that"
   live.current.history = messages;
@@ -333,7 +359,7 @@ export function useTalk({ sessionId, user }) {
   const setHandsFree = (v) => { setHandsFreeState(v); writeBool('talk-handsfree', v); if (!v) setPaused(false); };
   const setVoiceOn = (v) => { setVoiceOnState(v); writeBool('talk-voice', v); if (!v) voice.stop(); };
 
-  const phase = voice.speaking || voice.preparing ? 'speaking' : mic.listening ? 'listening' : mic.transcribing || busy ? 'thinking' : 'idle';
+  const phase = voice.speaking || voice.preparing ? 'speaking' : mic.listening ? 'listening' : mic.transcribing || busy || thinking ? 'thinking' : 'idle';
 
   return {
     lang, setLang, handsFree, setHandsFree, voiceOn, setVoiceOn, started, paused, messages, session, proposal, assets, mode, busy, phase, lastHeard,

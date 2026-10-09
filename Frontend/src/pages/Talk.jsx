@@ -22,14 +22,14 @@ const Bubble = ({ m, onReplay }) => {
     >
       <span className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${ai ? 'rounded-tl-md bg-ink/6 text-ink' : 'rounded-tr-md bg-accent text-on-accent'}`}>{m.text}</span>
       <span className="flex items-center gap-2 px-1 text-[11px] text-ink/45">
-        {ai ? 'GrowIT' : m.source === 'typed' ? 'You typed' : m.source === 'tap' ? 'You tapped' : 'You said'}
+        {ai ? (m.provider ? `GrowIt · ${m.provider === 'groq' ? 'Groq' : m.provider === 'gemini' ? 'Gemini' : 'Agnes'}${m.ms ? ` · ${(m.ms / 1000).toFixed(1)}s` : ''}` : 'GrowIt') : m.source === 'typed' ? 'You typed' : m.source === 'tap' ? 'You tapped' : 'You said'}
         {ai && <button type="button" onClick={() => onReplay(m.text)} aria-label="Say it again" className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 hover:bg-ink/8"><Volume2 size={11} /> again</button>}
       </span>
     </motion.li>
   );
 };
 
-// S3: Talk. The one place for everything spoken: start a campaign, change one, open a screen. GrowIT speaks every line and, in
+// S3: Talk. The one place for everything spoken: start a campaign, change one, open a screen. GrowIt speaks every line and, in
 // hands-free mode, listens again as soon as it has finished, like a phone call. Everything is also on screen, and you can type.
 const Talk = ({ id }) => {
   const { me } = useAuth();
@@ -59,7 +59,7 @@ const Talk = ({ id }) => {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-3">
           <label className="flex items-center gap-2 text-sm">
             <span className="font-medium">I speak</span>
-            <select className="field h-9 w-auto" value={t.session?.lang || t.lang} onChange={(e) => t.setLang(e.target.value)} disabled={locked} aria-label="Language">
+            <select className="field h-9 w-auto" value={t.lang} onChange={(e) => t.setLang(e.target.value)} aria-label="Language I speak">
               {MAIN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
               <optgroup label="More languages (draft)">
                 {MORE_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native} ({l.name})</option>)}
@@ -68,21 +68,26 @@ const Talk = ({ id }) => {
           </label>
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <label className="flex items-center gap-2"><Toggle checked={t.handsFree} onChange={t.setHandsFree} label="Hands-free" /> Hands-free</label>
-            <label className="flex items-center gap-2"><Toggle checked={t.voiceOn} onChange={t.setVoiceOn} label="GrowIT speaks" /> GrowIT speaks</label>
+            <label className="flex items-center gap-2"><Toggle checked={t.voiceOn} onChange={t.setVoiceOn} label="GrowIt speaks" /> GrowIt speaks</label>
           </div>
         </div>
 
-        {!LOCALISED.includes(t.session?.lang || t.lang) && (
+        {locked && t.lang !== t.session.lang && (
+          <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2 text-xs text-ink/70">
+            The questions for this campaign stay in {LANGS.find((l) => l.code === t.session.lang)?.name}. Your microphone, GrowIt's voice and its chat replies now follow {LANGS.find((l) => l.code === t.lang)?.name}.
+          </p>
+        )}
+        {!LOCALISED.includes(t.lang) && (
           <p className="mt-3 rounded-xl bg-warn/12 px-3 py-2 text-xs text-ink/75">
-            Draft language: GrowIT asks its questions in English. You can answer in {LANGS.find((l) => l.code === (t.session?.lang || t.lang))?.name}. Its fact-check words have not been read by a native speaker yet.
+            Draft language: GrowIt asks its questions in English. You can answer in {LANGS.find((l) => l.code === (t.session?.lang || t.lang))?.name}. Its fact-check words have not been read by a native speaker yet.
           </p>
         )}
 
         <ul className="my-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1" aria-live="polite">
           {t.messages.length === 0 && (
             <li className="m-auto max-w-sm text-center">
-              <h2 className="text-xl font-bold tracking-tight">Talk to GrowIT</h2>
-              <p className="mt-1 text-sm text-ink/60">Start a campaign, change one, or open any screen, all by voice. Tap the mic to begin. GrowIT answers out loud, and everything is also written here.</p>
+              <h2 className="text-xl font-bold tracking-tight">Talk to GrowIt</h2>
+              <p className="mt-1 text-sm text-ink/60">Start a campaign, change one, or open any screen, all by voice. Tap the mic to begin. GrowIt answers out loud, and everything is also written here.</p>
             </li>
           )}
           {t.messages.map((m) => <Bubble key={m.id} m={m} onReplay={t.replay} />)}
@@ -151,7 +156,7 @@ const Talk = ({ id }) => {
             </form>
           )}
           <p className="text-[11px] text-ink/40">
-            {t.voiceOn ? `Voice: ${t.voice.engine === 'gemini' ? 'Gemini' : 'your browser'}` : 'GrowIT is silent'}{t.mic.engine ? ` · Mic: ${t.mic.engine === 'server' ? 'server' : 'your browser'}` : ''}
+            {t.voiceOn ? `Voice: ${t.voice.engine === 'gemini' ? 'Gemini' : 'your browser'}` : 'GrowIt is silent'}{t.mic.engine ? ` · Mic: ${t.mic.engine === 'server' ? 'server' : 'your browser'}` : ''}
           </p>
         </div>
       </section>
@@ -172,10 +177,10 @@ const Talk = ({ id }) => {
           <>
             <h2 className="font-semibold">Things you can say</h2>
             <ul className="mt-3 flex flex-col gap-2.5 text-sm text-ink/75">
-              <li><strong className="text-ink">“New campaign”</strong><br />GrowIT asks a few short questions.</li>
+              <li><strong className="text-ink">“New campaign”</strong><br />GrowIt asks a few short questions.</li>
               <li><strong className="text-ink">“Change the price to 50”</strong><br />It shows what it touches, then waits for your yes.</li>
               <li><strong className="text-ink">“Open customers”</strong><br />Insights, settings, plan, dashboard and the rest work the same way.</li>
-              <li><strong className="text-ink">“Repeat”</strong><br />GrowIT says its last line again.</li>
+              <li><strong className="text-ink">“Repeat”</strong><br />GrowIt says its last line again.</li>
             </ul>
             {!t.hasCampaign && <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2 text-xs text-ink/65">You have no campaign yet, so changes are not available until you build one.</p>}
           </>

@@ -1,12 +1,12 @@
 """notifications: what happened that the owner should know about, in one place behind the name chip at the top right.
 
 Two parts:
-  suggestions  what GrowIT noticed and wants a yes or no on (from memory). They come from the memory table, not from here.
+  suggestions  what GrowIt noticed and wants a yes or no on (from memory). They come from the memory table, not from here.
   activity     things that happened: someone tapped Order on the website, an Instagram post gained likes, comments, saves or shares,
                a scheduled email went out or failed, a reminder is due, a customer unsubscribed.
 
 Every activity line is something the server actually saw. An "order" is a tap on the website's Order on WhatsApp button, counted when
-the visitor passes through the site's own link; GrowIT cannot see whether they then sent the message, and the line says so.
+the visitor passes through the site's own link; GrowIt cannot see whether they then sent the message, and the line says so.
 Producers call notify(); the same key never creates a second line, so a retry or a refresh cannot double-count.
 """
 from __future__ import annotations

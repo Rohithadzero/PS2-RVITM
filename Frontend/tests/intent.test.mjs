@@ -50,3 +50,21 @@ test('interview: only whole-sentence commands are commands, everything else is t
   assert.deepEqual(say('open settings', 'interview'), { intent: 'navigate', slug: 'settings' });
   assert.equal(say('open house for students this weekend with free tea', 'interview').intent, 'answer'); // long: an answer
 });
+
+import { looksLikeQuestion } from '../src/components/talk/intent.js';
+import { pieces } from '../src/components/talk/speechText.js';
+
+test('questions for the assistant are told apart from interview answers', () => {
+  for (const q of ['what does that mean?', 'How do I get more customers', 'can you explain the forecast', 'क्या यह सही है', 'why is my reach so low', 'Is it free?']) assert.equal(looksLikeQuestion(q), true, q);
+  for (const a of ['What a Cake', 'Brew Bandi Cafe', 'next level cafe', 'twenty percent off', 'Indiranagar Bengaluru', 'Indira Nagar bakery and cafe']) assert.equal(looksLikeQuestion(a), false, a);
+});
+
+test('replies are cut into sentence-sized pieces and long ones are shortened at a sentence end', () => {
+  assert.deepEqual(pieces('Hello there.'), ['Hello there.']);
+  const two = pieces('First sentence is here. Second sentence follows right after it.');
+  assert.equal(two.length, 1); // short enough to share a piece
+  const long = pieces('A sentence of a fair length that goes on for a while. '.repeat(12));
+  assert.ok(long.join(' ').length <= 360 && long.every((p) => p.length <= 200) && long.length >= 2);
+  assert.ok(long.join(' ').endsWith('.'));
+  assert.deepEqual(pieces(''), []);
+});

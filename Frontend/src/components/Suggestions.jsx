@@ -6,7 +6,7 @@ import { navigate } from '../lib/router';
 
 const send = (method, path) => api(path, { method });
 
-// What GrowIT noticed about the business (from saved details, approved offers, customers and results). Each one waits for a yes:
+// What GrowIt noticed about the business (from saved details, approved offers, customers and results). Each one waits for a yes:
 // nothing is used until it is accepted, and "Not right" keeps it from coming back. Accepted ones live on the Memory screen.
 const Suggestions = ({ className = '' }) => {
   const [items, setItems] = useState(null);
@@ -36,18 +36,18 @@ const Suggestions = ({ className = '' }) => {
   };
   const refresh = () => act(async () => {
     const r = await send('POST', '/memory/refresh');
-    setNotice(r.added ? `GrowIT found ${r.added} new thing${r.added === 1 ? '' : 's'} to suggest.` : 'Nothing new to suggest.');
+    setNotice(r.added ? `GrowIt found ${r.added} new thing${r.added === 1 ? '' : 's'} to suggest.` : 'Nothing new to suggest.');
   });
 
   if (items === null) return null;
   return (
-    <section className={`card ${className}`} aria-label="Suggested by GrowIT">
+    <section className={`card ${className}`} aria-label="Suggested by GrowIt">
       <CardTitle sub="Nothing is used until you accept it. Accepted ones are kept on the Memory screen, where you can edit them." action={
         <button type="button" className="btn-ghost" onClick={refresh} disabled={busy}><RefreshCw size={15} /> Look at my shop again</button>
-      }>Suggested by GrowIT</CardTitle>
+      }>Suggested by GrowIt</CardTitle>
       {error && <p role="alert" className="mb-2 text-sm text-bad">{error}</p>}
       {items.length === 0 ? (
-        <p className="text-sm text-ink/55">No suggestions right now. Save your shop details, approve an offer or enter results, and GrowIT will suggest what it noticed.</p>
+        <p className="text-sm text-ink/55">No suggestions right now. Save your shop details, approve an offer or enter results, and GrowIt will suggest what it noticed.</p>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {items.map((s) => (

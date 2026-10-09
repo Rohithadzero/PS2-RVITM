@@ -1,4 +1,4 @@
-"""languages: the one list of languages GrowIT works in, and what each one needs.
+"""languages: the one list of languages GrowIt works in, and what each one needs.
 
 For every language: its name, the script it is written in, the locale the browser mic and voice use, the Whisper code for cloud
 speech-to-text (Groq), the offline Vosk model if one exists, and the words the fact checker needs (weekdays, "percent", "rupees",

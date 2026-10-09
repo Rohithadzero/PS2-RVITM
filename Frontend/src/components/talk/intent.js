@@ -95,3 +95,13 @@ export function understand(text, state = 'home') {
   }
   return { intent: 'unknown' };
 }
+
+// A question put to the assistant, as opposed to an answer to the interview. "What a Cake" is a business name; "what does that mean" is a
+// question. So a question needs a question mark, or a question word followed by enough words to be a sentence.
+const QUESTION_START = /^(what|why|how|when|where|who|which|can|could|should|would|is|are|do|does|did|will|tell me|explain|help me|kya|kyun|kaise|क्या|क्यों|कैसे|कब|कहाँ|ಏನು|ಯಾಕೆ|ಹೇಗೆ|ಯಾವಾಗ)(?=\s|$)/u;
+export const looksLikeQuestion = (text) => {
+  const raw = String(text || '').trim();
+  if (/[?？]\s*$/.test(raw)) return true;
+  const t = normalize(raw);
+  return t.split(' ').length >= 4 && QUESTION_START.test(t);
+};

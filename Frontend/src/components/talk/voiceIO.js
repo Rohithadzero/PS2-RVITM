@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { API_URL, api } from '../../campaign/lib/api';
 import { pickVoice } from '../../campaign/lib/speech';
+import { pieces } from './speechText';
 
 // The voice out for Talk. One thing speaks at a time, and speak() gives back a promise that settles when it has finished (true) or
 // was cut off (false), so a conversation can wait for the voice before it listens.
-//   server   Gemini, when switched on in Settings: every language, one consistent voice. Audio is cached, so "say it again" is instant.
+//   server   ElevenLabs (or Gemini) through the app's /tts, when switched on in Settings. A reply is cut into sentence-sized pieces that
+//            are all requested at once, so the first piece starts playing while the rest are still being made. Audio is cached.
 //   browser  the voice built into the browser: free and offline, quality depends on the device.
-// If the server voice is off or fails, the browser's voice is used and the screen says which one spoke.
+// If the server voice is off or fails, the browser's voice takes over from where it stopped. Only the first MAX_SPOKEN characters of a
+// reply are spoken (the whole reply is always on screen): the voice account has a monthly allowance, and long speeches are slow to hear.
 
-const cache = new Map(); // `${lang}|${text}` -> Blob
-const MAX_CACHE = 40;
-
+const cache = new Map(); // `${lang}|${text}` -> { blob, engine }
+const MAX_CACHE = 60;
 export function useTalkVoice() {
   const [speaking, setSpeaking] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -38,35 +40,33 @@ export function useTalkVoice() {
 
   useEffect(() => stop, [stop]);
 
-  const viaServer = useCallback(async (text, lang, id) => {
+  // One piece of server audio, from the cache or the server. Resolves to { blob, engine } or null.
+  const fetchPiece = useCallback(async (text, lang) => {
     const key = `${lang}|${text}`;
-    let blob = cache.get(key);
-    if (!blob) {
-      setPreparing(true);
-      try {
-        const r = await fetch(`${API_URL}/tts`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.slice(0, 600), lang }) });
-        if (!r.ok) return null;
-        blob = await r.blob();
-      } catch {
-        return null;
-      } finally {
-        setPreparing(false);
-      }
+    if (cache.has(key)) return cache.get(key);
+    try {
+      const r = await fetch(`${API_URL}/tts`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang }) });
+      if (!r.ok) return null;
+      const got = { blob: await r.blob(), engine: r.headers.get('X-TTS-Engine') || 'server' };
       if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value);
-      cache.set(key, blob);
+      cache.set(key, got);
+      return got;
+    } catch {
+      return null;
     }
-    if (current.current.id !== id) return false; // cut off while the audio was being made
+  }, []);
+
+  const play = useCallback((blob, id) => new Promise((resolve) => {
+    if (current.current.id !== id) return resolve(false);
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     current.current.audio = audio;
-    return new Promise((resolve) => {
-      current.current.settle = resolve;
-      const done = (ok) => { URL.revokeObjectURL(url); resolve(ok); };
-      audio.onended = () => done(true);
-      audio.onerror = () => done(null);
-      audio.play().catch(() => done(null));
-    });
-  }, []);
+    current.current.settle = resolve;
+    const done = (ok) => { URL.revokeObjectURL(url); resolve(ok); };
+    audio.onended = () => done(true);
+    audio.onerror = () => done(null);
+    audio.play().catch(() => done(null));
+  }), []);
 
   const viaBrowser = useCallback((text, lang, id) => new Promise((resolve) => {
     try {
@@ -92,13 +92,28 @@ export function useTalkVoice() {
     stop();
     const id = current.current.id;
     setSpeaking(true);
-    let outcome = null;
+    let rest = null; // what the browser's voice should say, if the server voice could not
     if (serverOn) {
-      outcome = await viaServer(text, lang, id);
-      if (outcome !== null) setEngine('gemini');
+      const parts = pieces(text);
+      const fetched = parts.map((p) => fetchPiece(p, lang)); // all requested now; they arrive while the first one plays
+      setPreparing(true);
+      for (let i = 0; i < parts.length; i++) {
+        const got = await fetched[i];
+        if (i === 0) setPreparing(false);
+        if (current.current.id !== id) return false;
+        const ok = got ? await play(got.blob, id) : null;
+        if (ok === false) return false;
+        if (ok === null) { rest = parts.slice(i).join(' '); break; }
+        setEngine(got.engine);
+      }
+      if (rest === null) {
+        if (current.current.id === id) { current.current.settle = null; setSpeaking(false); }
+        return true;
+      }
     }
-    if (outcome === null && current.current.id === id) {
-      outcome = await viaBrowser(text, lang, id);
+    let outcome = null;
+    if (current.current.id === id) {
+      outcome = await viaBrowser(rest ?? text, lang, id);
       if (outcome !== null) setEngine('browser');
     }
     if (current.current.id === id) {
@@ -106,7 +121,7 @@ export function useTalkVoice() {
       setSpeaking(false);
     }
     return outcome;
-  }, [serverOn, stop, viaServer, viaBrowser]);
+  }, [serverOn, stop, fetchPiece, play, viaBrowser]);
 
   return { speak, stop, speaking, preparing, engine, serverOn };
 }

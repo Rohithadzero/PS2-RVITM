@@ -11,7 +11,7 @@ const WRITES = ['voice', 'rules'];
 
 const Source = ({ item }) => (
   <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.source === 'you' ? 'bg-ink/8 text-ink/70' : 'bg-accent-soft text-accent-deep'}`}>
-    {item.source === 'you' ? 'You wrote this' : item.status === 'suggested' ? 'Suggested by GrowIT' : 'GrowIT noticed, you accepted'}
+    {item.source === 'you' ? 'You wrote this' : item.status === 'suggested' ? 'Suggested by GrowIt' : 'GrowIt noticed, you accepted'}
   </span>
 );
 
@@ -26,14 +26,14 @@ const Editor = ({ value, kinds, onChange, onSave, onCancel, busy }) => (
       <Field label="Title"><input className="field" value={value.title} maxLength={120} onChange={(e) => onChange({ title: e.target.value })} placeholder="Menu and prices" /></Field>
     </div>
     <div className="mt-3">
-      <Field label="What GrowIT should know" hint="Plain words, as you would tell a new helper. One item per line works well for menus and prices.">
+      <Field label="What GrowIt should know" hint="Plain words, as you would tell a new helper. One item per line works well for menus and prices.">
         <textarea className="field min-h-28" value={value.body} maxLength={2000} onChange={(e) => onChange({ body: e.target.value })} />
       </Field>
     </div>
     {WRITES.includes(value.kind) && (
       <label className="mt-3 flex items-center gap-3 text-sm">
-        <Toggle checked={value.use_ai} onChange={(v) => onChange({ use_ai: v })} label="Use when GrowIT writes for me" />
-        Use this when GrowIT writes for me
+        <Toggle checked={value.use_ai} onChange={(v) => onChange({ use_ai: v })} label="Use when GrowIt writes for me" />
+        Use this when GrowIt writes for me
       </label>
     )}
     <div className="mt-4 flex flex-wrap gap-2">
@@ -43,7 +43,7 @@ const Editor = ({ value, kinds, onChange, onSave, onCancel, busy }) => (
   </div>
 );
 
-// S24: "How we remember you". What GrowIT knows about the business, written by you or proposed by GrowIT and waiting for your yes.
+// S24: "How we remember you". What GrowIt knows about the business, written by you or proposed by GrowIt and waiting for your yes.
 const Memory = () => {
   const [data, setData] = useState({ kinds: {}, items: [], suggested: [], note: '' });
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ const Memory = () => {
   };
 
   const forget = () => {
-    if (window.confirm('Forget everything GrowIT remembers about your business? Your menu and shop details in Brand & Data are not touched.')) {
+    if (window.confirm('Forget everything GrowIt remembers about your business? Your menu and shop details in Brand & Data are not touched.')) {
       act(() => send('DELETE', '/memory?confirm=true'), 'Everything was forgotten.');
     }
   };
@@ -105,28 +105,28 @@ const Memory = () => {
       {error && <Banner tone="warn">{error}</Banner>}
       {data.suggested.length > 0 && (
         <Banner tone="info" action={<button type="button" className="btn-primary h-8 px-3 text-xs" onClick={() => navigate('insights')}>See them on Insights</button>}>
-          <span className="inline-flex items-center gap-2"><Lightbulb size={15} /> GrowIT has {data.suggested.length} suggestion{data.suggested.length === 1 ? '' : 's'} waiting for your yes.</span>
+          <span className="inline-flex items-center gap-2"><Lightbulb size={15} /> GrowIt has {data.suggested.length} suggestion{data.suggested.length === 1 ? '' : 's'} waiting for your yes.</span>
         </Banner>
       )}
 
 
       <section className="card">
-        <CardTitle sub="Anything GrowIT should keep in mind: menu, pricing, timings, how you like to sound." action={
+        <CardTitle sub="Anything GrowIt should keep in mind: menu, pricing, timings, how you like to sound." action={
           <button type="button" className="btn-primary" onClick={() => setEditing({ ...EMPTY })}><Plus size={15} /> Add a note</button>
-        }>What GrowIT remembers</CardTitle>
+        }>What GrowIt remembers</CardTitle>
 
         {editing && (!editing.id || !data.items.some((i) => i.id === editing.id)) && <div className="mb-4"><Editor value={editing} kinds={data.kinds} busy={busy} onChange={(p) => setEditing({ ...editing, ...p })} onSave={save} onCancel={() => setEditing(null)} /></div>}
 
         <label className="relative mb-4 block">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
-          <input className="field pl-9" aria-label="Search what GrowIT remembers" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="field pl-9" aria-label="Search what GrowIt remembers" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
 
         {grouped.length === 0 && (
           <div className="grid place-items-center gap-2 rounded-2xl border border-dashed border-ink/15 px-6 py-10 text-center">
             <Brain size={26} className="text-ink/40" />
-            <p className="font-medium">{q ? 'Nothing matches that.' : 'GrowIT does not remember anything about your business yet.'}</p>
-            {!q && <p className="text-sm text-ink/55">Add your menu, prices, timings or how you like to sound, and GrowIT will keep it in mind.</p>}
+            <p className="font-medium">{q ? 'Nothing matches that.' : 'GrowIt does not remember anything about your business yet.'}</p>
+            {!q && <p className="text-sm text-ink/55">Add your menu, prices, timings or how you like to sound, and GrowIt will keep it in mind.</p>}
           </div>
         )}
 
@@ -163,7 +163,7 @@ const Memory = () => {
       <section className="card flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-semibold">Your memory, your call</p>
-          <p className="text-sm text-ink/60">Take a copy of everything, or have GrowIT forget it all. Only you can see it.</p>
+          <p className="text-sm text-ink/60">Take a copy of everything, or have GrowIt forget it all. Only you can see it.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-ghost" onClick={exportAll}><Download size={15} /> Download a copy</button>

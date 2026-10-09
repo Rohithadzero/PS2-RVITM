@@ -1,4 +1,4 @@
-"""tts: read text aloud, in any language GrowIT knows. And the list of languages with what speech each one has right now.
+"""tts: read text aloud, in any language GrowIt knows. And the list of languages with what speech each one has right now.
 
 Voice out has two engines:
   gemini   Google's Gemini text-to-speech, used when the owner has switched Gemini on in Settings. The text leaves this machine, so the

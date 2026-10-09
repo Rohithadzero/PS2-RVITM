@@ -33,7 +33,7 @@ import {
 export const pages = {
   home: { slug: 'home', screen: 'S2', label: 'Home', icon: House, description: 'Your campaigns and what needs you next.' },
   insights: { slug: 'insights', screen: 'S22', label: 'Insights', icon: ChartSpline, description: 'How the campaigns turned out: reach, posts, redemptions and the workflow. Sample data for now.' },
-  memory: { slug: 'memory', screen: 'S24', label: 'Memory', icon: Brain, description: 'How we remember you. What GrowIT knows about your business, in your words: your menu, pricing or timings. Edit anything, any time. Campaign prices and dates always come from the approved offer, never from here.' },
+  memory: { slug: 'memory', screen: 'S24', label: 'Memory', icon: Brain, description: 'How we remember you. What GrowIt knows about your business, in your words: your menu, pricing or timings. Edit anything, any time. Campaign prices and dates always come from the approved offer, never from here.' },
   connections: { slug: 'connections', screen: 'S23', label: 'Connections', icon: Plug, description: 'Link Instagram and YouTube, and see how WhatsApp sends. Facebook is not built yet.' },
   replies: { slug: 'replies', screen: 'S21', label: 'Replies', icon: MessageCircleReply, description: 'Paste a customer message. It answers only from your locked facts and hands the rest to you.' },
   agent: { slug: 'agent', screen: 'S20', label: 'Agent', icon: Bot, description: 'Describe your idea once. The agent plans the work, does what it can and stops at the steps that need you.' },
