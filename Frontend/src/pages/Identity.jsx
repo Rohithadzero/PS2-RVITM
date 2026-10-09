@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Loader2, WandSparkles, Save } from 'lucide-react';
-import { CardTitle, Field } from '../components/ui';
+import { CardTitle, Field, Banner } from '../components/ui';
+import ColorPicker from '../components/ColorPicker';
 import { LogoMark, contrast, grade, isHex } from '../lib/brand';
-import { NAME_IDEAS, TAGLINES, MORE_TAGLINES, PALETTES, FONT_PAIRS } from '../data/studio';
-import { useStore } from '../state/store';
-
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+import { PALETTES, FONT_PAIRS } from '../data/studio';
+import { LANG_LABEL, businessNames, useBusiness } from '../lib/business';
 
 const PAIRS = [
   ['Text on background', 'ink', 'bg'],
@@ -13,61 +12,113 @@ const PAIRS = [
   ['White on accent (buttons)', null, 'accent'],
   ['Text on soft panel', 'ink', 'soft'],
 ];
+const FIRST = PALETTES[0];
+const fromPalette = (p) => ({ bg: p.bg, ink: p.ink, accent: p.accent, soft: p.soft });
+const COLOUR_LABEL = { bg: 'Background', soft: 'Soft panel', accent: 'Accent', ink: 'Text' };
 
-// S17: business name, taglines per language, colours (real contrast maths) and starter logos (drawn in the browser).
+// S17: name, taglines per language, colours (real contrast maths), starter logos and fonts. Saved on the server; the website uses them.
 const Identity = () => {
-  const { state, dispatch } = useStore();
-  const I = state.identity;
-  const set = (patch) => dispatch({ type: 'SET_IDENTITY', patch: { ...patch, saved: false } });
-  const [extra, setExtra] = useState([]);
+  const { profile, loading, error, save } = useBusiness();
+  const [name, setName] = useState('');
+  const [tagline, setTagline] = useState({ en: '', hi: '', kn: '' });
+  const [palette, setPalette] = useState(fromPalette(FIRST));
+  const [fonts, setFonts] = useState('f1');
+  const [logo, setLogo] = useState(0);
+  const [idea, setIdea] = useState('');
+  const [city, setCity] = useState('');
+  const [ideas, setIdeas] = useState(null);
+  const [asking, setAsking] = useState(false);
+  const [problem, setProblem] = useState('');
+  const [saved, setSaved] = useState('');
   const [busy, setBusy] = useState(false);
-  const preset = PALETTES.find((p) => p.id === I.palette) ?? PALETTES[0];
-  const palette = I.custom ?? preset;
-  const taglines = [...TAGLINES, ...extra];
 
-  const setColour = (key, value) => set({ custom: { ...palette, [key]: value } });
-  const more = async () => {
+  useEffect(() => {
+    if (loading) return;
+    setName(profile.name || '');
+    setTagline({ en: '', hi: '', kn: '', ...(profile.tagline || {}) });
+    setPalette({ ...fromPalette(FIRST), ...(profile.palette || {}) });
+    setFonts(profile.fonts || 'f1');
+    setLogo(profile.logo ?? 0);
+  }, [loading, profile]);
+
+  const touch = (fn) => (v) => { setSaved(''); fn(v); };
+  const matched = PALETTES.find((p) => ['bg', 'ink', 'accent', 'soft'].every((k) => p[k].toLowerCase() === palette[k].toLowerCase()));
+  const preview = { ...palette };
+
+  const ask = async () => {
+    setAsking(true);
+    setProblem('');
+    try {
+      setIdeas(await businessNames(idea.trim(), city.trim()));
+    } catch (e) {
+      setProblem(e.message);
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  const submit = async () => {
     setBusy(true);
-    await wait(700);
-    setExtra(MORE_TAGLINES);
-    setBusy(false);
+    setProblem('');
+    try {
+      await save({ name: name.trim(), tagline, palette, fonts, logo });
+      setSaved('Saved. Used by the website and by posters.');
+    } catch (e) {
+      setProblem(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
-  const save = () => {
-    dispatch({ type: 'SET_IDENTITY', patch: { saved: true } });
-    dispatch({ type: 'LOG', actor: 'Priya', kind: 'edits', action: 'Saved brand identity', why: `${I.name}, ${preset.name}` });
-  };
+
+  if (loading) return <p className="text-sm text-white/60" role="status">Loading</p>;
 
   return (
     <div className="flex flex-col gap-4">
+      {error && <Banner tone="warn">{error}</Banner>}
       <div className="grid gap-4 xl:grid-cols-2">
         <section className="card">
-          <CardTitle sub="Shown on posters, the website and every message.">Business name</CardTitle>
-          <Field label="Name"><input className="field" value={I.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-          <p className="mb-1.5 mt-4 text-sm font-medium">Ideas</p>
-          <div className="flex flex-wrap gap-2">
-            {Object.values(NAME_IDEAS).flat().map((n) => (
-              <button key={n} type="button" onClick={() => set({ name: n })} className={`h-9 rounded-full px-3.5 text-sm font-medium ${I.name === n ? 'bg-ink text-white' : 'bg-ink/5 hover:bg-ink/10'}`}>{n}</button>
-            ))}
+          <CardTitle sub="Shown on the website and every message.">Business name</CardTitle>
+          <Field label="Name"><input className="field" value={name} maxLength={80} onChange={(e) => touch(setName)(e.target.value)} /></Field>
+          <div className="mt-5 rounded-2xl bg-ink/5 p-3">
+            <p className="text-sm font-medium">Need ideas?</p>
+            <p className="mb-2 text-xs text-ink/55">Tell the assistant what you sell and where. It suggests names and taglines in three languages. Suggestions only.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input aria-label="What do you sell" className="field" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Filter coffee and snacks" />
+              <input aria-label="City" className="field" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bengaluru" />
+            </div>
+            <button type="button" onClick={ask} disabled={asking || idea.trim().length < 3 || city.trim().length < 2} className="btn-ghost mt-2">
+              {asking ? <Loader2 size={14} className="animate-spin" /> : <WandSparkles size={14} />} Get ideas
+            </button>
+            {ideas?.names?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ideas.names.map((n) => (
+                  <button key={n} type="button" onClick={() => touch(setName)(n)} className={`h-9 rounded-full px-3.5 text-sm font-medium ${name === n ? 'bg-ink text-white' : 'bg-ink/5 hover:bg-ink/10'}`}>{n}</button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         <section className="card">
-          <CardTitle sub="Pick one. Each language is written natively, not translated word for word." action={
-            <button type="button" disabled={busy || extra.length > 0} onClick={more} className="btn-ghost h-8 px-3 text-xs">
-              {busy ? <Loader2 size={13} className="animate-spin" /> : <WandSparkles size={13} />} More ideas
-            </button>
-          }>Tagline</CardTitle>
-          <ul className="flex flex-col gap-2">
-            {taglines.map((t) => (
-              <li key={t.id}>
-                <button type="button" aria-pressed={I.tagline === t.id} onClick={() => set({ tagline: t.id })} className={`grid w-full gap-1 rounded-xl border p-3 text-left ${I.tagline === t.id ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
-                  <span lang="en" className="flex items-center justify-between text-sm">{t.en}{I.tagline === t.id && <Check size={16} className="text-accent-deep" />}</span>
-                  <span lang="hi" className="text-sm">{t.hi} <em className="text-[11px] not-italic text-warn">draft: needs native review</em></span>
-                  <span lang="kn" className="text-sm">{t.kn} <em className="text-[11px] not-italic text-warn">draft: needs native review</em></span>
-                </button>
-              </li>
+          <CardTitle sub="One line per language. Hindi and Kannada drafts from the assistant need a native speaker's check.">Tagline</CardTitle>
+          <div className="flex flex-col gap-3">
+            {Object.keys(LANG_LABEL).map((l) => (
+              <Field key={l} label={LANG_LABEL[l]}><input className="field" lang={l} value={tagline[l]} maxLength={120} onChange={(e) => touch(setTagline)({ ...tagline, [l]: e.target.value })} /></Field>
             ))}
-          </ul>
+          </div>
+          {ideas?.taglines?.length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2">
+              {ideas.taglines.map((t) => (
+                <li key={t.id}>
+                  <button type="button" onClick={() => touch(setTagline)({ en: t.en, hi: t.hi, kn: t.kn })} className="grid w-full gap-0.5 rounded-xl border border-ink/10 p-3 text-left text-sm hover:bg-ink/5">
+                    <span lang="en">{t.en}</span>
+                    {t.hi && <span lang="hi">{t.hi} <em className="text-[11px] not-italic text-warn">draft</em></span>}
+                    {t.kn && <span lang="kn">{t.kn} <em className="text-[11px] not-italic text-warn">draft</em></span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 
@@ -76,19 +127,18 @@ const Identity = () => {
           <CardTitle sub="Choose a palette, or edit the colours. Contrast follows WCAG 2.2.">Colours</CardTitle>
           <div className="mb-4 flex flex-wrap gap-2">
             {PALETTES.map((p) => (
-              <button key={p.id} type="button" aria-pressed={!I.custom && I.palette === p.id} onClick={() => dispatch({ type: 'SET_IDENTITY', patch: { palette: p.id, custom: null, saved: false } })} className={`flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-sm ${!I.custom && I.palette === p.id ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
-                <span className="flex overflow-hidden rounded-full ring-1 ring-ink/10">{[p.bg, p.accent, p.ink].map((c) => <span key={c} className="size-5" style={{ background: c }} />)}</span>{p.name}
+              <button key={p.id} type="button" aria-pressed={matched?.id === p.id} onClick={() => touch(setPalette)(fromPalette(p))} className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-sm font-medium ${matched?.id === p.id ? 'border-ink bg-ink/5' : 'border-ink/10 hover:bg-ink/5'}`}>
+                <span className="flex overflow-hidden rounded-full ring-1 ring-ink/10">{[p.bg, p.accent, p.ink].map((c) => <span key={c} className="size-5" style={{ background: c }} />)}</span>
+                {p.name}
               </button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {['bg', 'soft', 'accent', 'ink'].map((k) => (
-              <Field key={k} label={{ bg: 'Background', soft: 'Soft panel', accent: 'Accent', ink: 'Text' }[k]} error={isHex(palette[k]) ? undefined : 'Use a hex colour like #c4561a'}>
-                <div className="flex items-center gap-2">
-                  <input type="color" aria-label={`${k} colour picker`} value={isHex(palette[k]) && palette[k].length === 7 ? palette[k] : '#000000'} onChange={(e) => setColour(k, e.target.value)} className="size-9 shrink-0 cursor-pointer rounded-lg border border-ink/15 bg-white p-0.5" />
-                  <input className="field px-2 font-mono text-xs" value={palette[k]} onChange={(e) => setColour(k, e.target.value)} />
-                </div>
-              </Field>
+            {Object.keys(COLOUR_LABEL).map((k) => (
+              <div key={k} className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium">{COLOUR_LABEL[k]}</span>
+                <ColorPicker value={palette[k]} label="" onChange={(hex) => touch(setPalette)({ ...palette, [k]: hex })} />
+              </div>
             ))}
           </div>
           <table className="mt-4 w-full text-sm">
@@ -109,26 +159,28 @@ const Identity = () => {
         </section>
 
         <section className="card">
-          <CardTitle sub="Simple starter marks drawn from your initials. Swap for a designed logo any time.">Logo</CardTitle>
+          <CardTitle sub="Simple starter marks drawn from your initials. Swap for a designed logo any time.">Logo and fonts</CardTitle>
           <div className="flex flex-wrap gap-3">
             {[0, 1, 2].map((v) => (
-              <button key={v} type="button" aria-pressed={I.logo === v} onClick={() => set({ logo: v })} className={`rounded-2xl border p-3 ${I.logo === v ? 'border-accent bg-accent-soft' : 'border-ink/10 hover:bg-ink/5'}`}>
-                <LogoMark name={I.name} palette={palette} variant={v} size={84} />
+              <button key={v} type="button" aria-label={`Logo style ${v + 1}`} aria-pressed={logo === v} onClick={() => touch(setLogo)(v)} className={`rounded-2xl border p-3 ${logo === v ? 'border-ink bg-ink/5' : 'border-ink/10 hover:bg-ink/5'}`}>
+                <LogoMark name={name || 'Your shop'} palette={preview} variant={v} size={84} />
               </button>
             ))}
           </div>
-          <Field label="Fonts"><select className="field mt-4" value={I.fonts} onChange={(e) => set({ fonts: e.target.value })}>{FONT_PAIRS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select></Field>
+          <Field label="Fonts"><select className="field mt-4" value={fonts} onChange={(e) => touch(setFonts)(e.target.value)}>{FONT_PAIRS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select></Field>
           <div className="mt-4 rounded-2xl p-4" style={{ background: palette.bg, color: palette.ink }}>
-            <p className="text-xl font-semibold" style={{ color: palette.accent }}>{I.name}</p>
-            <p className="text-sm">{taglines.find((t) => t.id === I.tagline)?.en}</p>
-            <p lang="kn" className="text-sm">{taglines.find((t) => t.id === I.tagline)?.kn}</p>
+            <p className="text-xl font-semibold" style={{ color: palette.accent }}>{name || 'Your shop'}</p>
+            {['en', 'hi', 'kn'].map((l) => tagline[l] && <p key={l} lang={l} className="text-sm">{tagline[l]}</p>)}
           </div>
         </section>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={save} className="btn-primary"><Save size={16} /> Save brand identity</button>
-        {I.saved && <span className="text-sm text-good">Saved. Used by posters, the website and the reel.</span>}
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={submit} disabled={busy || !name.trim() || !Object.values(palette).every(isHex)} className="btn-primary">
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save brand identity
+        </button>
+        {saved && <span role="status" className="flex items-center gap-1 text-sm text-good"><Check size={14} /> {saved}</span>}
+        {problem && <span role="alert" className="text-sm font-medium text-bad">{problem}</span>}
       </div>
     </div>
   );

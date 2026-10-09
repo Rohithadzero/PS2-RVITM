@@ -55,14 +55,14 @@ export const pages = {
 };
 
 // The rail shows Home, then a few groups the owner can fold away. A group holding the page you are on always opens.
-// Screens with no backend yet live together under "Coming soon", folded by default, so they do not crowd the real ones.
+// Brand and site screens sit together, folded by default. The bake-off is a team tool: it stays reachable at #/bakeoff but is not in the rail.
 // Settings and Log out sit in the footer.
 export const homeItem = pages.home;
 export const sidebarGroups = [
   { id: 'start', title: 'Start', icon: Compass, defaultOpen: true, items: [pages.agent, pages.voice, pages.launch] },
   { id: 'campaign', title: 'Campaign', icon: Megaphone, defaultOpen: true, items: [pages.plan, pages.campaign, pages.dashboard, pages.insights] },
   { id: 'tools', title: 'Tools', icon: Wrench, defaultOpen: false, items: [pages.planner, pages.replies, pages.change, pages.log] },
-  { id: 'soon', title: 'Coming soon', icon: Hourglass, defaultOpen: false, items: [pages.studio, pages.identity, pages.website, pages.video, pages.brand, pages.bakeoff] },
+  { id: 'brand', title: 'Brand and site', icon: Palette, defaultOpen: false, items: [pages.studio, pages.brand, pages.identity, pages.website, pages.video] },
 ];
 
 export const groupOf = (slug) => sidebarGroups.find((g) => g.items.some((i) => i.slug === slug))?.id;
