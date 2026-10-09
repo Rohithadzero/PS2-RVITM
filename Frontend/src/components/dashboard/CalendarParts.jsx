@@ -28,7 +28,7 @@ export const useDayModel = (plan, ownerEvents) =>
       return items;
     };
     const style = (d) => {
-      if (d === todayIso) return 'bg-accent text-on-accent font-semibold';
+      if (d === todayIso) return 'bg-white text-ink font-semibold'; // white, so it never matches the owner's accent colour
       if (end && start !== end && d === end) return 'bg-rose text-white font-semibold';
       if (bySchedule[d] || (start && d >= start && d <= end)) return 'bg-good text-white font-semibold';
       if ((ownerEvents ?? []).some((e) => d >= e.start && d <= e.end)) return 'bg-info/80 text-white font-semibold';
@@ -37,7 +37,7 @@ export const useDayModel = (plan, ownerEvents) =>
     return { info, style };
   }, [plan, ownerEvents]);
 
-const TONE = { accent: 'bg-accent', good: 'bg-good', rose: 'bg-rose', info: 'bg-info' };
+const TONE = { accent: 'bg-ink', good: 'bg-good', rose: 'bg-rose', info: 'bg-info' };
 
 // Fixed-position card in <body>: the glass panel has a backdrop filter and scrolls, so it would trap or clip an absolute child.
 const DayCard = ({ anchor, date, items, side }) => {
@@ -150,7 +150,7 @@ export const Calendar = ({ model }) => {
         )}
       </motion.div>
       <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-accent" />Today</li>
+        <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-white" />Today</li>
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Scheduled</li>
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose" />Last day</li>
         <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-info" />Your event</li>
