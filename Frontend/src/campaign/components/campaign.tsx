@@ -6,7 +6,7 @@ import type { Route } from "../lib/route";
 import type { Asset, AssetState, AssetStateMap, Board, OutreachAction, Plan } from "../lib/types";
 import { PostAdvice, SchedulePanel } from "./advice";
 import { WhatsAppQueue } from "./broadcast";
-import { ChangeByVoice } from "./change";
+import { openTalk } from "../../components/talk/useTalk";
 import { AssetSurface, IMAGE_CHANNELS, OVERLAY_KIND, mediaPhase, pickBase } from "./surfaces";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
 
@@ -545,7 +545,7 @@ export function CampaignView({ id, go, onBusiness }: { id: string; go: (r: Route
         </section>
       ))}
 
-      {assets.length ? <ChangeByVoice campaignId={id} assets={assets} onApplied={(b) => { setBoard(b); refresh(); }} /> : null}
+      {assets.length ? <button type="button" className="fab" onClick={() => openTalk("change")}>Tell me what to change</button> : null}
     </div>
   );
 }

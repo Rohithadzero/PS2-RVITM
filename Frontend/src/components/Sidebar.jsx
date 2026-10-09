@@ -155,7 +155,7 @@ const Footer = ({ expanded, onSelect, active }) => (
   <div className="flex flex-col gap-1">
     <NavButton item={{ slug: 'voice', label: 'New campaign', icon: Plus }} expanded={expanded} onSelect={onSelect} accent tour="new" />
     <div className="mt-1 flex flex-col gap-1">
-      <NavButton item={memoryItem} active={active === 'memory'} expanded={expanded} onSelect={onSelect} />
+      <NavButton item={memoryItem} active={active === 'memory'} expanded={expanded} onSelect={onSelect} tour="memory" />
       <NavButton item={customersItem} active={active === 'customers'} expanded={expanded} onSelect={onSelect} />
       <NavButton item={connectionsItem} active={active === 'connections'} expanded={expanded} onSelect={onSelect} />
     </div>

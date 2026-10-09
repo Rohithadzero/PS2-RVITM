@@ -16,7 +16,6 @@ import Plan from './pages/Plan';
 import Campaign from './pages/Campaign';
 import Dashboard from './pages/Dashboard';
 import BudgetPlanner from './pages/BudgetPlanner';
-import ChangeByVoice from './pages/ChangeByVoice';
 import ChangeLog from './pages/ChangeLog';
 import Customers from './pages/Customers';
 import BrandData from './pages/BrandData';
@@ -45,7 +44,7 @@ const SCREENS = {
   planner: BudgetPlanner,
   campaign: Campaign,
   dashboard: Dashboard,
-  change: ChangeByVoice,
+  change: Talk,
   log: ChangeLog,
   customers: Customers,
   brand: BrandData,
@@ -114,7 +113,7 @@ const App = () => {
     );
   }
 
-  const page = findPage(slug) ?? pages.home;
+  const page = findPage(slug === 'change' ? 'voice' : slug) ?? pages.home;
   const Screen = SCREENS[page.slug];
 
   return (

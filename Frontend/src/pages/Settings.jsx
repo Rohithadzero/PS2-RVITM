@@ -404,14 +404,14 @@ const AppearanceTab = () => {
       </section>
       <section className="card xl:col-span-2">
         <CardTitle
-          sub="A short tour of the screens and the Talk, Plan, Campaign 0, Dashboard flow, in English, Kannada or Hindi."
+          sub="A short guided tour of the app and the Talk, Plan, Campaign 0, Dashboard flow, in English, Kannada or Hindi. It reads each step aloud if your device has a voice."
           action={
             <button type="button" onClick={startTour} className="btn-ghost h-9 px-4 text-sm">
-              <Compass size={14} /> Show me around
+              <Compass size={14} /> Start the tutorial
             </button>
           }
         >
-          Walkthrough
+          Tutorial
         </CardTitle>
       </section>
     </div>

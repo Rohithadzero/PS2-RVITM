@@ -5,6 +5,7 @@ import { getPlan, health } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
 import { useAuth } from '../lib/auth';
 import NotificationsMenu from './NotificationsMenu';
+import { openTalk } from './talk/useTalk';
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -75,10 +76,10 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
         <NotificationsMenu user={user} />
         <button
           type="button"
-          onClick={() => onSelect('change')}
+          onClick={() => openTalk('greet')}
           data-tour="mic"
-          aria-label="Change something by voice"
-          title="Change something by voice"
+          aria-label="Talk to GrowIT"
+          title="Talk to GrowIT"
           className="voice-mic voice-mic-dark voice-mic-sm grid size-10 place-items-center rounded-full"
         >
           <Mic size={18} />

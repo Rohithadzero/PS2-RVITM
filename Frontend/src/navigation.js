@@ -6,7 +6,6 @@ import {
   Scale,
   LayoutGrid,
   FileText,
-  MessageSquareDiff,
   ChartNoAxesColumn,
   Bot,
   MessageCircleReply,
@@ -43,7 +42,6 @@ export const pages = {
   campaign: { slug: 'campaign', screen: 'S7', label: 'Campaign 0', icon: LayoutGrid, description: 'Every asset shown as the surface it will appear on, with its fact and meaning checks.' },
   dashboard: { slug: 'dashboard', screen: 'S9', label: 'Dashboard', icon: ChartNoAxesColumn, description: 'Sends, clicks and checks. Every number comes from this app.' },
   planner: { slug: 'planner', screen: 'S5', label: 'Budget Planner', icon: Scale, description: 'Pick what you want. See what fits your time, money and review effort.' },
-  change: { slug: 'change', screen: 'S10', label: 'Change by Voice', icon: MessageSquareDiff, description: 'Say a change. See exactly which assets it touches before it runs.' },
   log: { slug: 'log', screen: 'S11', label: 'Change Log', icon: History, description: 'What changed, who changed it, why, and what is still pending.' },
   customers: { slug: 'customers', screen: 'S12', label: 'Customers', icon: Users, description: 'Your own list of people, with who agreed to hear from you. Campaigns only reach people marked as agreed.' },
   brand: { slug: 'brand', screen: 'S1', label: 'Brand & Data', icon: Store, description: 'Menu, photos, sample posts, customers and your brand rules. Set once, used in every campaign.' },
@@ -63,7 +61,7 @@ export const homeItem = pages.home;
 export const sidebarGroups = [
   { id: 'start', title: 'Start', icon: Compass, defaultOpen: true, items: [pages.agent, pages.voice, pages.launch] },
   { id: 'campaign', title: 'Campaign', icon: Megaphone, defaultOpen: true, items: [pages.plan, pages.campaign, pages.dashboard, pages.insights] },
-  { id: 'tools', title: 'Tools', icon: Wrench, defaultOpen: false, items: [pages.planner, pages.replies, pages.change, pages.log] },
+  { id: 'tools', title: 'Tools', icon: Wrench, defaultOpen: false, items: [pages.planner, pages.replies, pages.log] },
   { id: 'brand', title: 'Brand and site', icon: Palette, defaultOpen: false, items: [pages.studio, pages.brand, pages.identity, pages.website, pages.video] },
 ];
 

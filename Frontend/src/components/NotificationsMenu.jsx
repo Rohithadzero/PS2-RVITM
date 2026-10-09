@@ -72,6 +72,7 @@ const NotificationsMenu = ({ user }) => {
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
+        data-tour="notifications"
         onClick={() => setOpen((v) => !v)}
         aria-label={badge ? `Notifications, ${badge} new` : 'Notifications'}
         className="relative flex items-center gap-2 rounded-full bg-black/25 py-1 pl-1 pr-2.5 text-xs text-white/80 ring-1 ring-white/10 transition-colors hover:bg-black/35"

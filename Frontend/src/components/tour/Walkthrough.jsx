@@ -19,6 +19,8 @@ const GAP = 64; // card to spotlight: leaves room for the arrow
 const EDGE = 16; // minimum distance from the window edge
 const SPRING = { stiffness: 170, damping: 26, mass: 0.9 };
 const TOURED = STEPS.filter((s) => s.id !== 'welcome').length;
+// The tour is written in these languages. The app has more, but offering one the tour has no words for would break the card.
+const TOUR_LANGS = LANGS.filter((l) => WELCOME[l.code] && COPY[l.code]);
 
 const visible = (el) => {
   const r = el.getBoundingClientRect();
@@ -88,7 +90,7 @@ export default function Walkthrough({ user }) {
   const owner = tourOwner(user);
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
-  const [lang, setLang] = useState(readTourLang);
+  const [lang, setLang] = useState(() => (COPY[readTourLang()] ? readTourLang() : 'en'));
   const [rect, setRect] = useState(null);
   const [view, setView] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [size, setSize] = useState({ w: 360, h: 220 });
@@ -144,6 +146,14 @@ export default function Walkthrough({ user }) {
       navigate('home'); // server down: the Home buttons show the error when they are tried
     }
   };
+
+  // While the tour is open, the app behind it cannot take focus (Tab) or clicks; the tour card is outside #root.
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (!open || !root) return undefined;
+    root.inert = true;
+    return () => { root.inert = false; };
+  }, [open]);
 
   // Follow the target every frame: pages animate in and panels change width, so a one-off measure goes stale.
   useEffect(() => {
@@ -397,12 +407,12 @@ const Welcome = ({ name, lang, onChoose, onSkip, primaryRef }) => (
       {WELCOME.en.hello}{name ? `, ${name}` : ''}
     </h2>
     <div id="tour-body" className="mt-2 flex flex-col gap-0.5 text-sm text-ink/70">
-      {LANGS.map((l) => (
+      {TOUR_LANGS.map((l) => (
         <p key={l.code} lang={l.code}>{WELCOME[l.code].ask}</p>
       ))}
     </div>
     <div role="group" aria-label="Walkthrough language" className="mt-4 grid gap-2 sm:grid-cols-3">
-      {LANGS.map((l) => {
+      {TOUR_LANGS.map((l) => {
         const picked = l.code === lang;
         return (
           <motion.button

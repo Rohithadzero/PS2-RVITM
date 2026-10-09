@@ -23,7 +23,7 @@ function quoteOf(a: Answer | undefined) {
   return "";
 }
 
-function HeardList({ session, onEdit, busy }: { session: Session; onEdit: (aid: string, body: AnswerBody) => Promise<void>; busy: boolean }) {
+export function HeardList({ session, onEdit, busy }: { session: Session; onEdit: (aid: string, body: AnswerBody) => Promise<void>; busy: boolean }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<string[]>([]);

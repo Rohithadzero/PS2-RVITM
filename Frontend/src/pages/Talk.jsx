@@ -1,50 +1,188 @@
-import { useState } from 'react';
-import { Talk } from '../campaign/components/talk';
-import { startInterview } from '../campaign/lib/api';
-import { MAIN_LANGS, MORE_LANGS } from '../campaign/lib/format';
-import { go } from '../campaign/lib/current';
-import { Button, ErrorNote } from '../campaign/components/ui';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Keyboard, Send, Volume2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HeardList } from '../campaign/components/talk';
+import { LANGS, MAIN_LANGS, MORE_LANGS } from '../campaign/lib/format';
+import { Toggle } from '../components/ui';
+import Orb from '../components/talk/Orb';
+import { useTalk } from '../components/talk/useTalk';
+import { useAuth } from '../lib/auth';
 
-// S3: one question at a time, spoken and shown. Mic, tap or type. Every answer is kept with the owner's own words.
-const Start = () => {
-  const [starting, setStarting] = useState(null);
-  const [error, setError] = useState('');
-  const start = async (lang) => {
-    setStarting(lang);
-    setError('');
-    try {
-      const s = await startInterview(lang);
-      go({ name: 'talk', sid: s.id });
-    } catch (e) {
-      setError(e.message);
-      setStarting(null);
-    }
-  };
+const LOCALISED = ['en', 'hi', 'kn'];
+
+const Bubble = ({ m, onReplay }) => {
+  if (m.role === 'system') return <li className="self-center rounded-full bg-ink/5 px-3 py-1 text-xs text-ink/60">{m.text}</li>;
+  const ai = m.role === 'ai';
   return (
-    <section className="start">
-      <p className="kicker">Campaign 0 for your shop</p>
-      <h1 className="display">Say the offer. We write the campaign.</h1>
-      <p className="lede">Answer a few questions out loud or by tapping. Nothing goes out that is not what you said.</p>
-      <div className="start-actions" role="group" aria-label="Start in a language">
-        {MAIN_LANGS.map((l, i) => (
-          <Button key={l.code} variant={i === 0 ? 'primary' : 'secondary'} onClick={() => start(l.code)} disabled={starting !== null}>
-            {starting === l.code ? 'Starting' : `Start in ${l.native}`}
-          </Button>
-        ))}
-        <select aria-label="Start in another language" className="input select" value="" disabled={starting !== null} onChange={(e) => e.target.value && start(e.target.value)}>
-          <option value="">More languages</option>
-          {MORE_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native} ({l.name}, draft)</option>)}
-        </select>
-      </div>
-      {error ? <ErrorNote>{error}</ErrorNote> : null}
-    </section>
+    <motion.li
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className={`flex max-w-[88%] flex-col gap-1 ${ai ? 'self-start' : 'self-end items-end'}`}
+    >
+      <span className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${ai ? 'rounded-tl-md bg-ink/6 text-ink' : 'rounded-tr-md bg-accent text-on-accent'}`}>{m.text}</span>
+      <span className="flex items-center gap-2 px-1 text-[11px] text-ink/45">
+        {ai ? 'GrowIT' : m.source === 'typed' ? 'You typed' : m.source === 'tap' ? 'You tapped' : 'You said'}
+        {ai && <button type="button" onClick={() => onReplay(m.text)} aria-label="Say it again" className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 hover:bg-ink/8"><Volume2 size={11} /> again</button>}
+      </span>
+    </motion.li>
   );
 };
 
-const TalkPage = ({ id }) => (
-  <div className="cv">
-    {id ? <Talk key={id} sid={id} go={go} /> : <Start />}
-  </div>
-);
+// S3: Talk. The one place for everything spoken: start a campaign, change one, open a screen. GrowIT speaks every line and, in
+// hands-free mode, listens again as soon as it has finished, like a phone call. Everything is also on screen, and you can type.
+const Talk = ({ id }) => {
+  const { me } = useAuth();
+  const t = useTalk({ sessionId: id, user: me?.user });
+  const [text, setText] = useState('');
+  const [picked, setPicked] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const end = useRef(null);
+  const q = t.session?.question;
+  const locked = Boolean(t.session);
 
-export default TalkPage;
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [t.messages.length, t.proposal]);
+  useEffect(() => { setPicked([]); }, [q?.id]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    t.onHeard(text.trim(), 'typed');
+    setText('');
+  };
+  const chip = 'btn-ghost h-9 px-3.5 text-sm';
+  const caption = t.mic.listening ? t.mic.interim || 'Speak now' : t.mic.transcribing ? 'One moment' : t.lastHeard ? `Heard: “${t.lastHeard}”` : '';
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <section className="card flex min-h-[34rem] flex-col" aria-label="Conversation">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-3">
+          <label className="flex items-center gap-2 text-sm">
+            <span className="font-medium">I speak</span>
+            <select className="field h-9 w-auto" value={t.session?.lang || t.lang} onChange={(e) => t.setLang(e.target.value)} disabled={locked} aria-label="Language">
+              {MAIN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
+              <optgroup label="More languages (draft)">
+                {MORE_LANGS.map((l) => <option key={l.code} value={l.code}>{l.native} ({l.name})</option>)}
+              </optgroup>
+            </select>
+          </label>
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <label className="flex items-center gap-2"><Toggle checked={t.handsFree} onChange={t.setHandsFree} label="Hands-free" /> Hands-free</label>
+            <label className="flex items-center gap-2"><Toggle checked={t.voiceOn} onChange={t.setVoiceOn} label="GrowIT speaks" /> GrowIT speaks</label>
+          </div>
+        </div>
+
+        {!LOCALISED.includes(t.session?.lang || t.lang) && (
+          <p className="mt-3 rounded-xl bg-warn/12 px-3 py-2 text-xs text-ink/75">
+            Draft language: GrowIT asks its questions in English. You can answer in {LANGS.find((l) => l.code === (t.session?.lang || t.lang))?.name}. Its fact-check words have not been read by a native speaker yet.
+          </p>
+        )}
+
+        <ul className="my-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1" aria-live="polite">
+          {t.messages.length === 0 && (
+            <li className="m-auto max-w-sm text-center">
+              <h2 className="text-xl font-bold tracking-tight">Talk to GrowIT</h2>
+              <p className="mt-1 text-sm text-ink/60">Start a campaign, change one, or open any screen, all by voice. Tap the mic to begin. GrowIT answers out loud, and everything is also written here.</p>
+            </li>
+          )}
+          {t.messages.map((m) => <Bubble key={m.id} m={m} onReplay={t.replay} />)}
+          <AnimatePresence>
+            {t.proposal && t.mode === 'confirm' && (
+              <motion.li initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="self-start rounded-2xl border border-accent/50 bg-accent-soft/40 p-3.5 text-sm">
+                <p className="font-semibold">Change waiting for your yes</p>
+                <p className="mt-0.5 text-ink/75">Touches {t.proposal.affected_asset_ids.length} {t.proposal.affected_asset_ids.length === 1 ? 'asset' : 'assets'}. Nothing changes until you confirm.</p>
+                <div className="mt-2.5 flex gap-2">
+                  <button type="button" className="btn-primary h-9 px-4 text-sm" disabled={t.busy} onClick={t.applyNow}><Check size={14} /> Apply</button>
+                  <button type="button" className="btn-ghost h-9 px-4 text-sm" disabled={t.busy} onClick={t.discard}><X size={14} /> Cancel</button>
+                </div>
+              </motion.li>
+            )}
+          </AnimatePresence>
+          <li ref={end} aria-hidden="true" />
+        </ul>
+
+        {/* What can be tapped right now */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pb-3">
+          {t.mode === 'interview' && q && (
+            <>
+              {q.options?.map((o) => {
+                const on = picked.includes(o.value);
+                return (
+                  <button key={o.value} type="button" aria-pressed={on} disabled={t.busy} className={`${chip} ${on ? '!bg-ink !text-white' : ''}`}
+                    onClick={() => (q.kind === 'single' ? t.sendAnswer({ choices: [o.value], source: 'tap' }, o.label) : setPicked((c) => (on ? c.filter((x) => x !== o.value) : [...c, o.value])))}>
+                    {o.label}
+                  </button>
+                );
+              })}
+              {q.kind === 'multi' && (
+                <button type="button" className="btn-primary h-9 px-4 text-sm" disabled={t.busy || picked.length === 0}
+                  onClick={() => t.sendAnswer({ choices: picked, source: 'tap' }, q.options.filter((o) => picked.includes(o.value)).map((o) => o.label).join(', '))}>
+                  Done, {picked.length} chosen
+                </button>
+              )}
+              {!q.required && <button type="button" className={chip} disabled={t.busy} onClick={() => t.sendAnswer({ choices: ['skip'], source: 'tap' }, 'Skip')}>Skip this one</button>}
+            </>
+          )}
+          {t.mode === 'interview' && !q && <button type="button" className="btn-primary h-10 px-5" disabled={t.busy} onClick={t.buildPlan}>Build my plan</button>}
+          {t.mode === 'home' && (
+            <>
+              <button type="button" className={chip} onClick={() => t.onHeard('new campaign', 'tap')}>New campaign</button>
+              <button type="button" className={chip} onClick={() => t.onHeard('change something', 'tap')}>Change something</button>
+              {['customers', 'insights', 'settings'].map((s) => <button key={s} type="button" className={chip} onClick={() => t.onHeard(`open ${s}`, 'tap')}>Open {s}</button>)}
+              <button type="button" className={chip} onClick={() => t.onHeard('help', 'tap')}>What can I say?</button>
+            </>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center gap-2 border-t border-ink/10 pt-4">
+          <Orb phase={t.phase} started={t.started} onClick={t.orb} disabled={t.busy && t.phase !== 'speaking'} />
+          <p className="min-h-5 max-w-md text-center text-sm text-ink/70" aria-live="polite">{caption}</p>
+          {t.paused && <p className="text-xs text-warn">Hands-free is waiting. Tap the mic when you are ready.</p>}
+          {t.mic.error && <p role="alert" className="text-xs font-medium text-bad">{t.mic.error}</p>}
+          {t.mic.note && <p className="text-xs text-ink/50">{t.mic.note}</p>}
+          {!t.mic.supported && <p className="text-xs text-ink/55">Voice input is not available in this browser. You can type instead.</p>}
+          <button type="button" className="text-xs font-medium text-ink/55 hover:text-ink" aria-expanded={typing || !t.mic.supported} onClick={() => setTyping((v) => !v)}>
+            <Keyboard size={12} className="mr-1 inline" /> {typing || !t.mic.supported ? 'Hide typing' : 'Type instead'}
+          </button>
+          {(typing || !t.mic.supported) && (
+            <form onSubmit={submit} className="flex w-full max-w-lg gap-2">
+              <input className="field flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type here and press Enter" aria-label="Type your message" lang={t.session?.lang || t.lang} />
+              <button type="submit" className="btn-primary h-10 px-4" disabled={!text.trim() || t.busy}><Send size={15} /> Send</button>
+            </form>
+          )}
+          <p className="text-[11px] text-ink/40">
+            {t.voiceOn ? `Voice: ${t.voice.engine === 'gemini' ? 'Gemini' : 'your browser'}` : 'GrowIT is silent'}{t.mic.engine ? ` · Mic: ${t.mic.engine === 'server' ? 'server' : 'your browser'}` : ''}
+          </p>
+        </div>
+      </section>
+
+      <aside className="card h-fit" aria-label="Context">
+        {t.session ? (
+          <>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-semibold">What I heard</h2>
+              <span className="text-xs text-ink/55">{t.session.progress.answered} of {t.session.progress.total_required}</span>
+            </div>
+            <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-valuemin={0} aria-valuemax={t.session.progress.total_required} aria-valuenow={t.session.progress.answered} aria-label="Questions answered">
+              <span className="block h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(100, (t.session.progress.answered / Math.max(1, t.session.progress.total_required)) * 100)}%` }} />
+            </div>
+            <div className="cv"><HeardList session={t.session} onEdit={t.editHeard} busy={t.busy} /></div>
+          </>
+        ) : (
+          <>
+            <h2 className="font-semibold">Things you can say</h2>
+            <ul className="mt-3 flex flex-col gap-2.5 text-sm text-ink/75">
+              <li><strong className="text-ink">“New campaign”</strong><br />GrowIT asks a few short questions.</li>
+              <li><strong className="text-ink">“Change the price to 50”</strong><br />It shows what it touches, then waits for your yes.</li>
+              <li><strong className="text-ink">“Open customers”</strong><br />Insights, settings, plan, dashboard and the rest work the same way.</li>
+              <li><strong className="text-ink">“Repeat”</strong><br />GrowIT says its last line again.</li>
+            </ul>
+            {!t.hasCampaign && <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2 text-xs text-ink/65">You have no campaign yet, so changes are not available until you build one.</p>}
+          </>
+        )}
+      </aside>
+    </div>
+  );
+};
+
+export default Talk;
