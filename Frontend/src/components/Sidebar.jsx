@@ -220,7 +220,7 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
   >
     <RailHeader expanded={expanded} onToggle={onToggle} />
 
-    <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-8 [mask-image:linear-gradient(to_bottom,#000_calc(100%-44px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-10 [mask-image:linear-gradient(to_bottom,#000_calc(100%-55px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
     </div>
     <div className="mt-3">
