@@ -15,7 +15,7 @@ def rig(tmp_path, monkeypatch):
     app, client = make_client(tmp_path)
     monkeypatch.setattr(plan, "get_plan", lambda db, cid: PLAN)
     monkeypatch.setattr(outreach.smtplib, "SMTP", FakeSMTP)
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://loudlaunch.example")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://growit.example")
     for k, v in SMTP_ENV.items():
         monkeypatch.setenv(k, v)
     cid, assets = seed(client, app)

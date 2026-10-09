@@ -12,7 +12,7 @@ const Brand = ({ showName }) => (
     <span className="grid size-10 shrink-0 place-items-center text-accent" aria-hidden="true">
       <AudioLines size={22} strokeWidth={2.4} />
     </span>
-    {showName && <span className="whitespace-nowrap text-base font-semibold">LoudLaunch</span>}
+    {showName && <span className="whitespace-nowrap text-base font-semibold">GrowIT</span>}
   </div>
 );
 
@@ -196,7 +196,7 @@ const RailHeader = ({ expanded, onToggle }) => (
       )}
     </div>
     <div inert={!expanded} className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden pl-1 ${fade(expanded)}`}>
-      <span className="truncate whitespace-nowrap text-base font-semibold">LoudLaunch</span>
+      <span className="truncate whitespace-nowrap text-base font-semibold">GrowIT</span>
       <button
         type="button"
         onClick={onToggle}

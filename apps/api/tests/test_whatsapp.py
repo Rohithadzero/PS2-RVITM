@@ -33,7 +33,7 @@ def test_masking_hides_all_but_the_end():
 def rig(tmp_path, monkeypatch):
     app, client = make_client(tmp_path)
     monkeypatch.setattr(plan, "get_plan", lambda db, cid: PLAN)
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://loudlaunch.example")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://growit.example")
     cid, assets = seed(client, app)
     write_copy(app, assets["whatsapp"], status="approved")
     write_copy(app, assets["poster"], status="pending")
@@ -43,7 +43,7 @@ def rig(tmp_path, monkeypatch):
 def test_the_server_builds_the_message_and_one_chat_link_per_valid_number(rig):
     app, client, _, assets, _ = rig
     out = client.post(f"/assets/{assets['whatsapp']['id']}/whatsapp", json={"numbers": ["98450 12345", "+91 99000 11122", "99000 11122", "oops", ""]}).json()
-    assert out["has_link"] and out["link"].startswith("https://loudlaunch.example/r/") and out["link"] in out["text"]
+    assert out["has_link"] and out["link"].startswith("https://growit.example/r/") and out["link"] in out["text"]
     assert out["duplicates_dropped"] == 1 and out["invalid"] == 2
     good = [r for r in out["recipients"] if r["valid"]]
     assert len(good) == 2

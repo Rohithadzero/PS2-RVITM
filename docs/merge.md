@@ -2,7 +2,7 @@
 
 Two parallel builds existed on 8 Oct 2026. This record says what was compared, what was kept and why, so nobody has to rediscover it.
 
-- **Build A (this repo):** Rohith's React/Vite LoudLaunch UI on mock data, plus Kabir's docs, planner, validator lab, Vosk adapter and calibration.
+- **Build A (this repo):** Rohith's React/Vite GrowIT UI on mock data, plus Kabir's docs, planner, validator lab, Vosk adapter and calibration.
 - **Build B (`francisreubenr-rvu/PS2RVITM`):** Francis's FastAPI + SQLite backend and Next.js app, "Counter Voice". Real, 146 tests, verified live against Agnes.
 
 ## Backend: Build B is the runnable API

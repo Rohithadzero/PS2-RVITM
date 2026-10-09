@@ -174,7 +174,7 @@ def rig(tmp_path, monkeypatch):
     monkeypatch.setattr(plan, "get_plan", lambda db, cid: PLAN)
     monkeypatch.setattr(outreach.smtplib, "SMTP", FakeSMTP)
     FakeSMTP.sent, FakeSMTP.refuse, FakeSMTP.opened = [], set(), []
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://loudlaunch.example")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://growit.example")
     cid, assets = seed(c, c.app)
     write_copy(c.app, assets["whatsapp"], status="approved")
     write_copy(c.app, assets["cold_email"], "Hi {name},\n\nFilter coffee 20% off on Sunday only, just ₹80.", status="approved")

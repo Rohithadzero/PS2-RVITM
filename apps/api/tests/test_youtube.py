@@ -172,7 +172,7 @@ def test_disconnect_revokes_and_forgets(tmp_path, monkeypatch):
 def rig(tmp_path, monkeypatch):
     c = make(tmp_path, monkeypatch)
     monkeypatch.setattr(plan, "get_plan", lambda db, cid: PLAN)
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://loudlaunch.example")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://growit.example")
     cid, assets = seed(c, c.app)
     reel = assets["whatsapp"]  # reuse a seeded asset as the reel
     c.app.state.db.execute("UPDATE asset SET channel = 'reel' WHERE id = ?", (reel["id"],))
@@ -199,7 +199,7 @@ def test_a_short_is_uploaded_private_with_a_tracked_link_and_the_shorts_tag(rig)
     meta = init[3]
     assert meta["status"] == {"privacyStatus": "private", "selfDeclaredMadeForKids": False}
     assert meta["snippet"]["title"].endswith("#Shorts") and len(meta["snippet"]["title"]) <= 100
-    assert "https://loudlaunch.example/r/" in meta["snippet"]["description"] and "#Shorts" in meta["snippet"]["description"]
+    assert "https://growit.example/r/" in meta["snippet"]["description"] and "#Shorts" in meta["snippet"]["description"]
     assert init[5]["Authorization"] == "Bearer ACCESS" and init[5]["X-Upload-Content-Length"] == "5012"
     put = next(x for x in calls if x[0] == "PUT")
     assert put[1] == "https://upload.example/session1" and put[3] == 5012

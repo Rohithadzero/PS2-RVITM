@@ -1,4 +1,4 @@
-# PS2 RVITM: "LoudLaunch" campaign studio (HR26-AI-02)
+# PS2 RVITM: "GrowIT" campaign studio (HR26-AI-02)
 
 Voice-first marketing campaigns for small businesses on Agnes models. Design lives in [`docs/`](docs/README.md); the app UI lives in [`Frontend/`](Frontend/); the API in [`apps/api/`](apps/api/) with calibration in [`apps/api/calibration/`](apps/api/calibration/); desktop and mobile shells in [`clients/`](clients/).
 
@@ -7,14 +7,14 @@ Voice-first marketing campaigns for small businesses on Agnes models. Design liv
 npm run setup                  # venv + Python deps + frontend deps (Windows paths; adapt venv/Scripts on macOS)
 copy .env.example .env         # set AGNES_API_KEY (never commit .env)
 npm run api                    # FastAPI on http://127.0.0.1:8000
-npm run web                    # LoudLaunch on http://127.0.0.1:5173
+npm run web                    # GrowIT on http://127.0.0.1:5173
 npm run test                   # 210 backend tests
 npm run models                 # optional: offline Vosk speech models (English, Hindi)
 ```
 The app talks to the API at `http://127.0.0.1:8000`; set `VITE_API_URL` to change it. Nothing in the screens that have a backend is mock data.
 
 ## Where it came from
-One app from two builds: the LoudLaunch UI, planner, Vosk, bring-your-own keys and docs from this repo, and the interview, grounding, validator, meaning check, Campaign 0, outreach and dashboard from Francis's backend ([`francisreubenr-rvu/PS2RVITM`](https://github.com/francisreubenr-rvu/PS2RVITM)). What was kept from each, and why: [`docs/merge.md`](docs/merge.md).
+One app from two builds: the GrowIT UI, planner, Vosk, bring-your-own keys and docs from this repo, and the interview, grounding, validator, meaning check, Campaign 0, outreach and dashboard from Francis's backend ([`francisreubenr-rvu/PS2RVITM`](https://github.com/francisreubenr-rvu/PS2RVITM)). What was kept from each, and why: [`docs/merge.md`](docs/merge.md).
 
 ## What is real vs not connected
 | Part | Status |
