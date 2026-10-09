@@ -70,7 +70,7 @@ class OfferFacts(BaseModel):
     def _languages(cls, value: list[str]) -> list[str]:
         unknown = [lang for lang in value if lang not in LANGS]
         if unknown:
-            raise ValueError(f"languages must be en, kn, or hi (got {', '.join(unknown)})")
+            raise ValueError(f"languages must be one of {', '.join(LANGS)} (got {', '.join(unknown)})")
         if not value:
             raise ValueError("at least one language is required")
         return value

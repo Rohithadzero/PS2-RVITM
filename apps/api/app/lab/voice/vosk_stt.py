@@ -23,6 +23,8 @@ LANG_MODELS = {  # language -> preferred model directories, first installed wins
     "en-in": ["vosk-model-small-en-in-0.4"],
     "en-us": ["vosk-model-small-en-us-0.15"],
     "hi": ["vosk-model-small-hi-0.22"],
+    "gu": ["vosk-model-small-gu-0.42"],
+    "te": ["vosk-model-small-te-0.42"],
 }
 MIN_WORD_CONF = 0.5  # drop words the model was unsure of (docs/voice.md ConfidentWords)
 

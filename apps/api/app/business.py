@@ -19,7 +19,7 @@ from urllib.parse import quote, urlparse
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field, field_validator
 
-from app import connections, outreach
+from app import connections, languages, outreach
 from app.db import Database
 from app.media import fail
 from app.whatsapp import normalize_phone
@@ -36,17 +36,14 @@ CREATE TABLE IF NOT EXISTS business (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_business_slug ON business(site_slug) WHERE site_slug IS NOT NULL;
 """
-LANGS = ("en", "hi", "kn")
+LANGS = languages.CODES
 SLUG = re.compile(r"^[a-z0-9](?:[a-z0-9-]{1,38})[a-z0-9]$")
 RESERVED = {"admin", "api", "auth", "login", "static", "assets", "www", "site", "health", "docs"}
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 SECTIONS = ("hero", "menu", "about", "hours", "whatsapp")
 DEFAULT_PALETTE = {"bg": "#fff7ef", "ink": "#2b1d14", "accent": "#c4561a", "soft": "#fde3cf"}
-UI = {
-    "en": {"order": "Order on WhatsApp", "menu": "Menu", "about": "About us", "hours": "Hours and place", "hello": "Hi {name}, I'd like to order", "map": "Open the map", "off": "off"},
-    "hi": {"order": "व्हाट्सऐप पर ऑर्डर करें", "menu": "मेन्यू", "about": "हमारे बारे में", "hours": "समय और जगह", "hello": "नमस्ते {name}, मैं ऑर्डर करना चाहता/चाहती हूँ", "map": "नक्शा खोलें", "off": "की छूट"},
-    "kn": {"order": "ವಾಟ್ಸಾಪ್‌ನಲ್ಲಿ ಆರ್ಡರ್ ಮಾಡಿ", "menu": "ಮೆನು", "about": "ನಮ್ಮ ಬಗ್ಗೆ", "hours": "ಸಮಯ ಮತ್ತು ಸ್ಥಳ", "hello": "ನಮಸ್ಕಾರ {name}, ನಾನು ಆರ್ಡರ್ ಮಾಡಲು ಬಯಸುತ್ತೇನೆ", "map": "ನಕ್ಷೆ ತೆರೆಯಿರಿ", "off": "ರಿಯಾಯಿತಿ"},
-}
+UI = {"en": {"order": "Order on WhatsApp", "menu": "Menu", "about": "About us", "hours": "Hours and place", "hello": "Hi {name}, I'd like to order", "map": "Open the map", "off": "off"}}
+UI.update({l["code"]: l["ui"] for l in languages.LANGUAGES if l.get("ui")})
 FONTS = {"f1": ("Poppins", "Noto Sans Kannada"), "f2": ("Playfair Display", "Noto Sans"), "f3": ("Inter", "Noto Sans Devanagari")}
 
 
@@ -67,10 +64,7 @@ class MenuItem(BaseModel):
     price: float = Field(gt=0, le=100000)
 
 
-class PerLang(BaseModel):
-    en: str = Field(default="", max_length=400)
-    hi: str = Field(default="", max_length=400)
-    kn: str = Field(default="", max_length=400)
+PerLang = dict[str, str]  # language code -> text, up to 400 characters each; codes are checked on save
 
 
 class ProfileIn(BaseModel):
@@ -106,11 +100,20 @@ class ProfileIn(BaseModel):
             raise ValueError("the map link must start with https://")
         return v
 
+    @field_validator("about", "tagline")
+    @classmethod
+    def _per_lang(cls, v):
+        if v is None:
+            return v
+        if set(v) - set(languages.CODES) or any(len(t) > 400 for t in v.values()):
+            raise ValueError("text per language needs registered language codes and at most 400 characters each")
+        return v
+
     @field_validator("langs")
     @classmethod
     def _langs(cls, v):
         if v is not None and (not v or any(x not in LANGS for x in v)):
-            raise ValueError("languages must be a non-empty list of en, hi, kn")
+            raise ValueError("languages must be a non-empty list of registered language codes")
         return v
 
 

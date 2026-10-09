@@ -10,6 +10,8 @@ copies the text. An edited reply is re-checked before it can be approved.
 """
 from __future__ import annotations
 
+from app import languages
+
 import json
 import re
 import uuid
@@ -65,7 +67,7 @@ HOLDING = {  # Kannada and Hindi are drafts until a native speaker has checked t
 class InquiryIn(BaseModel):
     message: str = Field(min_length=2, max_length=1200)
     channel: str = Field(default="whatsapp", pattern="^(whatsapp|instagram|email|other)$")
-    lang: str = Field(default="en", pattern="^(en|kn|hi)$")
+    lang: str = Field(default="en", pattern=languages.LANG_PATTERN)
 
 
 class ApproveIn(BaseModel):
@@ -142,7 +144,7 @@ def _view(row: dict[str, Any]) -> dict[str, Any]:
     return {"id": row["id"], "campaign_id": row["campaign_id"], "channel": row["channel"], "lang": row["lang"],
             "message": row["message"], "status": row["status"], "intent": row["intent"],
             "used": json.loads(row["used"] or "[]"), "draft": row["draft"], "reason": row["reason"],
-            "final_text": row["final_text"], "holding": HOLDING[row["lang"]] if row["status"] == "escalated" else None,
+            "final_text": row["final_text"], "holding": HOLDING.get(row["lang"], HOLDING["en"]) if row["status"] == "escalated" else None,
             "holding_needs_native_review": row["lang"] != "en", "created_at": row["created_at"]}
 
 

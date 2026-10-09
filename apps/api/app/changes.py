@@ -43,7 +43,9 @@ CHANNEL_WORDS = {
     "google_business_post": ["google"],
     "reel": ["reel"],
 }
-LANG_WORDS = {"en": ["english"], "kn": ["kannada"], "hi": ["hindi"]}
+from app import languages
+
+LANG_WORDS = {l["code"]: [l["name"].lower()] for l in languages.LANGUAGES}
 
 
 def ensure_schema(db: Database) -> None:

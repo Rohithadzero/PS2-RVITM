@@ -42,11 +42,11 @@ def test_a_person_is_cleaned_and_starts_with_no_consent(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("body,reason", [
     ({"name": ""}, "name is missing"), ({"name": "A", "phone": "12345"}, "phone: wrong length"), ({"name": "A", "email": "not-an-email"}, "email does not look right"),
-    ({"name": "A"}, "needs a phone number or an email"), ({"name": "A", "phone": "98450 12345", "language": "tamil"}, "language must be en, kn or hi"),
+    ({"name": "A"}, "needs a phone number or an email"), ({"name": "A", "phone": "98450 12345", "language": "klingon"}, "language must be one of"),
 ])
 def test_bad_people_are_refused_with_a_reason(tmp_path, monkeypatch, body, reason):
     r = make(tmp_path, monkeypatch).post("/customers", json=body)
-    assert r.status_code == 422 and r.json()["detail"]["message"] == reason
+    assert r.status_code == 422 and r.json()["detail"]["message"].startswith(reason)
 
 
 def test_consent_needs_a_note_on_how_the_person_agreed_and_only_counts_for_a_channel_with_a_contact(tmp_path, monkeypatch):

@@ -7,7 +7,9 @@ from app.config import LANG_NAMES
 from app.schemas import OfferFacts
 from app.validator import DAYS, INDIC_DAYS, locked_days
 
-SCRIPTS = {"kn": ("\u0c80", "\u0cff"), "hi": ("\u0900", "\u097f")}
+from app import languages
+
+SCRIPTS = {l["code"]: (chr(l["script"][0]), chr(l["script"][1])) for l in languages.LANGUAGES if l["script"]}
 
 
 def day_names(facts: OfferFacts, lang: str) -> list[str]:
@@ -16,7 +18,11 @@ def day_names(facts: OfferFacts, lang: str) -> list[str]:
     if lang not in SCRIPTS:
         return [day.capitalize() for day in days]
     low, high = SCRIPTS[lang]
-    return [next(word for word in INDIC_DAYS[day] if low <= word[0] <= high) for day in days]
+    out = []
+    for day in days:
+        own = languages.day_words(lang, day)  # the language's own spelling first (Marathi and Hindi share a script, not words)
+        out.append(own[0] if own else next(word for word in INDIC_DAYS[day] if low <= word[0] <= high))
+    return out
 
 
 def copy_messages(

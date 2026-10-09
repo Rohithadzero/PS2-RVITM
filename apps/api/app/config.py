@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-LANGS = ("en", "kn", "hi")
+from app import languages as _languages
+
+LANGS = _languages.CODES
 CHANNELS = (
     "cold_email",
     "instagram_post",
@@ -16,7 +18,7 @@ CHANNELS = (
     "google_business_post",
     "reel",
 )
-LANG_NAMES = {"en": "English", "kn": "Kannada", "hi": "Hindi"}
+LANG_NAMES = _languages.names()
 
 
 @dataclass(frozen=True)

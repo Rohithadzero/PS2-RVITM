@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+
+from app import languages
 import unicodedata
 from dataclasses import dataclass
 
@@ -19,15 +21,15 @@ DAYS = (
 # \d also matches Kannada and Devanagari digits, and float() parses them.
 # Indic words carry combining vowel signs, which break \b, so they match as plain substrings.
 PERCENT_RE = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(?:%|percent\b|प्रतिशत|फ़ीसदी|फीसदी|ಶೇಕಡಾ|ಶೇ)|(?:ಶೇಕಡಾ|ಶೇ)\.?\s*(\d+(?:\.\d+)?)",
+    r"(\d+(?:\.\d+)?)\s*(?:%|percent\b|प्रतिशत|फ़ीसदी|फीसदी|ಶೇಕಡಾ|ಶೇ|" + languages.alternation("percent") + r")|(?:ಶೇಕಡಾ|ಶೇ|শতকরা)\.?\s*(\d+(?:\.\d+)?)",
     re.IGNORECASE,
 )
 PRICE_RE = re.compile(
     r"(?:₹|\brs\.?|\binr|रु\.?|ರೂ\.?)\s*(\d+(?:\.\d+)?)"
-    r"|(\d+(?:\.\d+)?)\s*(?:rupees?\b|रुपये|रुपए|रुपया|ರೂಪಾಯಿ|ರೂ)",
+    r"|(\d+(?:\.\d+)?)\s*(?:rupees?\b|रुपये|रुपए|रुपया|ರೂಪಾಯಿ|ರೂ|" + languages.alternation("rupee") + r")",
     re.IGNORECASE,
 )
-FREE_RE = re.compile(r"\bfree\b|मुफ़्त|मुफ्त|फ्री|ಉಚಿತ|ಫ್ರೀ", re.IGNORECASE)
+FREE_RE = re.compile(r"\bfree\b|मुफ़्त|मुफ्त|फ्री|ಉಚಿತ|ಫ್ರೀ|" + languages.alternation("free"), re.IGNORECASE)
 DAY_RE = re.compile(
     r"\b(mondays?|tuesdays?|wednesdays?|thursdays?|fridays?|saturdays?|sundays?"
     r"|somvar|mangalvar|budhvar|guruvar|shukravar|shanivar|ravivar|itwar)\b",
@@ -54,6 +56,8 @@ INDIC_DAYS = {
     "saturday": ("ಶನಿವಾರ", "शनिवार"),
     "sunday": ("ಭಾನುವಾರ", "ರವಿವಾರ", "रविवार", "इतवार"),
 }
+for _day, _extra in languages.extra_day_words().items():
+    INDIC_DAYS[_day] = tuple(dict.fromkeys(INDIC_DAYS.get(_day, ()) + _extra))
 DAILY_RE = re.compile(
     r"\b(every day|everyday|all week|daily)\b|हर दिन|हर रोज़|हर रोज|रोज़ाना|रोजाना|पूरे हफ्ते|ಪ್ರತಿದಿನ|ದಿನನಿತ್ಯ|ವಾರಪೂರ್ತಿ",
     re.IGNORECASE,

@@ -10,7 +10,9 @@ import httpx
 
 URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 MODEL = "whisper-large-v3"
-LANGS = {"en": "en", "hi": "hi", "kn": "kn"}
+from app import languages
+
+LANGS = {l["code"]: l["groq"] for l in languages.LANGUAGES if l.get("groq")}
 
 
 class GroqError(Exception):

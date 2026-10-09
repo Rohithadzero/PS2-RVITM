@@ -22,14 +22,14 @@ from typing import Any
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field
 
-from app import connections
+from app import connections, languages
 from app.db import Database
 from app.media import fail
 from app.whatsapp import normalize_phone
 
 router = APIRouter()
 
-LANGS = ("en", "kn", "hi")
+LANGS = languages.CODES
 MAX_IMPORT_ROWS = 5000
 MAX_IMPORT_BYTES = 5 * 1024 * 1024
 EMAIL_RE = re.compile(r"^[^@\s,;<>]{1,64}@[^@\s,;<>]{1,190}\.[A-Za-z]{2,24}$")
@@ -104,9 +104,9 @@ def validate(raw: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     if not phone and not email:
         return None, "needs a phone number or an email"
     lang = _clean(raw.get("language"), 12).lower() or None
-    lang = {"english": "en", "kannada": "kn", "hindi": "hi"}.get(lang, lang)
+    lang = {l["name"].lower(): l["code"] for l in languages.LANGUAGES}.get(lang, lang)
     if lang and lang not in LANGS:
-        return None, "language must be en, kn or hi"
+        return None, "language must be one of: " + ", ".join(LANGS)
     return {"name": name, "phone": phone, "email": email, "language": lang, "tags": clean_tags(raw.get("tags")), "notes": _clean(raw.get("notes"), 500)}, None
 
 

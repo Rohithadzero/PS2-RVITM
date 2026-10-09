@@ -13,6 +13,8 @@ routes, so they obey exactly the same rules as the screens.
 """
 from __future__ import annotations
 
+from app import languages
+
 import asyncio
 import json
 import re
@@ -89,7 +91,7 @@ STEPS = (
 
 class RunIn(BaseModel):
     idea: str = Field(min_length=8, max_length=2000)
-    lang: str = Field(default="en", pattern="^(en|kn|hi)$")
+    lang: str = Field(default="en", pattern=languages.LANG_PATTERN)
 
 
 def ensure_schema(db: Database) -> None:

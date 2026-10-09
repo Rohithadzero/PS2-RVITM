@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from app import plan as plan_module
 from app import speech
 from app.agnes import AgnesError
+from app import languages
 from app.config import CHANNELS, LANGS
 from app.db import Database
 from app.schemas import OfferFacts
@@ -63,7 +64,7 @@ GOALS = ["more_walkins", "promote_offer", "launch_product", "announce_opening", 
 OFFER_TYPES = ["percent_off", "fixed_price", "buy_one_get_one", "free_item", "no_offer"]
 AUDIENCES = ["students", "office_workers", "families", "regulars", "tourists", "nearby_residents"]
 TONES = ["friendly", "warm_local", "playful", "straightforward"]
-LANGUAGE_LABELS = {"en": "English", "kn": "ಕನ್ನಡ", "hi": "हिन्दी"}
+LANGUAGE_LABELS = {l["code"]: l["native"] for l in languages.LANGUAGES}
 DAY_LABELS = {
     "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", "fri": "Friday",
     "sat": "Saturday", "sun": "Sunday", "weekend": "Weekend", "weekdays": "Weekdays", "every_day": "Every day",
@@ -215,6 +216,7 @@ WORDS: dict[str, dict[str, list[str]]] = {
         "en": ["english", "angrezi", "ಇಂಗ್ಲಿಷ್", "अंग्रेज़ी", "अंग्रेजी"],
         "kn": ["kannada", "ಕನ್ನಡ", "कन्नड़", "कन्नड"],
         "hi": ["hindi", "ಹಿಂದಿ", "हिंदी", "हिन्दी"],
+        **{code: names for code, names in languages.spoken_names().items() if code not in ("en", "kn", "hi")},
     },
     "channels": {
         "cold_email": ["email", "e-mail", "ಇಮೇಲ್", "ईमेल"],
@@ -632,7 +634,7 @@ def _cross_check(q: Q, fields: dict[str, Any], reading: Reading) -> Reading:
 @router.post("/interview/start")
 def start(body: StartIn, request: Request) -> dict:
     if body.lang not in LANGS:
-        raise _http(422, "bad_lang", "lang must be en, kn or hi.")
+        raise _http(422, "bad_lang", "lang must be one of: " + ", ".join(LANGS) + ".")
     sid = uuid.uuid4().hex
     request.app.state.db.execute(
         "INSERT INTO interview_session (id, lang, campaign_id, clarify, created_at) VALUES (?, ?, NULL, NULL, ?)",

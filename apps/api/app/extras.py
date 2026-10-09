@@ -17,6 +17,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 
 from app.config import ROOT
+from app import languages
 from app.db import Database
 from app.lab.domain.planner import Calibration, solve
 from app.lab.security import BlockedUrl, check_custom_base_url, decrypt_key, encrypt_key, last4
@@ -41,7 +42,7 @@ CALIBRATION_DIR = ROOT / "data" / "calibration"
 # Extra services the owner can switch on or off. The key lives in the server's .env; the switch is the owner's consent.
 TOGGLES = {
     "groq": {"label": "Groq", "env": "GROQ_API_KEY", "used_for": "Speech to text for Kannada and Hindi (Whisper). Audio is sent to Groq."},
-    "gemini": {"label": "Gemini", "env": "GEMINI_API_KEY", "used_for": "Not used by any feature yet. The switch is saved for when it is."},
+    "gemini": {"label": "Gemini", "env": "GEMINI_API_KEY", "used_for": "Reads text aloud in every language (read-back). Off means your browser's own voice is used."},
 }
 TOGGLE_SCHEMA = "CREATE TABLE IF NOT EXISTS service_toggle (name TEXT PRIMARY KEY, enabled INTEGER NOT NULL, updated_at TEXT NOT NULL)"
 
@@ -213,8 +214,8 @@ def stt_engines(db: Database) -> dict[str, str | None]:
     """Which engine would transcribe each language right now: offline Vosk, Groq (if switched on), or none."""
     installed = vosk_stt.available_languages()
     groq_on = toggle_state(db, "groq")["active"]
-    # Vosk has no Kannada model, so Kannada is Groq or nothing.
-    return {lang: ("vosk" if lang in installed and lang != "kn" else ("groq" if groq_on else None)) for lang in ("en", "hi", "kn")}
+    # Vosk has no Kannada model, so Kannada is Groq or nothing. Every other language: Vosk if a model is installed, else Groq if on.
+    return {lang: ("vosk" if lang in installed and lang != "kn" else ("groq" if groq_on else None)) for lang in languages.CODES}
 
 
 @router.get("/stt/languages")
@@ -222,7 +223,7 @@ def stt_languages(request: Request) -> dict:
     db: Database = request.app.state.db
     return {"engine": "vosk", "installed": vosk_stt.available_languages(), "engines": stt_engines(db),
             "groq": {k: toggle_state(db, "groq")[k] for k in ("configured", "enabled", "active")},
-            "unsupported": ["kn", "hinglish"],
+            "unsupported": ["kn", "hinglish"] + [c for c in languages.CODES if c != "kn" and c not in vosk_stt.available_languages()],
             "note": "Vosk has no Kannada or Hinglish model. Switch Groq on in Settings, use the browser mic, or type the answer."}
 
 
