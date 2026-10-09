@@ -85,20 +85,33 @@ class PlannerIn(BaseModel):
     limits: dict[str, float] = Field(default_factory=dict)
 
 
+def _rpm_from_env(calib: Calibration) -> Calibration:
+    """The queue throttles to TEXT_RPM, IMAGE_RPM and VIDEO_RPM, so the planner must plan with the same numbers."""
+    for kind, name in (("text", "TEXT_RPM"), ("image", "IMAGE_RPM"), ("video", "VIDEO_RPM")):
+        try:
+            value = float((os.environ.get(name) or "").strip())
+        except ValueError:
+            continue
+        if value > 0:
+            calib.rpm = {**calib.rpm, kind: value}
+            calib.source = f"{calib.source}, rpm from {name}" if name not in calib.source else calib.source
+    return calib
+
+
 def latest_calibration() -> Calibration:
-    """Measured RPM and latency from the newest data/calibration/agnes-*.json, else documented defaults."""
+    """Measured latency from the newest data/calibration/agnes-*.json, else documented defaults. RPM follows the configured limits."""
     files = sorted(CALIBRATION_DIR.glob("agnes-*.json")) if CALIBRATION_DIR.is_dir() else []
     if not files:
-        return Calibration()
+        return _rpm_from_env(Calibration())
     try:
         data = json.loads(files[-1].read_text(encoding="utf-8"))
         calib = Calibration(source=files[-1].name)
         text = (data.get("latency_s", {}).get("copy_batch") or {}).get("p50")
         image = (data.get("image") or {}).get("seconds")
         calib.latency = {**calib.latency, **({"text": float(text)} if text else {}), **({"image": float(image)} if image else {})}
-        return calib
+        return _rpm_from_env(calib)
     except (OSError, ValueError, TypeError):
-        return Calibration()
+        return _rpm_from_env(Calibration())
 
 
 @router.post("/planner/solve")

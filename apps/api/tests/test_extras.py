@@ -218,3 +218,12 @@ def test_is_silent_reads_real_levels():
     from app.extras import is_silent
     assert is_silent(_wav(amp=10)) and not is_silent(_wav(amp=8000))
     assert is_silent(b"not audio") is False  # unreadable is reported by the engine, not hidden as silence
+
+
+def test_planner_uses_the_configured_rpm(monkeypatch):
+    from app.extras import latest_calibration
+    monkeypatch.delenv("TEXT_RPM", raising=False); monkeypatch.delenv("IMAGE_RPM", raising=False); monkeypatch.delenv("VIDEO_RPM", raising=False)
+    assert latest_calibration().rpm == {"text": 10, "image": 10, "video": 1}  # free tier defaults
+    monkeypatch.setenv("TEXT_RPM", "1000"); monkeypatch.setenv("VIDEO_RPM", "5"); monkeypatch.setenv("IMAGE_RPM", "oops")
+    c = latest_calibration()
+    assert c.rpm == {"text": 1000.0, "image": 10, "video": 5.0} and "TEXT_RPM" in c.source  # a bad value is ignored, not fatal
