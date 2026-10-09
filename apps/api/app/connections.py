@@ -9,9 +9,9 @@ Flow (all server side, the app secret and the token never reach the browser)
   DELETE /connections/instagram   forgets the token on this server.
 
 What this can and cannot do: it works for Instagram Business or Creator accounts, and until the Meta app passes review only for
-accounts added as testers of the app. Personal accounts are not supported by Instagram's API any more. With the basic scope used
-here it reads profile details and recent posts with their like and comment counts. Reach and impressions need the insights
-scope, which is not requested, so the Insights screen charts are sample data.
+accounts added as testers of the app. Personal accounts are not supported by Instagram's API any more. It reads profile details, recent posts
+with likes and comments, and (insights scope) 28-day reach, profile views and engaged accounts, plus reach, saves and shares for
+the newest posts. If the insights are not granted or not returned, the Insights screen keeps its sample data.
 
 Settings (environment): INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, INSTAGRAM_REDIRECT_URI (only if it differs from this server's own
 callback URL, for example behind an https tunnel).
@@ -40,10 +40,11 @@ router = APIRouter()
 AUTHORIZE_URL = "https://www.instagram.com/oauth/authorize"
 TOKEN_URL = "https://api.instagram.com/oauth/access_token"
 GRAPH = "https://graph.instagram.com"
-SCOPE = "instagram_business_basic"
+SCOPE = "instagram_business_basic,instagram_business_manage_insights"
 PROFILE_FIELDS = "user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count"
 MEDIA_FIELDS = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count"
-MEDIA_LIMIT = 12
+MEDIA_LIMIT = 30
+INSIGHT_POSTS = 10  # per-post insights are one request each, so only the newest few
 FLOW_COOKIE = "ll_ig_oauth"
 RENEW_AFTER = timedelta(hours=24)  # Instagram only renews a long-lived token that is at least a day old
 SCHEMA = """
@@ -167,7 +168,28 @@ async def read_account(client: httpx.AsyncClient, token: str) -> tuple[dict[str,
     except InstagramError as exc:
         if exc.code == "expired":
             raise  # the login itself is bad: say so. Any other post-reading failure still leaves the profile usable.
+    await _insights(client, token, profile, media)
     return profile, media
+
+
+async def _insights(client: httpx.AsyncClient, token: str, profile: dict[str, Any], media: list[dict[str, Any]]) -> None:
+    """Reach and friends, when the owner granted the insights scope. Every failure here is quiet: the profile and posts still show."""
+    try:
+        until = int(_now().timestamp())
+        r = _check(await client.get(f"{GRAPH}/me/insights", params={"metric": "reach,profile_views,accounts_engaged,total_interactions", "period": "day",
+                                    "metric_type": "total_value", "since": until - 28 * 86400, "until": until, "access_token": token}), "reading insights")
+        totals = {m.get("name"): (m.get("total_value") or {}).get("value") for m in r.get("data") or []}
+        if totals:
+            profile["insights"] = {"window_days": 28, **{k: v for k, v in totals.items() if isinstance(v, (int, float))}}
+    except (InstagramError, httpx.HTTPError):
+        return
+    for m in media[:INSIGHT_POSTS]:
+        try:
+            r = _check(await client.get(f"{GRAPH}/{m['id']}/insights", params={"metric": "reach,saved,shares", "access_token": token}), "reading post insights")
+            got = {d.get("name"): (d.get("values") or [{}])[0].get("value") for d in r.get("data") or []}
+            m.update({k: v for k, v in got.items() if isinstance(v, (int, float))})
+        except (InstagramError, httpx.HTTPError):
+            continue
 
 
 # ---------------------------------------------------------------- storage
@@ -192,7 +214,7 @@ def _view(row: dict[str, Any] | None) -> dict[str, Any]:
     return {**base, "connected": True, "profile": json.loads(row["profile"] or "{}"), "media": json.loads(row["media"] or "[]"),
             "connected_at": row["connected_at"], "fetched_at": row["fetched_at"], "expires_at": row["expires_at"],
             "expired": bool(expires and expires <= _now()), "scope": SCOPE,
-            "can_read_insights": False}  # reach and impressions need a scope this app does not ask for
+            "can_read_insights": bool(json.loads(row["profile"] or "{}").get("insights"))}
 
 
 def _require_owner(request: Request) -> str:

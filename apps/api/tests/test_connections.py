@@ -37,7 +37,7 @@ def make(tmp_path, monkeypatch, *, configured=True, require=False):
     return TestClient(create_app(s), follow_redirects=False, base_url="http://127.0.0.1:8000")
 
 
-def fake_instagram(monkeypatch, *, token_status=200, profile_status=200, media_status=200, calls=None, profile=PROFILE):
+def fake_instagram(monkeypatch, *, token_status=200, profile_status=200, media_status=200, calls=None, profile=PROFILE, insights=False):
     class Client:
         def __init__(self, *a, **k):
             pass
@@ -60,6 +60,12 @@ def fake_instagram(monkeypatch, *, token_status=200, profile_status=200, media_s
                 return Resp(200, {"access_token": "LONG", "token_type": "bearer", "expires_in": 5184000})
             if url.endswith("/refresh_access_token"):
                 return Resp(200, {"access_token": "LONG2", "expires_in": 5184000})
+            if url.endswith("/me/insights"):
+                if not insights:
+                    return Resp(400, {"error": {"message": "(#10) Application does not have permission", "code": 10}})
+                return Resp(200, {"data": [{"name": "reach", "total_value": {"value": 1200}}, {"name": "profile_views", "total_value": {"value": 85}}]})
+            if url.endswith("/insights"):
+                return Resp(200, {"data": [{"name": "reach", "values": [{"value": 300}]}, {"name": "saved", "values": [{"value": 9}]}]})
             if url.endswith("/me/media"):
                 return Resp(media_status, MEDIA if media_status == 200 else {"error": {"message": "Error validating access token", "code": 190}})
             if url.endswith("/me"):
@@ -89,7 +95,7 @@ def test_login_redirects_to_instagram_with_the_smallest_scope_and_a_signed_state
     c = make(tmp_path, monkeypatch)
     r, q = begin(c)
     assert r.status_code == 302 and r.headers["location"].startswith("https://www.instagram.com/oauth/authorize?")
-    assert q["client_id"] == ["ig-app-1"] and q["scope"] == ["instagram_business_basic"] and q["response_type"] == ["code"]
+    assert q["client_id"] == ["ig-app-1"] and q["scope"] == ["instagram_business_basic,instagram_business_manage_insights"] and q["response_type"] == ["code"]
     assert q["redirect_uri"] == ["http://127.0.0.1:8000/auth/instagram/callback"]
     flow = auth.verify(c.app, c.cookies.get(connections.FLOW_COOKIE))
     assert flow["state"] == q["state"][0]
@@ -200,3 +206,17 @@ def test_with_login_required_each_owner_sees_only_their_own_connection(tmp_path,
     c.cookies.clear()
     c.cookies.set(auth.SESSION_COOKIE, auth.sign(c.app, {"email": "a@example.com", "name": "a", "sub": "a"}, 600))
     assert c.get("/connections").json()["connections"][0]["connected"] is True
+
+
+def test_insights_are_read_when_granted_and_quiet_when_not(tmp_path, monkeypatch):
+    import asyncio
+    for granted in (True, False):
+        fake_instagram(monkeypatch, insights=granted)
+        profile = {"followers_count": 1}
+        media = [{"id": "m1"}]
+        asyncio.run(connections._insights(connections.httpx.AsyncClient(), "tok", profile, media))
+        if granted:
+            assert profile["insights"] == {"window_days": 28, "reach": 1200, "profile_views": 85}
+            assert media[0]["reach"] == 300 and media[0]["saved"] == 9
+        else:
+            assert "insights" not in profile and "reach" not in media[0]

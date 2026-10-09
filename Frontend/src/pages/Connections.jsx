@@ -108,6 +108,13 @@ const Instagram = ({ c, setup, reload }) => {
               <div key={k}><dd className="text-lg font-semibold tabular-nums">{stat(v)}</dd><dt className="text-xs text-ink/55">{k}</dt></div>
             ))}
           </dl>
+          {p.insights && (
+            <dl className="grid grid-cols-3 divide-x divide-ink/10 rounded-xl bg-ink/5 py-2.5 text-center" aria-label={`Last ${p.insights.window_days} days`}>
+              {[['Reach', p.insights.reach], ['Profile views', p.insights.profile_views], ['Accounts engaged', p.insights.accounts_engaged]].map(([k, v]) => (
+                <div key={k}><dd className="text-lg font-semibold tabular-nums">{stat(v)}</dd><dt className="text-xs text-ink/55">{k}, {p.insights.window_days} days</dt></div>
+              ))}
+            </dl>
+          )}
           {c.media.length > 0 && (
             <div>
               <p className="mb-1.5 text-xs font-medium text-ink/55">Recent posts, read just now</p>

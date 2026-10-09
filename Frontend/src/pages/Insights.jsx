@@ -40,7 +40,7 @@ const Insights = () => {
   return (
     <div className="flex flex-col gap-4">
       <p className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-white/80" role="note">
-        The charts below are <strong>sample data</strong>. Instagram does not let this app read reach, so these numbers are made up to show the screen. Nothing here is measured, so do not read them as results.
+        The charts below are <strong>sample data</strong>, made up to show the screen. Real account figures appear in the strip above once Instagram is connected and its insights are allowed. Nothing here is measured, so do not read them as results.
       </p>
 
       {ig ? (
@@ -49,6 +49,7 @@ const Insights = () => {
           <div className="min-w-0 flex-1">
             <p className="font-semibold">@{ig.profile.username} <span className="rounded-full bg-good/12 px-2 py-0.5 text-[11px] font-semibold text-good">Live from Instagram</span></p>
             <p className="text-sm text-ink/60">{n(ig.profile.followers_count ?? 0)} followers, {n(ig.profile.follows_count ?? 0)} following, {n(ig.profile.media_count ?? 0)} posts</p>
+            {ig.profile.insights && <p className="text-sm text-ink/60">Last {ig.profile.insights.window_days} days: {n(ig.profile.insights.reach ?? 0)} reached, {n(ig.profile.insights.profile_views ?? 0)} profile views, {n(ig.profile.insights.accounts_engaged ?? 0)} accounts engaged</p>}
           </div>
         </section>
       ) : (
