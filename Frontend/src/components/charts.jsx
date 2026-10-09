@@ -15,15 +15,15 @@ const nice = (max) => {
 };
 export const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : `${Math.round(n)}`);
 
-export const ChartCard = ({ title, sub, sample = true, live = false, children, table, className = '' }) => (
+export const ChartCard = ({ title, sub, sample = true, live = false, badge, children, table, className = '' }) => (
   <section className={`card ${className}`}>
     <div className="flex flex-wrap items-start justify-between gap-2">
       <div className="min-w-0">
         <h3 className="font-semibold">{title}</h3>
         {sub && <p className="mt-0.5 text-xs text-ink/55">{sub}</p>}
       </div>
-      {(sample || live) && (
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${live ? 'bg-good/12 text-good' : 'bg-ink/8 text-ink/60'}`}>{live ? 'Live from Instagram' : 'Sample data'}</span>
+      {(sample || live || badge) && (
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${live || badge ? 'bg-good/12 text-good' : 'bg-ink/8 text-ink/60'}`}>{badge || (live ? 'Live from Instagram' : 'Sample data')}</span>
       )}
     </div>
     <div className="mt-3">{children}</div>

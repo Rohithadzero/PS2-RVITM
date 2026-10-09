@@ -106,3 +106,16 @@ def test_memory_belongs_to_its_owner(rig):
     made = c.post("/memory", json={"kind": "other", "title": "Mine"}).json()
     app.state.db.execute("UPDATE memory_item SET owner = 'other@x.com'")
     assert c.get("/memory").json()["items"] == [] and c.put(f"/memory/{made['id']}", json={"kind": "other", "title": "x"}).status_code == 404
+
+
+def test_results_you_entered_become_a_suggestion_with_evidence(rig):
+    app, c = rig
+    campaign = app.state.db.campaign_list()[0]["id"]
+    assets = app.state.db.assets_for(campaign)
+    wa = [a for a in assets if a["channel"] == "whatsapp"][0]
+    r = c.post(f"/campaign/{campaign}/results", json={"results": [{"asset_id": wa["id"], "reach": 200, "redemptions": 30}]})
+    assert r.status_code == 200, r.text
+    c.post("/memory/refresh")
+    got = [s for s in c.get("/memory").json()["suggested"] if s["kind"] == "results"]
+    assert got and got[0]["title"].startswith("What worked: filter coffee") and "Best channel: whatsapp" in got[0]["body"]
+    assert "200" in got[0]["evidence"] and got[0]["status"] == "suggested"

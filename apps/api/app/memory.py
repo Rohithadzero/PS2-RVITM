@@ -31,7 +31,7 @@ router = APIRouter()
 
 KINDS = {
     "menu": "Menu and prices", "pricing": "Plans and pricing", "hours": "Hours and schedule", "offers": "Offers and specials",
-    "audience": "Customers and audience", "voice": "How we sound", "rules": "Never say or do", "about": "About the business", "other": "Other",
+    "audience": "Customers and audience", "voice": "How we sound", "results": "What has worked", "rules": "Never say or do", "about": "About the business", "other": "Other",
 }
 PROMPT_KINDS = ("voice", "rules")  # the only kinds that may reach a copy prompt
 MAX_ITEMS = 200
@@ -117,6 +117,18 @@ def gather(db: Database, owner: str) -> list[dict[str, str]]:
                 ", ".join(f.get("dates") or []) or None, f.get("timings"), f.get("terms")]
         out.append({"kind": "offers", "title": f"Offer: {f.get('item')}", "body": " · ".join(b for b in bits if b), "key": f"offer:{c['id']}",
                     "evidence": "From the approved facts of one of your campaigns."})
+    from app import learn  # imported here: learn pulls in the forecast, which memory does not otherwise need
+    for cid in [r["campaign_id"] for r in db.query("SELECT DISTINCT campaign_id FROM result ORDER BY updated_at DESC LIMIT 3")]:
+        got = learn.learning(db, cid)
+        if not got["summary"]["assets_with_results"]:
+            continue
+        best = got["summary"]["best_channel"]
+        body = "\n".join(([f"Best channel: {best.replace('_', ' ')}."] if best else []) + got["lessons"][:4])
+        row = db.facts_approved(cid) or db.facts_latest(cid)
+        item = json.loads(row["json"]).get("item") if row else None
+        out.append({"kind": "results", "title": f"What worked: {item}" if item else "What worked in a past campaign",
+                    "body": body, "key": f"results:{cid}",
+                    "evidence": f"From the {got['summary']['assets_with_results']} result(s) you entered: {got['summary']['total_reached']:,} reached, {got['summary']['total_redemptions']:,} redeemed."})
     rows = db.query("SELECT language FROM customer WHERE owner = ?", (owner,))
     langs = Counter(r["language"] for r in rows if r["language"])
     if sum(langs.values()) >= 5:

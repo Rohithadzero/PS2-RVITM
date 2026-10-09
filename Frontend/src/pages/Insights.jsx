@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Eye, Heart, Ticket, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { BarChart, ChartCard, Donut, FunnelChart, Heatmap, Histogram, LineChart, bin } from '../components/charts';
 import { buildInsights } from '../data/insightsMock';
-import { api } from '../campaign/lib/api';
+import { api, getLearning } from '../campaign/lib/api';
+import { useCurrent } from '../campaign/lib/current';
 import { navigate } from '../lib/router';
 
 const Kpi = ({ icon: Icon, label, value, note }) => (
@@ -17,6 +18,74 @@ const Kpi = ({ icon: Icon, label, value, note }) => (
 );
 
 const n = (v) => Math.round(v).toLocaleString('en-IN');
+const pct = (v) => `${(v * 100).toFixed(1)}%`;
+const VERDICT = { within: ['As forecast', 'bg-good/12 text-good'], above: ['Better than forecast', 'bg-good/12 text-good'], below: ['Below forecast', 'bg-warn/15 text-warn'], no_forecast: ['No forecast to compare', 'bg-ink/8 text-ink/60'] };
+
+// One row: the forecast range as a band, and what really happened as a marker on the same scale.
+const RangeRow = ({ item, max }) => {
+  const [text, tone] = VERDICT[item.verdict] || VERDICT.no_forecast;
+  const at = (v) => `${Math.min(100, (v / max) * 100)}%`;
+  return (
+    <li className="grid gap-1.5 border-t border-ink/8 py-3 first:border-t-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="font-medium">{item.channel.replace(/_/g, ' ')} <span className="text-ink/50">({item.lang})</span></span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone}`}>{text}</span>
+      </div>
+      <div className="relative h-3 rounded-full bg-ink/8" role="img" aria-label={`Forecast ${item.expected ? `${pct(item.expected.low)} to ${pct(item.expected.high)}` : 'not available'}, actual ${pct(item.actual_rate)}`}>
+        {item.expected && <span className="absolute inset-y-0 rounded-full bg-accent/35" style={{ left: at(item.expected.low), width: `calc(${at(item.expected.high)} - ${at(item.expected.low)})` }} />}
+        <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-ink shadow" style={{ left: at(item.actual_rate) }} />
+      </div>
+      <p className="text-xs text-ink/60">
+        Forecast {item.expected ? `${pct(item.expected.low)} to ${pct(item.expected.high)}` : 'none'}. Actual {pct(item.actual_rate)}: {n(item.redemptions)} of {n(item.reach)} people redeemed.
+      </p>
+    </li>
+  );
+};
+
+// Real numbers: what the owner entered for the current campaign, set against the forecast made before it ran.
+const Results = () => {
+  const cur = useCurrent();
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!cur.id) return undefined;
+    let live = true;
+    getLearning(cur.id).then((l) => live && setData(l)).catch((e) => live && setError(e.message));
+    return () => { live = false; };
+  }, [cur.id]);
+
+  if (!cur.id) return null;
+  const items = data?.items ?? [];
+  const max = Math.max(0.05, ...items.flatMap((i) => [i.actual_rate, i.expected?.high ?? 0])) * 1.2;
+  return (
+    <ChartCard
+      className="xl:col-span-2"
+      sample={false}
+      badge="Your numbers"
+      title="Forecast and what happened"
+      sub="The band is the range the forecast gave before the campaign. The dot is what you entered afterwards."
+    >
+      {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+      {data && items.length === 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-ink/15 p-4 text-sm">
+          <span>No results entered for this campaign yet. Add how many people each post reached and how many redeemed, and the forecast learns from it.</span>
+          <button type="button" className="btn-primary" onClick={() => navigate('dashboard')}>Enter results</button>
+        </div>
+      )}
+      {items.length > 0 && (
+        <>
+          <p className="mb-2 text-sm text-ink/70">
+            {data.summary.within} of {data.summary.judged} landed inside the forecast. {n(data.summary.total_redemptions)} redemptions from {n(data.summary.total_reached)} people reached.
+            {data.summary.best_channel && <> Best channel: <strong>{data.summary.best_channel.replace(/_/g, ' ')}</strong>.</>}
+          </p>
+          <ul>{items.map((i) => <RangeRow key={i.asset_id} item={i} max={max} />)}</ul>
+          {data.lessons.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink/75">{data.lessons.map((l) => <li key={l}>{l}</li>)}</ul>}
+          <p className="mt-3 text-xs text-ink/55">Entered by you, not measured by this app. GrowIT will offer to remember what worked on the Memory screen.</p>
+        </>
+      )}
+    </ChartCard>
+  );
+};
 
 // S22: how the campaigns turned out. Reach and the rest are SAMPLE DATA, because Instagram does not give this app reach numbers.
 // The strip at the top and the "recent posts" chart are live, and only appear once an Instagram account is connected.
@@ -125,6 +194,8 @@ const Insights = () => {
           <Donut items={d.languages} label="Donut chart of people reached by language" />
         </ChartCard>
 
+        <Results />
+
         {ig && mediaBars.length > 0 && (
           <ChartCard
             className="xl:col-span-2"
@@ -140,7 +211,7 @@ const Insights = () => {
       </div>
 
       <p className="flex items-start gap-2 text-xs text-white/55">
-        <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Real reach and impressions need Instagram's insights permission, which this app does not ask for yet, and a reviewed Meta app.
+        <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Reach and impressions come from Instagram's insights permission, which this app asks for when you connect. It works for Business or Creator accounts that are testers of the Meta app, until the app passes Meta's review.
       </p>
     </div>
   );
