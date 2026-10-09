@@ -3,6 +3,7 @@ import { Brain, Check, Download, Lightbulb, Pencil, Pin, PinOff, Plus, Search, T
 import { CardTitle, Field, Banner, Toggle } from '../components/ui';
 import { api } from '../campaign/lib/api';
 import { navigate } from '../lib/router';
+import BriefingCard from '../components/briefing/BriefingCard';
 
 const send = (method, path, body) => api(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
 
@@ -109,6 +110,8 @@ const Memory = () => {
         </Banner>
       )}
 
+
+      <BriefingCard onSaved={() => load(q.trim())} />
 
       <section className="card">
         <CardTitle sub="Anything GrowIt should keep in mind: menu, pricing, timings, how you like to sound." action={
