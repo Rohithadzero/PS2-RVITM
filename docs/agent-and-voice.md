@@ -77,7 +77,7 @@ Built here: owner can speak the whole idea into the Agent; Plan has "Read it bac
 
 Next, in order of value:
 1. **Voice for every gate.** "Lock it", "approve the Kannada poster", "skip", "what is blocked?" as spoken commands with read-back confirmation. Same grounded readers, commands only map to existing routes.
-2. **Kannada and Hinglish speech to text that works.** Vosk has neither. Compare Sarvam Saaras (`kn-IN`), Groq Whisper and AI4Bharat IndicConformer on the dataset's voice utterances with native speakers; wire the winner behind the same `/stt` route.
+2. **Kannada speech to text (built with Groq Whisper; Hinglish and a bake-off still open).** The app records the microphone, converts it to 16 kHz WAV in the browser, and `/stt` sends Kannada to Groq Whisper when the Groq switch is on. Silent clips never reach Whisper (it invents words for silence). Checked live on synthetic Kannada (`calibration/kannada_stt_probe.py`): 0.86 character similarity, the percentage, days and the start time came through, the end time "11" was garbled. Synthetic speech is cleaner than a shop floor, so test with native speakers on real recordings. Still to do: compare Sarvam Saaras and AI4Bharat, and Hinglish.
 3. **Read-back in the owner's language** from a native-reviewed template bank, so the lock confirmation is heard in Kannada or Hindi, not English.
 4. **WhatsApp voice notes in.** Owner sends a voice note to a number; it becomes an idea for the Agent. Needs a WhatsApp Business account, so a stretch.
 5. **Voiced assets out.** A 15 second spoken promo from the approved WhatsApp copy using Indic TTS (Sarvam Bulbul), for shops that broadcast voice notes.

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { KeyRound, ShieldCheck, CircleAlert, Trash2, Loader2, Mic } from 'lucide-react';
 import { CardTitle, Field, Tabs, Banner, Toggle } from '../components/ui';
 import { api, API_URL, runEvals } from '../campaign/lib/api';
+import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
 
 const TABS = ['Providers', 'Voice', 'Calibration', 'Guardrails'];
 
@@ -138,6 +139,49 @@ const ProvidersTab = ({ data, reload }) => (
   </div>
 );
 
+const ENGINE_LABEL = { vosk: 'Offline (Vosk)', groq: 'Groq Whisper (cloud)' };
+const PREFS = [
+  { id: 'auto', label: 'Automatic', hint: 'Kannada goes to Groq when it is on. Other languages use the browser microphone, else the server.' },
+  { id: 'server', label: 'Always the server', hint: 'Record, then transcribe on the server (offline Vosk, or Groq for Kannada). Nothing live while you talk.' },
+  { id: 'browser', label: 'Browser only', hint: 'Use only the browser speech recognition. Kannada may be unreliable.' },
+];
+
+const EnginesCard = () => {
+  const [map, setMap] = useState(null);
+  const [pref, setPref] = useState(readVoicePref);
+  useEffect(() => {
+    api('/stt/languages').then(setMap).catch(() => setMap(false));
+  }, []);
+  const choose = (id) => {
+    saveVoicePref(id);
+    setPref(id);
+  };
+  return (
+    <section className="card xl:col-span-2">
+      <CardTitle sub="What turns your voice into text, per language, right now.">Microphone engine</CardTitle>
+      {map === false && <p role="alert" className="text-sm text-bad">The server did not answer.</p>}
+      {map && (
+        <ul className="mb-4 grid gap-2 sm:grid-cols-3">
+          {['en', 'hi', 'kn'].map((l) => (
+            <li key={l} className="rounded-xl bg-ink/5 px-3 py-2.5 text-sm">
+              <span className="font-semibold">{{ en: 'English', hi: 'Hindi', kn: 'Kannada' }[l]}</span>
+              <span className="mt-0.5 block text-xs text-ink/60">{map.engines[l] ? ENGINE_LABEL[map.engines[l]] : l === 'kn' ? 'Needs Groq switched on' : 'Not installed'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div role="radiogroup" aria-label="Microphone engine" className="flex flex-col gap-2">
+        {PREFS.map((p) => (
+          <label key={p.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-sm ${pref === p.id ? 'border-accent bg-accent-soft/50' : 'border-ink/10'}`}>
+            <input type="radio" name="voice-engine" checked={pref === p.id} onChange={() => choose(p.id)} className="mt-1 accent-[var(--color-accent)]" />
+            <span><span className="font-medium">{p.label}</span><span className="block text-xs text-ink/60">{p.hint}</span></span>
+          </label>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const VoiceTab = ({ data }) => {
   const [lang, setLang] = useState('en');
   const [state, setState] = useState(null);
@@ -161,13 +205,14 @@ const VoiceTab = ({ data }) => {
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
+      <EnginesCard />
       <section className="card">
         <CardTitle sub="Runs on this machine. No audio leaves it.">Offline speech to text (Vosk)</CardTitle>
         <ul className="flex flex-col gap-2 text-sm">
           {['en', 'hi', 'kn'].map((l) => (
             <li key={l} className="flex items-center justify-between rounded-xl bg-ink/5 px-3 py-2.5">
               <span className="font-medium">{{ en: 'English', hi: 'Hindi', kn: 'Kannada' }[l]}</span>
-              {installed.includes(l) ? <Badge tone="good">installed</Badge> : <Badge>{l === 'kn' ? 'no Vosk model, use browser mic' : 'not installed'}</Badge>}
+              {installed.includes(l) ? <Badge tone="good">installed</Badge> : <Badge>{l === 'kn' ? 'no Vosk model: use Groq (Other services) or the browser mic' : 'not installed'}</Badge>}
             </li>
           ))}
         </ul>

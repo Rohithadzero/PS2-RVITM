@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { answerQuestion, editAnswer, finishInterview, getSession } from "../lib/api";
 import { FIELD_LABEL, FIELD_OPTIONS, choiceLabels, formatValue, isMultiField, optionLabel } from "../lib/format";
 import type { Route } from "../lib/route";
-import { useRecognizer, useSpeaker } from "../lib/speech";
+import { useSpeaker } from "../lib/speech";
+import { useVoiceInput } from "../lib/voice";
 import type { Answer, AnswerBody, Session } from "../lib/types";
 import { Badge, Button, ErrorNote, Sheet } from "./ui";
 
@@ -157,7 +158,7 @@ export function Talk({ sid, go }: { sid: string; go: (r: Route) => void }) {
     }
   }
 
-  const mic = useRecognizer(lang, (said) => {
+  const mic = useVoiceInput(lang, (said) => {
     setLastHeard(said);
     send({ text: said, source: "voice" });
   });
@@ -241,12 +242,13 @@ export function Talk({ sid, go }: { sid: string; go: (r: Route) => void }) {
               </div>
 
               <div className="mic-desk">{micButton}</div>
-              {mic.listening || mic.interim || lastHeard ? (
+              {mic.listening || mic.transcribing || mic.interim || lastHeard ? (
                 <div className={`transcript${mic.listening ? " live" : ""}`}>
-                  <span className="label">{mic.listening ? "Listening" : "Heard"}</span>
-                  <p>{mic.listening ? mic.interim || "Speak now" : busy ? `${lastHeard}` : lastHeard}</p>
+                  <span className="label">{mic.listening ? "Listening" : mic.transcribing ? "Transcribing" : "Heard"}</span>
+                  <p>{mic.listening ? mic.interim || "Speak now" : mic.transcribing ? "One moment" : busy ? `${lastHeard}` : lastHeard}</p>
                 </div>
               ) : null}
+              {mic.note ? <p className="muted small">{mic.note}</p> : null}
               {mic.error ? <ErrorNote>{mic.error}</ErrorNote> : null}
               {error ? <ErrorNote onRetry={load}>{error}</ErrorNote> : null}
 

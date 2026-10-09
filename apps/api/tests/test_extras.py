@@ -1,3 +1,4 @@
+import json
 """Planner, calibration, provider-key and STT routes."""
 import io
 import wave
@@ -52,17 +53,26 @@ def test_provider_custom_url_blocks_private_hosts(tmp_path):
 def test_stt_rejects_kannada_and_bad_audio(tmp_path, monkeypatch):
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     c = client(tmp_path)
-    b = io.BytesIO()
-    w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b"\0\0" * 1600); w.close()
-    r = c.post("/stt", files={"audio": ("a.wav", b.getvalue(), "audio/wav")}, data={"lang": "kn"})
+    r = c.post("/stt", files={"audio": ("a.wav", _wav(), "audio/wav")}, data={"lang": "kn"})
     assert r.status_code == 422 and r.json()["detail"]["code"] == "stt_unsupported"
     r = c.post("/stt", files={"audio": ("a.wav", b"not audio", "audio/wav")}, data={"lang": "en"})
     assert r.status_code == 422
 
 
-def _wav():
+def _tone(seconds=0.2, amp=8000, rate=16000):
+    import math
     b = io.BytesIO()
-    w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b"\0\0" * 1600); w.close()
+    w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
+    w.writeframes(b"".join(int(amp * math.sin(i / 8)).to_bytes(2, "little", signed=True) for i in range(int(rate * seconds)))); w.close()
+    return b.getvalue()
+
+
+def _wav(amp=8000, seconds=0.2):
+    """Audible audio (a tone), so tests exercise the engines. A silent file is caught before any engine is called."""
+    import math
+    b = io.BytesIO()
+    w = wave.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+    w.writeframes(b"".join(int(amp * math.sin(i / 8)).to_bytes(2, "little", signed=True) for i in range(int(16000 * seconds)))); w.close()
     return b.getvalue()
 
 
@@ -128,3 +138,83 @@ def test_groq_client_never_passes_on_the_response_body():
         raise AssertionError("expected an error")
     except groq_stt.GroqError as exc:
         assert "401" in str(exc) and "gsk_secretecho" not in str(exc)
+
+
+def test_silent_audio_never_reaches_an_engine(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    calls = []
+
+    async def spy(*a, **k):
+        calls.append(1)
+        return {"text": "Thank you.", "segments": [], "lang": "kn", "provider": "groq", "model": "m", "latency_ms": 1}
+
+    monkeypatch.setattr("app.lab.voice.groq_stt.transcribe", spy)
+    c = client(tmp_path)
+    r = c.post("/stt", files={"audio": ("a.wav", _wav(amp=40), "audio/wav")}, data={"lang": "kn"}).json()
+    assert r["silent"] is True and r["text"] == "" and calls == []  # Whisper would have invented "Thank you."
+    loud = c.post("/stt", files={"audio": ("a.wav", _wav(), "audio/wav")}, data={"lang": "kn"}).json()
+    assert loud["text"] == "Thank you." and calls == [1]
+
+
+def test_oversized_recordings_are_refused(tmp_path):
+    c = client(tmp_path)
+    big = b"\0" * (10 * 1024 * 1024 + 10)
+    r = c.post("/stt", files={"audio": ("a.wav", big, "audio/wav")}, data={"lang": "kn"})
+    assert r.status_code == 413 and r.json()["detail"]["code"] == "audio_too_large"
+
+
+def test_engine_map_tells_the_browser_what_will_transcribe_each_language(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    c = client(tmp_path)
+    on = c.get("/stt/languages").json()
+    assert on["engines"]["kn"] == "groq" and on["groq"]["active"] is True
+    c.put("/settings/toggles/groq", json={"enabled": False})
+    off = c.get("/stt/languages").json()
+    assert off["engines"]["kn"] is None and off["groq"]["active"] is False
+    assert "gsk_test" not in json.dumps(off)
+
+
+def test_is_silent_reads_real_levels():
+    from app.extras import is_silent
+    assert is_silent(_wav(amp=10)) and not is_silent(_wav(amp=8000))
+    assert is_silent(b"not audio") is False  # unreadable is reported by the engine, not hidden as silence
+
+
+def test_silent_audio_never_reaches_an_engine(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    calls = []
+
+    async def spy(*a, **k):
+        calls.append(1)
+        return {"text": "Thank you.", "segments": [], "lang": "kn", "provider": "groq", "model": "m", "latency_ms": 1}
+
+    monkeypatch.setattr("app.lab.voice.groq_stt.transcribe", spy)
+    c = client(tmp_path)
+    r = c.post("/stt", files={"audio": ("a.wav", _wav(amp=40), "audio/wav")}, data={"lang": "kn"}).json()
+    assert r["silent"] is True and r["text"] == "" and calls == []  # Whisper would have invented "Thank you."
+    loud = c.post("/stt", files={"audio": ("a.wav", _wav(), "audio/wav")}, data={"lang": "kn"}).json()
+    assert loud["text"] == "Thank you." and calls == [1]
+
+
+def test_oversized_recordings_are_refused(tmp_path):
+    c = client(tmp_path)
+    big = b"\0" * (10 * 1024 * 1024 + 10)
+    r = c.post("/stt", files={"audio": ("a.wav", big, "audio/wav")}, data={"lang": "kn"})
+    assert r.status_code == 413 and r.json()["detail"]["code"] == "audio_too_large"
+
+
+def test_engine_map_tells_the_browser_what_will_transcribe_each_language(tmp_path, monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    c = client(tmp_path)
+    on = c.get("/stt/languages").json()
+    assert on["engines"]["kn"] == "groq" and on["groq"]["active"] is True
+    c.put("/settings/toggles/groq", json={"enabled": False})
+    off = c.get("/stt/languages").json()
+    assert off["engines"]["kn"] is None and off["groq"]["active"] is False
+    assert "gsk_test" not in json.dumps(off)
+
+
+def test_is_silent_reads_real_levels():
+    from app.extras import is_silent
+    assert is_silent(_wav(amp=10)) and not is_silent(_wav(amp=8000))
+    assert is_silent(b"not audio") is False  # unreadable is reported by the engine, not hidden as silence

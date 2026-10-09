@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ApiError, applyChange, proposeChange } from "../lib/api";
 import { FIELD_LABEL, LANGS, channelLabel, langName, prettyText } from "../lib/format";
-import { useRecognizer } from "../lib/speech";
+import { useVoiceInput } from "../lib/voice";
 import type { Asset, Board, ChangeProposal, Lang } from "../lib/types";
 import { Badge, Button, ErrorNote, Sheet } from "./ui";
 
@@ -22,7 +22,7 @@ export function ChangeByVoice({ campaignId, assets, onApplied, defaultOpen = fal
     try { setProposal(await proposeChange(campaignId, said.trim())); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
 
-  const mic = useRecognizer(lang, (said) => { setText(said); propose(said); });
+  const mic = useVoiceInput(lang, (said) => { setText(said); propose(said); });
   const byId = new Map(assets.map((a) => [a.id, a]));
 
   async function apply() {
@@ -60,7 +60,8 @@ export function ChangeByVoice({ campaignId, assets, onApplied, defaultOpen = fal
           ) : (
             <p className="muted small">Voice input is not available in this browser. Type the change.</p>
           )}
-          {mic.listening || mic.interim ? <div className="transcript live"><span className="label">Listening</span><p>{mic.interim || "Speak now"}</p></div> : null}
+          {mic.listening || mic.transcribing || mic.interim ? <div className="transcript live"><span className="label">Listening</span><p>{mic.interim || "Speak now"}</p></div> : null}
+          {mic.note ? <p className="muted small">{mic.note}</p> : null}
           {mic.error ? <ErrorNote>{mic.error}</ErrorNote> : null}
           <form onSubmit={(e) => { e.preventDefault(); propose(text); }} className="type-box">
             <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type the change" aria-label="Describe the change" />

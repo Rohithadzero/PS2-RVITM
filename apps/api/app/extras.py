@@ -6,6 +6,7 @@ write-only: the API never returns a stored key, only its last four characters.
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import os
 import wave
@@ -195,16 +196,48 @@ def set_toggle(name: str, body: ToggleIn, request: Request) -> dict:
 
 # ---------------------------------------------------------------- offline speech-to-text
 
+def stt_engines(db: Database) -> dict[str, str | None]:
+    """Which engine would transcribe each language right now: offline Vosk, Groq (if switched on), or none."""
+    installed = vosk_stt.available_languages()
+    groq_on = toggle_state(db, "groq")["active"]
+    # Vosk has no Kannada model, so Kannada is Groq or nothing.
+    return {lang: ("vosk" if lang in installed and lang != "kn" else ("groq" if groq_on else None)) for lang in ("en", "hi", "kn")}
+
+
 @router.get("/stt/languages")
-def stt_languages() -> dict:
-    return {"engine": "vosk", "installed": vosk_stt.available_languages(),
+def stt_languages(request: Request) -> dict:
+    db: Database = request.app.state.db
+    return {"engine": "vosk", "installed": vosk_stt.available_languages(), "engines": stt_engines(db),
+            "groq": {k: toggle_state(db, "groq")[k] for k in ("configured", "enabled", "active")},
             "unsupported": ["kn", "hinglish"],
             "note": "Vosk has no Kannada or Hinglish model. Switch Groq on in Settings, use the browser mic, or type the answer."}
 
 
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
+SILENCE_PEAK = 300  # of 32768. Whisper invents words ("Thank you.") for silence, so quiet audio never reaches it.
+
+
+def is_silent(wav_bytes: bytes) -> bool:
+    """True when a 16-bit WAV never gets louder than a faint hiss. Unreadable audio is not called silent: the engine reports it."""
+    import array
+    try:
+        with wave.open(io.BytesIO(wav_bytes)) as w:
+            if w.getsampwidth() != 2:
+                return False
+            samples = array.array("h")
+            samples.frombytes(w.readframes(w.getnframes()))
+    except (wave.Error, EOFError):
+        return False
+    return not samples or max(abs(min(samples)), abs(max(samples))) < SILENCE_PEAK
+
+
 @router.post("/stt")
 async def stt(request: Request, audio: UploadFile = File(...), lang: str = Form("en")) -> dict:
-    data = await audio.read()
+    data = await audio.read(MAX_AUDIO_BYTES + 1)
+    if len(data) > MAX_AUDIO_BYTES:
+        raise _fail("audio_too_large", "That recording is too long. Keep it under about a minute.", 413)
+    if is_silent(data):
+        return {"text": "", "segments": [], "lang": lang, "provider": "none", "model": None, "latency_ms": 0, "silent": True}
     groq = toggle_state(request.app.state.db, "groq")
     # Vosk first (offline, nothing leaves the machine). Groq only for what Vosk cannot do, and only when switched on.
     if groq["active"] and (lang in ("kn", "hinglish") or lang not in vosk_stt.available_languages()):

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Gauge, Bot, Brain, Cog, UserRound, Check, Loader2, CircleAlert, SkipForward, ArrowRight, Mic, Square, ChevronDown } from 'lucide-react';
 import { createAgentRun, tickAgentRun, listAgentRuns, confirmAgentStep, skipAgentStep, runAutopilot } from '../campaign/lib/api';
 import { LANGS, FIELD_LABEL } from '../campaign/lib/format';
-import { useRecognizer } from '../campaign/lib/speech';
+import { useVoiceInput } from '../campaign/lib/voice';
 import { go, setCurrent } from '../campaign/lib/current';
 import { navigate } from '../lib/router';
 
@@ -206,7 +206,7 @@ const Agent = () => {
   const [busy, setBusy] = useState(false);
   const alive = useRef(true);
 
-  const mic = useRecognizer(lang, (text) => setIdea((cur) => `${cur} ${text}`.trim()));
+  const mic = useVoiceInput(lang, (text) => setIdea((cur) => `${cur} ${text}`.trim()));
 
   useEffect(() => {
     alive.current = true;
@@ -290,7 +290,7 @@ const Agent = () => {
             ))}
           </div>
           <textarea
-            value={mic.listening && mic.interim ? `${idea} ${mic.interim}`.trim() : idea}
+            value={mic.interim && (mic.listening || mic.transcribing) ? `${idea} ${mic.interim}`.trim() : idea}
             onChange={(e) => setIdea(e.target.value)}
             rows={5}
             maxLength={2000}
@@ -303,12 +303,13 @@ const Agent = () => {
               {busy ? <Loader2 size={15} className="animate-spin" /> : <Bot size={15} />} Plan the work
             </button>
             {mic.supported && (
-              <button type="button" onClick={() => (mic.listening ? mic.stop() : mic.start())} aria-pressed={mic.listening} className="btn-ghost">
-                {mic.listening ? <Square size={14} /> : <Mic size={15} />} {mic.listening ? 'Stop' : 'Speak it'}
+              <button type="button" onClick={() => (mic.listening ? mic.stop() : mic.start())} aria-pressed={mic.listening} disabled={mic.transcribing} className="btn-ghost">
+                {mic.listening ? <Square size={14} /> : <Mic size={15} />} {mic.listening ? 'Stop' : mic.transcribing ? 'Transcribing' : 'Speak it'}
               </button>
             )}
             <button type="button" onClick={() => setIdea(EXAMPLE)} className="text-sm text-ink/55 underline hover:text-ink">Use an example</button>
           </div>
+          {mic.note && <p className="mt-2 text-xs text-ink/55">{mic.note}</p>}
           {mic.error && <p role="alert" className="mt-2 text-sm text-bad">{mic.error}</p>}
           <Autopilot onUse={(sentence) => setIdea((cur) => `${cur} ${sentence}`.trim())} />
           {error && <p role="alert" className="mt-2 text-sm text-bad">{error}</p>}
