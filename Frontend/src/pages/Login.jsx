@@ -1,3 +1,4 @@
+import Backdrop from '../components/Backdrop.jsx';
 import { AudioLines, Loader2 } from 'lucide-react';
 import { loginUrl, useAuth } from '../lib/auth';
 import { navigate } from '../lib/router';
@@ -26,7 +27,7 @@ const Login = ({ reason }) => {
 
   return (
     <div className="grid min-h-dvh place-items-center p-4">
-      <div className="app-backdrop" aria-hidden="true" />
+      <Backdrop />
       <main className="glass-panel w-full max-w-sm rounded-[28px] p-8 text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
           <AudioLines size={28} strokeWidth={2.4} />

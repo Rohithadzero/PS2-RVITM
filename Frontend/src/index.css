@@ -152,6 +152,11 @@ body {
   }
 }
 
+/* The three.js shader draws the gradient itself, so the two CSS blob layers step aside while it is on screen. */
+.shader-backdrop { position: absolute; inset: 0; }
+.app-backdrop.has-shader::before,
+.app-backdrop.has-shader::after { display: none; }
+
 /* Background, picked in Settings > Appearance. */
 :root[data-backdrop='still'] .app-backdrop::before,
 :root[data-backdrop='still'] .app-backdrop::after {

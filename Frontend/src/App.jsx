@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import Backdrop from './components/Backdrop.jsx';
 import { MotionConfig, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -97,7 +98,7 @@ const App = () => {
   };
 
   if (loading) {
-    return <div className="app-backdrop" aria-hidden="true" />;
+    return <Backdrop />;
   }
 
   // The server says whether login is required. Without it the app stays open for local work.
@@ -115,7 +116,7 @@ const App = () => {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="app-backdrop" aria-hidden="true" />
+      <Backdrop />
       <div className="flex min-h-dvh gap-4 p-3 sm:p-4 lg:h-dvh">
         <Sidebar
           active={page.slug}
