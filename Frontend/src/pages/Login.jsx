@@ -1,5 +1,6 @@
 import Backdrop from '../components/Backdrop.jsx';
-import { AudioLines, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Logo from '../components/Logo';
 import { loginUrl, useAuth } from '../lib/auth';
 import { navigate } from '../lib/router';
 
@@ -29,10 +30,9 @@ const Login = ({ reason }) => {
     <div className="grid min-h-dvh place-items-center p-4">
       <Backdrop />
       <main className="glass-panel w-full max-w-sm rounded-[28px] p-8 text-center">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
-          <AudioLines size={28} strokeWidth={2.4} />
-        </span>
+        <Logo size={64} className="mx-auto rounded-2xl" />
         <h1 className="mt-5 text-2xl font-semibold tracking-tight">GrowIT</h1>
+        <p className="text-xs font-medium tracking-wide text-accent">AI Marketing Studio</p>
         <p className="mt-2 text-sm text-white/60">Your brand and campaigns sync to your phone and laptop.</p>
 
         {loading ? (

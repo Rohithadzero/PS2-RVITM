@@ -7,6 +7,7 @@ import { LANGS } from '../campaign/lib/format';
 import { readVoicePref, saveVoicePref } from '../campaign/lib/voice';
 import { ACCENTS, BACKDROPS, DEFAULTS, SURFACES, useAppearance } from '../lib/appearance';
 import { startTour } from '../lib/tour';
+import { replayIntro } from '../lib/intro';
 
 const TABS = ['Appearance', 'Providers', 'Voice', 'Calibration', 'Guardrails'];
 
@@ -406,9 +407,12 @@ const AppearanceTab = () => {
         <CardTitle
           sub="A short guided tour of the app and the Talk, Plan, Campaign 0, Dashboard flow, in English, Kannada or Hindi. It reads each step aloud if your device has a voice."
           action={
-            <button type="button" onClick={startTour} className="btn-ghost h-9 px-4 text-sm">
-              <Compass size={14} /> Start the tutorial
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={startTour} className="btn-ghost h-9 px-4 text-sm">
+                <Compass size={14} /> Start the tutorial
+              </button>
+              <button type="button" onClick={replayIntro} className="btn-ghost h-9 px-4 text-sm">Replay the intro</button>
+            </div>
           }
         >
           Tutorial

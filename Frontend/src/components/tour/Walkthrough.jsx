@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useSpring, useTransform } from 'framer-motion';
-import { ArrowLeft, ArrowRight, AudioLines, Check, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Volume2, VolumeX, X } from 'lucide-react';
+import Logo from '../Logo';
 import { LANGS } from '../../campaign/lib/format';
 import { useSpeaker } from '../../campaign/lib/speech';
 import { startInterview } from '../../campaign/lib/api';
 import { go } from '../../campaign/lib/current';
 import { navigate } from '../../lib/router';
+import { INTRO_DONE, introActive } from '../../lib/intro';
 import { TOUR_EVENT, hasSeenTour, markTourSeen, readTourLang, saveTourLang, tourOwner } from '../../lib/tour';
 import { COPY, STEPS, WELCOME } from './copy';
 
@@ -113,10 +115,16 @@ export default function Walkthrough({ user }) {
 
   // New here: open once the app has settled. Settings fires TOUR_EVENT to replay it.
   useEffect(() => {
-    const t = hasSeenTour(owner) ? 0 : setTimeout(begin, 900);
+    let t = 0;
+    const arm = () => { t = setTimeout(begin, 900); };
+    if (!hasSeenTour(owner)) {
+      if (introActive()) window.addEventListener(INTRO_DONE, arm, { once: true }); // not while the opening animation is playing
+      else arm();
+    }
     window.addEventListener(TOUR_EVENT, begin);
     return () => {
       clearTimeout(t);
+      window.removeEventListener(INTRO_DONE, arm);
       window.removeEventListener(TOUR_EVENT, begin);
     };
   }, [owner, begin]);
@@ -397,11 +405,11 @@ const Dots = ({ index }) => (
 const Welcome = ({ name, lang, onChoose, onSkip, primaryRef }) => (
   <div>
     <motion.span
-      className="grid size-12 place-items-center rounded-2xl bg-ink text-accent"
+      className="inline-block"
       animate={{ scale: [1, 1.06, 1] }}
       transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <AudioLines size={24} strokeWidth={2.4} />
+      <Logo size={48} className="rounded-2xl" />
     </motion.span>
     <h2 id="tour-title" className="mt-4 text-xl font-bold tracking-tight">
       {WELCOME.en.hello}{name ? `, ${name}` : ''}

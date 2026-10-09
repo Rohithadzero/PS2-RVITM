@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AudioLines, ChevronDown, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
+import Logo from './Logo';
 import { sidebarGroups, homeItem, settingsItem, connectionsItem, customersItem, memoryItem, groupOf, logoutItem, hasBackend } from '../navigation';
 import Liquid from './ui/Liquid';
 
@@ -9,8 +10,8 @@ const EXPANDED = 236;
 
 const Brand = ({ showName }) => (
   <div className="flex items-center gap-1">
-    <span className="grid size-10 shrink-0 place-items-center text-accent" aria-hidden="true">
-      <AudioLines size={22} strokeWidth={2.4} />
+    <span className="grid size-10 shrink-0 place-items-center" aria-hidden="true">
+      <Logo size={28} className="rounded-lg" />
     </span>
     {showName && <span className="whitespace-nowrap text-base font-semibold">GrowIT</span>}
   </div>
@@ -170,12 +171,7 @@ const Footer = ({ expanded, onSelect, active }) => (
 const RailHeader = ({ expanded, onToggle }) => (
   <div className="flex h-10 shrink-0 items-center">
     <div className="group relative grid size-10 shrink-0 place-items-center text-accent">
-      <AudioLines
-        size={22}
-        strokeWidth={2.4}
-        aria-hidden="true"
-        className={expanded ? '' : 'transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0'}
-      />
+      <Logo size={28} className={`rounded-lg ${expanded ? '' : 'transition-opacity group-hover:opacity-0 group-has-[:focus-visible]:opacity-0'}`} />
       {!expanded && (
         <>
           <button

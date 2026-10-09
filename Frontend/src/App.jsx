@@ -31,6 +31,8 @@ import { findPage, pages } from './navigation';
 import { useRoute, navigate } from './lib/router';
 import { useAuth } from './lib/auth';
 import Walkthrough from './components/tour/Walkthrough';
+import Intro from './components/intro/Intro';
+import { INTRO_START, markIntroSeen, setIntroActive, shouldPlayIntro } from './lib/intro';
 
 const SCREENS = {
   home: Home,
@@ -65,7 +67,7 @@ const readExpanded = () => {
   }
 };
 
-const App = () => {
+const AppInner = () => {
   const { me, loading, logout } = useAuth();
   const { slug, param } = useRoute();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -150,6 +152,26 @@ const App = () => {
       </div>
       <Walkthrough user={me.user} />
     </MotionConfig>
+  );
+};
+
+// The opening animation plays when the site is opened. The page loads behind it, so when it clears the login screen (or the app) is there.
+const App = () => {
+  const [intro, setIntro] = useState(() => {
+    const play = shouldPlayIntro();
+    setIntroActive(play);
+    return play;
+  });
+  useEffect(() => {
+    const again = () => { setIntroActive(true); setIntro(true); };
+    window.addEventListener(INTRO_START, again);
+    return () => window.removeEventListener(INTRO_START, again);
+  }, []);
+  return (
+    <>
+      <AppInner />
+      {intro && <Intro onDone={() => { markIntroSeen(); setIntro(false); setIntroActive(false); }} />}
+    </>
   );
 };
 
