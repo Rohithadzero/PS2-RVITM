@@ -216,14 +216,16 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     animate={{ width: expanded ? EXPANDED : RAIL }}
     transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
     style={{ willChange: 'width' }}
-    className="glass-panel relative z-30 hidden shrink-0 flex-col rounded-[28px] px-[11px] py-3 lg:flex"
+    className="relative z-30 hidden shrink-0 flex-col gap-3 lg:flex"
   >
-    <RailHeader expanded={expanded} onToggle={onToggle} />
-
-    <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-10 [mask-image:linear-gradient(to_bottom,#000_calc(100%-55px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
+    {/* Two cards: the pages (which scroll) above, the always-there actions below. */}
+    <div className="glass-panel flex min-h-0 flex-1 flex-col rounded-[28px] px-[11px] py-3">
+      <RailHeader expanded={expanded} onToggle={onToggle} />
+      <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
+      </div>
     </div>
-    <div className="mt-3">
+    <div className="glass-panel shrink-0 rounded-[28px] px-[11px] py-3">
       <Footer expanded={expanded} onSelect={onSelect} active={active} />
     </div>
   </motion.aside>
