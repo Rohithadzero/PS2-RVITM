@@ -26,7 +26,7 @@ import Website from './pages/Website';
 import Video from './pages/Video';
 import { findPage, pages } from './navigation';
 import { useRoute, navigate } from './lib/router';
-import { useStore } from './state/store';
+import { useAuth } from './lib/auth';
 
 const SCREENS = {
   home: Home,
@@ -59,7 +59,7 @@ const readExpanded = () => {
 };
 
 const App = () => {
-  const { state, dispatch } = useStore();
+  const { me, loading, logout } = useAuth();
   const { slug, param } = useRoute();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded, setExpanded] = useState(readExpanded);
@@ -72,19 +72,28 @@ const App = () => {
     }
   }, [expanded]);
 
+  useEffect(() => {
+    if (me?.signed_in && slug === 'login') navigate('home');
+  }, [me?.signed_in, slug]);
+
   const select = (next) => {
     if (next === 'logout') {
-      dispatch({ type: 'SIGN_OUT' });
-      navigate('login');
+      logout().then(() => navigate('login'));
       return;
     }
     navigate(next);
   };
 
-  if (!state.signedIn || slug === 'login') {
+  if (loading) {
+    return <div className="app-backdrop" aria-hidden="true" />;
+  }
+
+  // The server says whether login is required. Without it the app stays open for local work.
+  const needLogin = me.require_login && !me.signed_in;
+  if (needLogin || (slug === 'login' && !me.signed_in)) {
     return (
       <MotionConfig reducedMotion="user">
-        <Login />
+        <Login reason={slug === 'login' ? param : undefined} />
       </MotionConfig>
     );
   }

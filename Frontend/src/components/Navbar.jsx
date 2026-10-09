@@ -3,6 +3,7 @@ import { Bell, Menu, Mic, Lock } from 'lucide-react';
 import { SyncDot, ProviderChip } from './ui';
 import { getPlan, health } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
+import { useAuth } from '../lib/auth';
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -17,6 +18,9 @@ const POOL = { token_plan: 'Agnes, token plan', free: 'Agnes, free tier' };
 // Everything here is read from the API; nothing is a placeholder.
 const Navbar = ({ page, onSelect, onOpenMenu }) => {
   const { id, business } = useCurrent();
+  const { me } = useAuth();
+  const user = me?.user;
+  const first = user?.name?.split(' ')[0];
   const [status, setStatus] = useState(null); // null while loading, false when unreachable
   const [locked, setLocked] = useState(null);
   const isHome = page.slug === 'home';
@@ -52,7 +56,7 @@ const Navbar = ({ page, onSelect, onOpenMenu }) => {
           <Menu size={20} />
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{isHome ? `${greeting()}${business ? `, ${business}` : ''}` : page.label}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{isHome ? `${greeting()}${first ? `, ${first}` : business ? `, ${business}` : ''}` : page.label}</h1>
           <p className="mt-0.5 max-w-xl text-sm text-white/55">{isHome ? 'Your campaigns and what needs you next.' : page.description}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             {business && <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80">{business}</span>}
@@ -68,6 +72,16 @@ const Navbar = ({ page, onSelect, onOpenMenu }) => {
       </div>
 
       <div className="flex items-center gap-2">
+        {user && (
+          <span className="flex items-center gap-2 rounded-full bg-black/25 py-1 pl-1 pr-3 text-xs text-white/80 ring-1 ring-white/10" title={user.email}>
+            {user.picture ? (
+              <img src={user.picture} alt="" referrerPolicy="no-referrer" className="size-8 rounded-full" />
+            ) : (
+              <span className="grid size-8 place-items-center rounded-full bg-accent text-sm font-semibold text-white">{first?.[0]}</span>
+            )}
+            <span className="hidden max-w-32 truncate sm:inline">{user.name}</span>
+          </span>
+        )}
         <button
           type="button"
           onClick={() => onSelect('change')}

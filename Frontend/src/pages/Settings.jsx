@@ -150,7 +150,7 @@ const VoiceTab = ({ data }) => {
     form.append('audio', file);
     form.append('lang', lang);
     try {
-      const r = await fetch(`${API_URL}/stt`, { method: 'POST', body: form });
+      const r = await fetch(`${API_URL}/stt`, { method: 'POST', body: form, credentials: 'include' });
       const body = await r.json();
       if (!r.ok) throw new Error(body?.detail?.message || 'Request failed');
       setState({ text: body.text || '(no speech found)', ms: body.latency_ms, model: body.model });

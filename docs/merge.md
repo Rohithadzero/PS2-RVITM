@@ -61,7 +61,7 @@ The current campaign is kept in `localStorage` (`ll-campaign`) so every screen o
 
 - Kannada copy from `agnes-3.0-flash` is unreliable; the meaning check catches invented words and wrong claims it can read, not meaning inversions with no keyword. Native review is still required.
 - A full campaign takes minutes at the free 10 RPM.
-- No login; anyone who can reach the API can use it.
+- Sign in with Google is built (`app/auth.py`, login screen) but needs a Google client: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. It is open by default for local work; set `REQUIRE_LOGIN=1` to protect the API and `ALLOWED_EMAILS` to restrict who gets in. The desktop and phone shells will need their own Google client types later.
 - Real microphone recognition needs a human test in Chrome. Vosk Hindi accuracy is untested.
 - Offer types such as bundles, buy-one-get-one, thresholds and caps are not modelled in the offer facts.
 - Tauri and Capacitor shells are repointed but untested.

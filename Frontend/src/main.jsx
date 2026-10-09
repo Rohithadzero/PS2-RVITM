@@ -5,11 +5,14 @@ import './campaign/campaign.css';
 import './campaign/theme.css';
 import App from './App.jsx';
 import { StoreProvider } from './state/store';
+import { AuthProvider } from './lib/auth';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <StoreProvider>
-      <App />
-    </StoreProvider>
+    <AuthProvider>
+      <StoreProvider>
+        <App />
+      </StoreProvider>
+    </AuthProvider>
   </StrictMode>
 );

@@ -64,19 +64,55 @@ body {
   min-height: 100dvh;
 }
 
-/* Blurred café interior behind the app. Swap for a real photo with
-   `background: url('/bg.jpg') center / cover` plus a blur if one is added to /public. */
+/* Animated gradient behind the app. A deep plum to ember base, with two layers of soft colour blobs that drift slowly.
+   Only transforms animate (cheap on the GPU), and the drift stops for people who ask for reduced motion. */
 .app-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1f1030 0%, #3a1a33 28%, #6a2a2c 56%, #8a4a22 80%, #3a2416 100%);
+}
+
+.app-backdrop::before,
+.app-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  will-change: transform;
+}
+
+.app-backdrop::before {
   background:
-    radial-gradient(28rem 22rem at 12% 8%, rgb(255 205 140 / 0.55), transparent 70%),
-    radial-gradient(34rem 26rem at 55% 30%, rgb(226 208 182 / 0.55), transparent 70%),
-    radial-gradient(26rem 30rem at 92% 40%, rgb(120 132 92 / 0.45), transparent 70%),
-    radial-gradient(60rem 24rem at 40% 105%, rgb(70 44 28 / 0.95), transparent 70%),
-    linear-gradient(180deg, #8a7460 0%, #6b5240 55%, #3a2a1f 100%);
-  filter: saturate(110%);
+    radial-gradient(38rem 30rem at 18% 22%, rgb(255 138 54 / 0.62), transparent 66%),
+    radial-gradient(34rem 28rem at 82% 18%, rgb(224 69 123 / 0.5), transparent 66%),
+    radial-gradient(42rem 32rem at 72% 84%, rgb(124 84 224 / 0.42), transparent 66%);
+  animation: backdrop-drift-a 28s ease-in-out infinite alternate;
+}
+
+.app-backdrop::after {
+  background:
+    radial-gradient(36rem 26rem at 28% 80%, rgb(255 196 110 / 0.42), transparent 66%),
+    radial-gradient(30rem 26rem at 58% 46%, rgb(61 123 224 / 0.32), transparent 66%),
+    radial-gradient(26rem 22rem at 94% 58%, rgb(255 110 150 / 0.3), transparent 66%);
+  animation: backdrop-drift-b 38s ease-in-out infinite alternate;
+}
+
+@keyframes backdrop-drift-a {
+  from { transform: translate3d(-4%, 3%, 0) rotate(0deg) scale(1); }
+  to { transform: translate3d(5%, -4%, 0) rotate(9deg) scale(1.14); }
+}
+
+@keyframes backdrop-drift-b {
+  from { transform: translate3d(5%, -3%, 0) rotate(0deg) scale(1.1); }
+  to { transform: translate3d(-5%, 5%, 0) rotate(-11deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-backdrop::before,
+  .app-backdrop::after {
+    animation: none;
+  }
 }
 
 /* Dark frosted surface used for the rail, main panel and right panel. */

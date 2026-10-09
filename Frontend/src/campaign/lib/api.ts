@@ -3,7 +3,8 @@ import type {
   OutreachAction, OverviewRow, Plan, Campaign, Session, Forecast,
 } from "./types";
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+// Same host as the page, so the session cookie (set per host) is sent whether it is opened as localhost or 127.0.0.1.
+export const API_URL = import.meta.env.VITE_API_URL || `http://${typeof window === "undefined" ? "127.0.0.1" : window.location.hostname}:8000`;
 
 export class ApiError extends Error {
   status: number;
@@ -23,6 +24,7 @@ async function parse(response: Response) {
   }
   if (!response.ok) {
     const detail = (body as { detail?: unknown } | null)?.detail;
+    if (response.status === 401 && typeof window !== "undefined") window.dispatchEvent(new Event("ll-login-required"));
     if (typeof detail === "string") throw new ApiError(response.status, "error", detail);
     const d = detail as { code?: string; message?: string } | undefined;
     throw new ApiError(response.status, d?.code || "error", d?.message || response.statusText || "Request failed");
@@ -34,6 +36,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
+      credentials: "include",
       ...init,
       headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     });
@@ -86,7 +89,7 @@ export async function uploadRender(assetId: string, png: Blob) {
   form.append("file", png, `${assetId}.png`);
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/assets/${assetId}/render`, { method: "POST", body: form });
+    response = await fetch(`${API_URL}/assets/${assetId}/render`, { method: "POST", body: form, credentials: "include" });
   } catch {
     throw new ApiError(0, "unreachable", "Cannot reach the server.");
   }

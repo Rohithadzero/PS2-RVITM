@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import os
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import agent, autopilot, changes, dashboard, evals, extras, forecast, launch, learn, panel, reply, scout, interview, media, outreach, persona, plan
+from app import agent, auth, autopilot, changes, dashboard, evals, extras, forecast, launch, learn, panel, reply, scout, interview, media, outreach, persona, plan
 from app.agnes import Agnes
 from app.config import Settings, load_settings
 from app.db import Database
@@ -17,7 +18,7 @@ from app.worker import run_brief_job, start_jobs
 
 api = APIRouter()
 # Feature modules. Each owns its tables (ensure_schema) and its routes (router).
-MODULES = (interview, plan, changes, media, outreach, dashboard, persona, extras, forecast, agent, learn, reply, panel, autopilot, launch, scout, evals)
+MODULES = (interview, plan, changes, media, outreach, dashboard, persona, extras, forecast, agent, learn, reply, panel, autopilot, launch, scout, evals, auth)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -32,9 +33,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.buckets = Buckets(settings)
     app.state.agnes = Agnes(settings, app.state.buckets, db)
     app.state.tasks = set()
+    auth.install(app)  # before CORS, so a 401 still carries CORS headers
+    # Cookies need explicit origins (never "*"). Local dev, the desktop and phone shells; add more with CORS_ORIGINS.
+    extra = [o.strip() for o in (os.environ.get("CORS_ORIGINS") or "").split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=extra,
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^(tauri|capacitor)://localhost$|^http://tauri\.localhost$",
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
