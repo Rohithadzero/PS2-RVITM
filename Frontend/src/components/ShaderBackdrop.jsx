@@ -2,15 +2,15 @@ import { useEffect, useRef } from 'react';
 import { Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, Vector3, WebGLRenderer } from 'three';
 
 // A flowing, warped gradient drawn by a small fragment shader on one full-screen triangle pair.
-// It draws at a reduced resolution (the blur hides it), pauses while the tab is hidden, stands still for people who ask
+// It draws at full resolution with dithering (dark gradients band badly in 8 bits otherwise), pauses while the tab is hidden, stands still for people who ask
 // for reduced motion, and removes itself if WebGL is missing so the CSS gradient underneath shows instead.
 const SPEED = 0.3;
-const SCALE = 0.55; // render at 55% of the screen size, then let the browser stretch it
+const MAX_DPR = 1.5; // full resolution up to this pixel ratio: a stretched low-res canvas looks soft and blocky
 
 const VERT = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
 const FRAG = `
-precision mediump float;
+precision highp float;
 varying vec2 vUv;
 uniform float uTime;
 uniform vec2 uRes;
@@ -19,12 +19,12 @@ uniform vec3 uAccent;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
+  f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
 }
 float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
-  for (int i = 0; i < 4; i++) { v += a * noise(p); p = p * 2.02 + 17.0; a *= 0.5; }
+  for (int i = 0; i < 3; i++) { v += a * noise(p); p = p * 2.02 + 17.0; a *= 0.5; }
   return v;
 }
 
@@ -32,19 +32,23 @@ void main() {
   vec2 uv = vUv;
   uv.x *= uRes.x / uRes.y;
   float t = uTime;
-  vec2 q = vec2(fbm(uv * 1.6 + vec2(0.0, t * 0.55)), fbm(uv * 1.6 + vec2(5.2, -t * 0.45)));
-  vec2 r = vec2(fbm(uv * 2.0 + 3.0 * q + vec2(1.7, 9.2) + t * 0.35), fbm(uv * 2.0 + 3.0 * q + vec2(8.3, 2.8) - t * 0.30));
-  float f = fbm(uv * 1.4 + 3.2 * r);
+  vec2 q = vec2(fbm(uv * 0.85 + vec2(0.0, t * 0.55)), fbm(uv * 0.85 + vec2(5.2, -t * 0.45)));
+  vec2 r = vec2(fbm(uv * 1.0 + 2.2 * q + vec2(1.7, 9.2) + t * 0.35), fbm(uv * 1.0 + 2.2 * q + vec2(8.3, 2.8) - t * 0.30));
+  float f = fbm(uv * 0.8 + 2.4 * r);
 
   vec3 ink = vec3(0.105, 0.088, 0.070);
-  vec3 ochre = vec3(0.48, 0.35, 0.12);
-  vec3 ember = vec3(0.84, 0.55, 0.24);
-  vec3 sea = vec3(0.12, 0.30, 0.42);
-  vec3 col = mix(ink, ochre, smoothstep(0.15, 0.75, f));
+  vec3 ochre = vec3(0.62, 0.40, 0.08);
+  vec3 ember = vec3(0.95, 0.52, 0.18);
+  vec3 sea = vec3(0.07, 0.30, 0.50);
+  vec3 col = mix(ink, ochre, smoothstep(0.25, 0.7, f));
   col = mix(col, sea, smoothstep(0.35, 1.0, length(q)) * 0.55);
   col = mix(col, uAccent, smoothstep(0.45, 0.95, r.x) * 0.55);
   col += ember * smoothstep(0.6, 1.0, f * r.y * 1.6) * 0.35;
   col *= 0.8 + 0.35 * smoothstep(0.0, 1.0, vUv.y);
+  // soft vignette, then ±0.5/255 triangular noise so the 8-bit output has no visible steps
+  col *= 1.0 - 0.28 * smoothstep(0.55, 1.25, length(vUv - 0.5) * 1.6);
+  float d = hash(gl_FragCoord.xy + fract(uTime) * 61.0) + hash(gl_FragCoord.xy * 1.37 + 7.0) - 1.0;
+  col += d / 255.0;
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -64,7 +68,7 @@ export default function ShaderBackdrop() {
     if (!el) return undefined;
     let renderer;
     try {
-      renderer = new WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'low-power' });
+      renderer = new WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'default' });
     } catch {
       return undefined; // no WebGL: the CSS gradient stays
     }
@@ -79,8 +83,9 @@ export default function ShaderBackdrop() {
     scene.add(new Mesh(new PlaneGeometry(2, 2), new ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms })));
 
     const resize = () => {
-      const w = Math.max(2, Math.floor(window.innerWidth * SCALE));
-      const h = Math.max(2, Math.floor(window.innerHeight * SCALE));
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      const w = Math.max(2, Math.floor(window.innerWidth * dpr));
+      const h = Math.max(2, Math.floor(window.innerHeight * dpr));
       renderer.setPixelRatio(1);
       renderer.setSize(w, h, false);
       uniforms.uRes.value.set(w, h);
