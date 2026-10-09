@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, timedelta
 from typing import Any
 
@@ -11,6 +12,7 @@ from app.config import CHANNELS
 from app.db import Database
 from app.schemas import OfferFacts
 from app.service import Service, ServiceError, now
+from app import speech
 from app.speech import days_phrase
 from app.validator import locked_days
 
@@ -171,6 +173,76 @@ def build_schedule(facts: OfferFacts) -> list[dict[str, Any]]:
     return rows
 
 
+_WORD_HOURS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+               "ten": 10, "eleven": 11, "twelve": 12, "noon": 12}
+_CLOCK = r"(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?"
+_RANGE_RE = re.compile(_CLOCK + r"\s*(?:to|till|until|-|\u2013|se|tak)\s*" + _CLOCK, re.IGNORECASE)
+
+
+def parse_time_window(text: str | None) -> tuple[str | None, str | None]:
+    """'9am to 1pm' -> ('09:00', '13:00'). Anything not clearly two clock times gives (None, None); nothing is guessed."""
+    if not text:
+        return None, None
+    low = speech.ascii_digits(text).lower()
+    low = re.sub(r"\b(" + "|".join(_WORD_HOURS) + r")\b", lambda m: str(_WORD_HOURS[m.group(1)]), low)
+    found = _RANGE_RE.findall(low)
+    if len(found) != 1:
+        return None, None
+    h1, m1, ap1, h2, m2, ap2 = found[0]
+    h1, h2 = int(h1), int(h2)
+    ap1, ap2 = ap1[:1], ap2[:1]
+    if not (0 <= h1 <= 24 and 0 <= h2 <= 24):
+        return None, None
+    morning = "morning" in low
+    evening = any(w in low for w in ("evening", "afternoon", "night"))
+    if h1 > 12 or h2 > 12:
+        pass  # already 24 hour
+    elif ap1 and ap2:
+        pass
+    elif ap2 or ap1:
+        # The unmarked side shares the marker unless that would put the start after the end; then it flips.
+        other = "p" if (ap1 or ap2) == "a" else "a"
+        for unmarked in ("start" if not ap1 else "end",):
+            same = (ap1 or ap2)
+            h24 = lambda h, m: (h % 12) + (12 if m == "p" else 0)
+            if unmarked == "start":
+                ap1 = same if h24(h1, same) <= h24(h2, ap2) else other
+            else:
+                ap2 = same if h24(h2, same) >= h24(h1, ap1) else other
+    elif h2 < h1 or (h1 < 12 and h2 == 12):
+        ap1, ap2 = "a", "p"
+    elif morning:
+        ap1 = ap2 = "a"
+    elif evening:
+        ap1 = ap2 = "p"
+    else:
+        return None, None
+
+    def clock(hour: int, minute: str, marker: str) -> str:
+        if marker == "p" and hour < 12:
+            hour += 12
+        if marker == "a" and hour == 12:
+            hour = 0
+        return f"{hour % 24:02d}:{minute or '00'}"
+
+    return clock(h1, m1, ap1), clock(h2, m2, ap2)
+
+
+def offer_window(facts: OfferFacts, time_window_text: str | None) -> dict[str, Any]:
+    """Days, dates and clock times for the poster overlay, from the owner's answers only."""
+    days = [d[:3] for d in locked_days_in_order(facts)]
+    start, end = (min(facts.dates), max(facts.dates)) if facts.dates else (None, None)
+    t_start, t_end = parse_time_window(time_window_text)
+    return {"days": days, "start_date": start, "end_date": end if end != start else None, "time_start": t_start, "time_end": t_end}
+
+
+def locked_days_in_order(facts: OfferFacts) -> list[str]:
+    """The locked weekdays in week order. An every-day offer locks none, so it is all seven."""
+    locked = locked_days(facts)
+    names = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+    return [d for d in names if d in locked] or list(names)
+
+
 def _facts_row(db: Database, campaign_id: str) -> tuple[dict[str, Any] | None, bool]:
     approved = db.facts_approved(campaign_id)
     if approved:
@@ -205,6 +277,7 @@ def get_plan(db: Database, campaign_id: str) -> dict | None:
         "tone": data["tone"],
         "cta": data["cta"],
         "email_recipients": data["email_recipients"],
+        "offer_window": offer_window(facts, data.get("time_window")),
         "schedule": build_schedule(facts),
         "sources": data["sources"],
         "answers": data["answers"],

@@ -132,6 +132,47 @@ def _words(text: str) -> list[str]:
     return cleaned.split()
 
 
+_EN_MONTHS = {
+    "January": 1, "February": 2, "March": 3, "April": 4, "June": 6, "July": 7, "August": 8, "September": 9,
+    "October": 10, "November": 11, "December": 12,
+}
+_EN_MONTH_RE = re.compile(r"\b(" + "|".join(_EN_MONTHS) + r")\b")
+# Capitalised three-letter forms count only next to a day number ("Oct 12", "12 Oct"), so a name like Mar or Jan is safe.
+_EN_ABBR = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "Jun": 6, "Jul": 7, "Aug": 8, "Sep": 9, "Sept": 9, "Oct": 10, "Nov": 11, "Dec": 12}
+_EN_ABBR_RE = re.compile(r"\b(" + "|".join(_EN_ABBR) + r")\b\.?(?=\s*\d)|(?<=\d)(?:st|nd|rd|th)?\s+(" + "|".join(_EN_ABBR) + r")\b")
+# "May" is also a verb, so it counts only beside a day number.
+_EN_MAY_RE = re.compile(r"\bMay\s+\d{1,2}\b|\b\d{1,2}(?:st|nd|rd|th)?\s+May\b")
+# Indic month names are matched as stems, so a case ending ("ಅಕ್ಟೋಬರ್‌ನಲ್ಲಿ", "अक्टूबर में") still counts.
+_KN_MONTHS = {
+    1: ("ಜನವರಿ", "ಜನೆವರಿ"), 2: ("ಫೆಬ್ರವರಿ", "ಫೆಬ್ರುವರಿ"), 3: ("ಮಾರ್ಚ",), 4: ("ಏಪ್ರಿಲ",), 6: ("ಜೂನ",),
+    7: ("ಜುಲೈ",), 8: ("ಆಗಸ್ಟ", "ಅಗಸ್ಟ"), 9: ("ಸೆಪ್ಟೆಂಬರ", "ಸೆಪ್ಟಂಬರ"), 10: ("ಅಕ್ಟೋಬರ", "ಅಕ್ಟೊಬರ"),
+    11: ("ನವೆಂಬರ", "ನವಂಬರ"), 12: ("ಡಿಸೆಂಬರ", "ಡಿಸಂಬರ"),
+}
+_KN_MAY_RE = re.compile("(?<![\u0c80-\u0cff])ಮೇ(?![\u0c80-\u0cff])")
+_HI_MONTHS = {
+    1: ("जनवरी",), 2: ("फ़रवरी", "फरवरी"), 3: ("मार्च",), 4: ("अप्रैल",), 6: ("जून",), 7: ("जुलाई",), 8: ("अगस्त",),
+    9: ("सितंबर", "सितम्बर"), 10: ("अक्टूबर", "अक्तूबर"), 11: ("नवंबर", "नवम्बर"), 12: ("दिसंबर", "दिसम्बर"),
+}
+_HI_MAY_RE = re.compile("(?<![\u0900-\u097f])मई(?![\u0900-\u097f])")
+
+
+def months_in(content: str) -> set[int]:
+    """Month numbers the copy names, in English, Kannada or Hindi."""
+    found = {_EN_MONTHS[m.group(1)] for m in _EN_MONTH_RE.finditer(content)}
+    found |= {_EN_ABBR[m.group(1) or m.group(2)] for m in _EN_ABBR_RE.finditer(content)}
+    if _EN_MAY_RE.search(content):
+        found.add(5)
+    for table, may in ((_KN_MONTHS, _KN_MAY_RE), (_HI_MONTHS, _HI_MAY_RE)):
+        found |= {number for number, stems in table.items() if any(stem in content for stem in stems)}
+        if may.search(content):
+            found.add(5)
+    return found
+
+
+_MONTH_NAMES = ("", "January", "February", "March", "April", "May", "June", "July", "August", "September",
+                "October", "November", "December")
+
+
 def repeated_text(content: str) -> str | None:
     """Language-agnostic degeneration check. Returns what repeats, or None.
 
@@ -218,6 +259,21 @@ def validate_content(content: str, facts: OfferFacts) -> ValidationResult:
             )
         else:
             issues.append(Issue("date_unexpected", "Copy states a date but the offer facts lock none."))
+
+    locked_months = {int(d[5:7]) for d in facts.dates}
+    stated_months = months_in(content)
+    if locked_months:
+        wrong = sorted(stated_months - locked_months)
+        if wrong:
+            issues.append(
+                Issue(
+                    "month_mismatch",
+                    f"Copy names {', '.join(_MONTH_NAMES[m] for m in wrong)} but the locked dates are in "
+                    f"{', '.join(_MONTH_NAMES[m] for m in sorted(locked_months))}.",
+                )
+            )
+    elif stated_months:
+        issues.append(Issue("month_unexpected", "Copy names a month but the offer facts lock no dates."))
 
     fact_days = locked_days(facts)
     copy_days = _days_in(content)

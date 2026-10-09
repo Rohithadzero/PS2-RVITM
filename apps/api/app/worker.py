@@ -15,6 +15,9 @@ from app.service import Service, now
 
 # One rewrite with the rejection reasons fed back. More would spend the 10 RPM text budget on a lost cause.
 REPAIR_LIMIT = 1
+# Kannada and Hindi script tokenise heavily, so a long post needs far more output room than a one-line message.
+COPY_MAX_TOKENS = {"blog_post": 4000}
+COPY_MAX_TOKENS_DEFAULT = 1500
 
 
 def parse_json_object(text: str) -> dict[str, Any]:
@@ -77,8 +80,18 @@ async def run_copy_job(app: FastAPI, job_id: str) -> None:
             raise ValueError("asset or locked facts disappeared")
         facts = OfferFacts.model_validate_json(facts_row["json"])
         messages = copy_messages(facts, asset, _payload(job).get("feedback"), plan.copy_context(db, job["campaign_id"]))
-        raw = await app.state.agnes.chat(messages, cache_kind="copy", max_tokens=2400)
-        payload = parse_json_object(raw)
+        limit = COPY_MAX_TOKENS.get(asset["channel"], COPY_MAX_TOKENS_DEFAULT)
+        raw = await app.state.agnes.chat(messages, cache_kind="copy", max_tokens=limit)
+        try:
+            payload = parse_json_object(raw)
+        except (ValueError, json.JSONDecodeError) as exc:
+            # A truncated or malformed reply: ask once more, naming the error. The note also changes the prompt,
+            # so the cached bad reply is not served again.
+            db.log(now(), "system", "copy_retry", f"Reply was not valid JSON ({exc}). Asking again.", job["campaign_id"])
+            note = {"role": "user", "content": f"Your previous reply was not valid JSON ({exc}). "
+                    "Return the complete JSON object only, as short as the brief allows."}
+            raw = await app.state.agnes.chat(messages + [note], cache_kind="copy", max_tokens=int(limit * 1.5))
+            payload = parse_json_object(raw)
         content, extra = channels.parse_output(asset["channel"], payload)
         declared = payload.get("facts_used")
         declared = [str(field) for field in declared] if isinstance(declared, list) else []
