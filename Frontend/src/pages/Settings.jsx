@@ -144,7 +144,7 @@ const ProvidersTab = ({ data, reload }) => (
   </div>
 );
 
-const ENGINE_LABEL = { vosk: 'Offline (Vosk)', groq: 'Groq Whisper (cloud)' };
+const ENGINE_LABEL = { vosk: 'Offline (Vosk)', groq: 'Groq Whisper (cloud)', elevenlabs: 'ElevenLabs Scribe (cloud)' };
 const PREFS = [
   { id: 'auto', label: 'Automatic', hint: 'Kannada goes to Groq when it is on. Other languages use the browser microphone, else the server.' },
   { id: 'server', label: 'Always the server', hint: 'Record, then transcribe on the server (offline Vosk, or Groq for Kannada). Nothing live while you talk.' },

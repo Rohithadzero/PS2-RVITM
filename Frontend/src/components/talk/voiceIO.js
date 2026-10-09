@@ -20,7 +20,7 @@ export function useTalkVoice() {
 
   useEffect(() => {
     let live = true;
-    api('/languages').then((r) => live && setServerOn(r.languages?.[0]?.tts === 'gemini')).catch(() => live && setServerOn(false));
+    api('/languages').then((r) => live && setServerOn(r.languages?.[0]?.tts !== 'browser')).catch(() => live && setServerOn(false));
     return () => { live = false; };
   }, []);
 

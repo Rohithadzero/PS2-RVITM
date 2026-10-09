@@ -408,3 +408,13 @@ body {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 70%, transparent); }
   100% { box-shadow: 0 0 0 14px transparent; }
 }
+
+/* Edge fade for a scroll area (components/Sidebar.jsx FadeScroll). The two lengths are registered so they can ease between 0 and their width. */
+@property --fade-top { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --fade-bottom { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.fade-scroll {
+  transition: --fade-top 0.25s ease, --fade-bottom 0.25s ease;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) { .fade-scroll { transition: none; } }

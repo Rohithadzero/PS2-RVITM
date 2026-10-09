@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from app import extras, languages
 from app.db import Database
-from app.lab.voice import vosk_stt
+from app.lab.voice import elevenlabs, vosk_stt
 from app.media import fail
 
 router = APIRouter()
@@ -48,6 +48,9 @@ def wav_from_pcm(pcm: bytes, rate: int = SAMPLE_RATE) -> bytes:
 
 
 def tts_engine(db: Database) -> str:
+    """The voice that would speak right now: ElevenLabs, else Gemini, else the browser's own."""
+    if extras.toggle_state(db, "elevenlabs")["active"]:
+        return "elevenlabs"
     return "gemini" if extras.toggle_state(db, "gemini")["active"] else "browser"
 
 
@@ -57,7 +60,7 @@ def public_languages(db: Database) -> list[dict]:
     for l in languages.LANGUAGES:
         stt = engines.get(l["code"])
         out.append({"code": l["code"], "name": l["name"], "native": l["native"], "locale": l["locale"], "tier": l["tier"],
-                    "stt": stt or "browser", "stt_cloud": stt == "groq", "tts": tts_engine(db),
+                    "stt": stt or "browser", "stt_cloud": stt in ("groq", "elevenlabs"), "tts": tts_engine(db),
                     "note": "Draft: the words used to check this language have not been read by a native speaker yet." if l["tier"] == "draft" else None})
     return out
 
@@ -81,8 +84,15 @@ async def speak(body: SpeakIn, request: Request) -> Response:
     lang = languages.get(body.lang)
     if lang is None:
         raise fail("bad_lang", "That language is not supported.", 422)
+    if extras.toggle_state(db, "elevenlabs")["active"]:
+        try:
+            audio = await elevenlabs.speak(body.text, body.lang)
+            return Response(audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store", "X-TTS-Engine": "elevenlabs"})
+        except elevenlabs.ElevenLabsError as exc:
+            if not extras.toggle_state(db, "gemini")["active"]:
+                raise fail(exc.code, str(exc), exc.status) from exc  # nothing else to try: the screen uses the browser's voice
     if not extras.toggle_state(db, "gemini")["active"]:
-        raise fail("tts_off", "Server voices are off. Switch Gemini on in Settings, or use your browser's voice.", 409)
+        raise fail("tts_off", "Server voices are off. Switch ElevenLabs or Gemini on in Settings, or use your browser's voice.", 409)
     prompt = f"Say this in {lang['name']}, clearly and at a natural pace: {body.text}"
     payload = {"contents": [{"parts": [{"text": prompt}]}],
                "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}}}}

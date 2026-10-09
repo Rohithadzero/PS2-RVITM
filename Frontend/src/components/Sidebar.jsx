@@ -1,9 +1,37 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, Plus, X } from 'lucide-react';
 import Logo from './Logo';
 import { sidebarGroups, homeItem, settingsItem, connectionsItem, customersItem, memoryItem, groupOf, logoutItem, hasBackend } from '../navigation';
 import Liquid from './ui/Liquid';
+
+// A scroll area that fades only the edge that has more to scroll to. At the very top nothing fades at the top, at the very bottom nothing
+// fades at the bottom, so the first and last rows are never dimmed. The fade width eases in and out as you scroll off the ends.
+const FadeScroll = ({ className = '', children }) => {
+  const box = useRef(null);
+  const [edge, setEdge] = useState({ top: false, bottom: false });
+  const measure = useCallback(() => {
+    const el = box.current;
+    if (!el) return;
+    const top = el.scrollTop > 2;
+    const bottom = el.scrollHeight - el.clientHeight - el.scrollTop > 2;
+    setEdge((e) => (e.top === top && e.bottom === bottom ? e : { top, bottom }));
+  }, []);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return undefined;
+    measure();
+    const ro = new ResizeObserver(measure); // the list grows and shrinks as groups fold, and the rail changes width
+    ro.observe(el);
+    [...el.children].forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+  }, [measure]);
+  return (
+    <div ref={box} onScroll={measure} className={`fade-scroll ${className}`} style={{ '--fade-top': edge.top ? '44px' : '0px', '--fade-bottom': edge.bottom ? '52px' : '0px' }}>
+      {children}
+    </div>
+  );
+};
 
 const RAIL = 64;
 const EXPANDED = 236;
@@ -218,9 +246,9 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     {/* Two cards: the pages (which scroll) above, the always-there actions below. */}
     <div className="glass-panel flex min-h-0 flex-1 flex-col rounded-[28px] px-[11px] py-3">
       <RailHeader expanded={expanded} onToggle={onToggle} />
-      <div className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <FadeScroll className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
-      </div>
+      </FadeScroll>
     </div>
     <div className="glass-panel shrink-0 rounded-[28px] px-[11px] py-3">
       <Footer expanded={expanded} onSelect={onSelect} active={active} />
@@ -245,9 +273,9 @@ const Drawer = ({ active, onSelect, onClose, badges }) => (
             <X size={20} />
           </button>
         </div>
-        <div className="mt-3 flex-1 overflow-y-auto">
+        <FadeScroll className="mt-3 flex-1 overflow-y-auto">
           <NavList active={active} onSelect={onSelect} expanded badges={badges} pillId="drawer-pill" />
-        </div>
+        </FadeScroll>
         <div className="border-t border-white/10 pt-3">
           <Footer expanded onSelect={onSelect} active={active} />
         </div>

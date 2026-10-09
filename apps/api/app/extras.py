@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from app.config import ROOT
 from app import languages
+from app.lab.voice import elevenlabs
 from app.db import Database
 from app.lab.domain.planner import Calibration, solve
 from app.lab.security import BlockedUrl, check_custom_base_url, decrypt_key, encrypt_key, last4
@@ -41,8 +42,10 @@ CALIBRATION_DIR = ROOT / "data" / "calibration"
 
 # Extra services the owner can switch on or off. The key lives in the server's .env; the switch is the owner's consent.
 TOGGLES = {
-    "groq": {"label": "Groq", "env": "GROQ_API_KEY", "used_for": "Speech to text for Kannada and Hindi (Whisper). Audio is sent to Groq."},
-    "gemini": {"label": "Gemini", "env": "GEMINI_API_KEY", "used_for": "Reads text aloud in every language (read-back). Off means your browser's own voice is used."},
+    "groq": {"label": "Groq", "env": "GROQ_API_KEY", "used_for": "Fast chat replies on the Talk page (Llama) and speech to text for languages the offline model lacks. Your messages and audio are sent to Groq."},
+    "gemini": {"label": "Gemini", "env": "GEMINI_API_KEY", "used_for": "The backup for chat replies, and a voice for reading aloud when ElevenLabs is off. Text is sent to Google."},
+    "elevenlabs": {"label": "ElevenLabs", "env": "AGNEZ_ELEVENLABS_API_KEY", "alt": ["ELEVENLABS_API_KEY"],
+                   "used_for": "GrowIt's voice: reads its replies aloud and turns your speech into text, in every language. Text and audio are sent to ElevenLabs."},
 }
 TOGGLE_SCHEMA = "CREATE TABLE IF NOT EXISTS service_toggle (name TEXT PRIMARY KEY, enabled INTEGER NOT NULL, updated_at TEXT NOT NULL)"
 
@@ -56,7 +59,7 @@ def toggle_state(db: Database, name: str) -> dict:
     """configured: a key is set on the server. enabled: the owner's switch (on until they turn it off). active: both."""
     meta = TOGGLES[name]
     row = db.query_one("SELECT enabled FROM service_toggle WHERE name = ?", (name,))
-    configured = bool((os.environ.get(meta["env"]) or "").strip())
+    configured = any((os.environ.get(n) or "").strip() for n in (meta["env"], *meta.get("alt", [])))
     enabled = True if row is None else bool(row["enabled"])
     return {"name": name, "label": meta["label"], "used_for": meta["used_for"], "configured": configured, "enabled": enabled,
             "active": configured and enabled}
@@ -214,6 +217,8 @@ def stt_engines(db: Database) -> dict[str, str | None]:
     """Which engine would transcribe each language right now: offline Vosk, Groq (if switched on), or none."""
     installed = vosk_stt.available_languages()
     groq_on = toggle_state(db, "groq")["active"]
+    if toggle_state(db, "elevenlabs")["active"]:
+        return {lang: "elevenlabs" for lang in languages.CODES}
     # Vosk has no Kannada model, so Kannada is Groq or nothing. Every other language: Vosk if a model is installed, else Groq if on.
     return {lang: ("vosk" if lang in installed and lang != "kn" else ("groq" if groq_on else None)) for lang in languages.CODES}
 
@@ -252,8 +257,14 @@ async def stt(request: Request, audio: UploadFile = File(...), lang: str = Form(
         raise _fail("audio_too_large", "That recording is too long. Keep it under about a minute.", 413)
     if is_silent(data):
         return {"text": "", "segments": [], "lang": lang, "provider": "none", "model": None, "latency_ms": 0, "silent": True}
+    eleven = toggle_state(request.app.state.db, "elevenlabs")
+    if eleven["active"]:
+        try:
+            return await elevenlabs.transcribe(data, lang)
+        except elevenlabs.ElevenLabsError:
+            pass  # fall through to the offline model or Groq: the owner still gets their words
     groq = toggle_state(request.app.state.db, "groq")
-    # Vosk first (offline, nothing leaves the machine). Groq only for what Vosk cannot do, and only when switched on.
+    # Vosk next (offline, nothing leaves the machine). Groq only for what Vosk cannot do, and only when switched on.
     if groq["active"] and (lang in ("kn", "hinglish") or lang not in vosk_stt.available_languages()):
         try:
             return await groq_stt.transcribe(data, "hi" if lang == "hinglish" else lang, os.environ["GROQ_API_KEY"].strip())
