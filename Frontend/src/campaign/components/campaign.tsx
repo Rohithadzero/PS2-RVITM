@@ -5,6 +5,7 @@ import { CHANNEL_ORDER, MEANING_LABEL, channelLabel, langName } from "../lib/for
 import type { Route } from "../lib/route";
 import type { Asset, AssetState, AssetStateMap, Board, OutreachAction, Plan } from "../lib/types";
 import { PostAdvice, SchedulePanel } from "./advice";
+import { WhatsAppQueue } from "./broadcast";
 import { ChangeByVoice } from "./change";
 import { AssetSurface, IMAGE_CHANNELS, OVERLAY_KIND, mediaPhase, pickBase } from "./surfaces";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
@@ -119,15 +120,16 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
   });
 
   // window.open runs straight from the click, so browsers do not block it. It is counted only when the chat really opens.
-  const openChat = (url: string, id: number | "any") => {
+  const openChat = (url: string, id: number | "any"): boolean => {
     // Not "noopener" in the features string: that makes window.open return null even when it worked, so a blocked pop-up could not
     // be told apart from an open one. The opener link is cut by hand instead.
     const w = window.open(url, "_blank");
-    if (!w) { setError("Your browser blocked the WhatsApp window. Allow pop-ups for this page and press the button again."); return; }
+    if (!w) { setError("Your browser blocked the WhatsApp window. Allow pop-ups for this page and press the button again."); return false; }
     try { w.opener = null; } catch { /* cross-origin already */ }
     setError("");
     if (id !== "any") setWaOpened((cur) => ({ ...cur, [id]: true }));
     void log("shared_whatsapp");
+    return true;
   };
 
   const useCustomers = () => run("wa", async () => {
@@ -344,6 +346,7 @@ function AssetCard({ asset, state, plan, business, onChanged, onMakeImage, image
                   {!wa.has_link ? <p className="muted small">The plan has no call to action, so this message goes without a link.</p> : null}
                   {wa.image_note ? <p className="muted small">{wa.image_note}</p> : null}
                   {wa.duplicates_dropped ? <p className="muted small">{wa.duplicates_dropped} repeated number{wa.duplicates_dropped === 1 ? "" : "s"} left out.</p> : null}
+                  <WhatsAppQueue recipients={wa.recipients} opened={waOpened} openChat={(u, id) => openChat(u, id)} />
                   <ul style={{ display: "grid", gap: 4 }}>
                     {wa.recipients.map((r: any) => (
                       <li key={r.id} className="row" style={{ justifyContent: "space-between", gap: 8 }}>
