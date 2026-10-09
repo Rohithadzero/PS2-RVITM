@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -62,6 +62,7 @@ const App = () => {
   const { me, loading, logout } = useAuth();
   const { slug, param } = useRoute();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [expanded, setExpanded] = useState(readExpanded);
 
   useEffect(() => {
@@ -72,9 +73,16 @@ const App = () => {
     }
   }, [expanded]);
 
+  // Links inside the summary drawer change the route; the drawer should not stay over the new page.
+  useEffect(() => {
+    setSummaryOpen(false);
+  }, [slug, param]);
+
   useEffect(() => {
     if (me?.signed_in && slug === 'login') navigate('home');
   }, [me?.signed_in, slug]);
+
+  const closeSummary = useCallback(() => setSummaryOpen(false), []);
 
   const select = (next) => {
     if (next === 'logout') {
@@ -100,7 +108,6 @@ const App = () => {
 
   const page = findPage(slug) ?? pages.home;
   const Screen = SCREENS[page.slug];
-  const isHome = page.slug === 'home';
 
   return (
     <MotionConfig reducedMotion="user">
@@ -118,7 +125,7 @@ const App = () => {
 
         <div className="glass-panel relative flex min-w-0 flex-1 flex-col rounded-[28px]">
           <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
-            <Navbar page={page} onSelect={select} onOpenMenu={() => setMobileOpen(true)} />
+            <Navbar page={page} onSelect={select} onOpenMenu={() => setMobileOpen(true)} onOpenSummary={() => setSummaryOpen(true)} />
             <div className="mt-6">
               <Screen key={param} id={param} />
             </div>
@@ -126,7 +133,7 @@ const App = () => {
           <BottomNav active={page.slug} onSelect={select} />
         </div>
 
-        {isHome && <RightPanel />}
+        <RightPanel drawerOpen={summaryOpen} onCloseDrawer={closeSummary} />
       </div>
     </MotionConfig>
   );

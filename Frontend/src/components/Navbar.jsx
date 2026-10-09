@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, Menu, Mic, Lock } from 'lucide-react';
+import { Bell, Menu, Mic, Lock, PanelRightOpen } from 'lucide-react';
 import { SyncDot, ProviderChip } from './ui';
 import { getPlan, health } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
@@ -16,7 +16,7 @@ const POOL = { token_plan: 'Agnes, token plan', free: 'Agnes, free tier' };
 
 // AppShell top bar: page title, campaign name, plan state, sync dot and provider chip (docs/frontend.prd.md section 4).
 // Everything here is read from the API; nothing is a placeholder.
-const Navbar = ({ page, onSelect, onOpenMenu }) => {
+const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
   const { id, business } = useCurrent();
   const { me } = useAuth();
   const user = me?.user;
@@ -99,6 +99,15 @@ const Navbar = ({ page, onSelect, onOpenMenu }) => {
           className="relative grid size-10 place-items-center rounded-full bg-black/25 text-white/70 ring-1 ring-white/10 transition-colors hover:text-white"
         >
           <Bell size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenSummary}
+          aria-label="Open the calendar panel"
+          title="Calendar and next up"
+          className="grid size-10 place-items-center rounded-full bg-black/25 text-white/70 ring-1 ring-white/10 transition-colors hover:text-white xl:hidden"
+        >
+          <PanelRightOpen size={18} />
         </button>
       </div>
     </header>

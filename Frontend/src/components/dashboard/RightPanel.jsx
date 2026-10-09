@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { PanelRightClose, PanelRightOpen, ShieldX, Clock, Languages } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PanelRightClose, PanelRightOpen, ShieldX, Clock, Languages, X } from 'lucide-react';
 import { getBoard, getPlan, getScout } from '../../campaign/lib/api';
 import { Calendar, DateRail, useDayModel } from './CalendarParts';
 import { channelLabel, langName } from '../../campaign/lib/format';
@@ -98,7 +98,48 @@ const readExpanded = () => {
 
 const fade = (shown) => `transition-opacity ${shown ? 'opacity-100 duration-200 delay-100' : 'opacity-0 duration-100'}`;
 
-const RightPanel = () => {
+const Summary = ({ plan, model, board, id }) => (
+  <>
+    <Profile plan={plan} />
+    <Calendar model={model} />
+    <NextUp board={board} id={id} />
+  </>
+);
+
+// Below xl the panel has no room beside the main panel, so it slides in from the right instead.
+const Drawer = ({ onClose, children }) => {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] xl:hidden">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <motion.aside
+        aria-label="Campaign summary"
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 360, damping: 38 }}
+        className="absolute inset-y-0 right-0 w-[min(22rem,90vw)] p-3"
+      >
+        <div className="glass-panel flex h-full flex-col rounded-3xl p-3">
+          <div className="flex items-center justify-between">
+            <h2 className="pl-1 text-base font-semibold">Summary</h2>
+            <button type="button" onClick={onClose} aria-label="Close the calendar panel" className="grid size-10 place-items-center rounded-xl text-white/70 hover:bg-white/10 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-1">{children}</div>
+        </div>
+      </motion.aside>
+    </div>
+  );
+};
+
+const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
   const { id } = useCurrent();
   const [plan, setPlan] = useState(null);
   const [board, setBoard] = useState(null);
@@ -130,36 +171,43 @@ const RightPanel = () => {
   const model = useDayModel(plan, events);
 
   return (
-    <motion.aside
-      aria-label="Campaign summary"
-      initial={false}
-      animate={{ width: expanded ? WIDE : RAIL }}
-      transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
-      style={{ willChange: 'width' }}
-      className="glass-panel hidden shrink-0 flex-col overflow-hidden rounded-[28px] p-[11px] xl:flex"
-    >
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        aria-label={expanded ? 'Collapse the calendar panel' : 'Expand the calendar panel'}
-        aria-expanded={expanded}
-        title={expanded ? 'Collapse' : 'Expand'}
-        className={`grid size-10 shrink-0 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white ${expanded ? 'self-start' : 'self-center'}`}
+    <>
+      <motion.aside
+        aria-label="Campaign summary"
+        initial={false}
+        animate={{ width: expanded ? WIDE : RAIL }}
+        transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
+        style={{ willChange: 'width' }}
+        className="glass-panel hidden shrink-0 flex-col overflow-hidden rounded-[28px] p-[11px] xl:flex"
       >
-        {expanded ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
-      </button>
-      {expanded ? (
-        <div className={`mt-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-1 ${fade(expanded)}`}>
-          <Profile plan={plan} />
-          <Calendar model={model} />
-          <NextUp board={board} id={id} />
-        </div>
-      ) : (
-        <div className="mt-2 flex min-h-0 flex-1 flex-col">
-          <DateRail model={model} />
-        </div>
-      )}
-    </motion.aside>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? 'Collapse the calendar panel' : 'Expand the calendar panel'}
+          aria-expanded={expanded}
+          title={expanded ? 'Collapse' : 'Expand'}
+          className={`grid size-10 shrink-0 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white ${expanded ? 'self-start' : 'self-center'}`}
+        >
+          {expanded ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+        </button>
+        {expanded ? (
+          <div className={`mt-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-1 ${fade(expanded)}`}>
+            <Summary plan={plan} model={model} board={board} id={id} />
+          </div>
+        ) : (
+          <div className="mt-2 flex min-h-0 flex-1 flex-col">
+            <DateRail model={model} />
+          </div>
+        )}
+      </motion.aside>
+      <AnimatePresence>
+        {drawerOpen && (
+          <Drawer onClose={onCloseDrawer}>
+            <Summary plan={plan} model={model} board={board} id={id} />
+          </Drawer>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
