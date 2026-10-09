@@ -196,7 +196,13 @@ async def _insights(client: httpx.AsyncClient, token: str, profile: dict[str, An
 
 def _save(db: Database, owner: str, token: str, expires_in: int, profile: dict[str, Any], media: list[dict[str, Any]], issued: datetime | None = None) -> None:
     now = _now()
-    existing = db.query_one("SELECT connected_at FROM connection WHERE provider = 'instagram' AND owner = ?", (owner,))
+    existing = db.query_one("SELECT connected_at, media FROM connection WHERE provider = 'instagram' AND owner = ?", (owner,))
+    if existing and existing["media"]:
+        from app import notifications  # imported here: notifications uses this module
+        try:
+            notifications.notify_engagement(db, owner, json.loads(existing["media"]), media, _iso(now))
+        except (ValueError, TypeError):
+            pass  # an unreadable old snapshot must never block saving the new one
     db.execute(
         "INSERT INTO connection (provider, owner, account_id, username, token_enc, token_issued_at, expires_at, profile, media, fetched_at, connected_at) "
         "VALUES ('instagram', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(provider, owner) DO UPDATE SET account_id=excluded.account_id, "

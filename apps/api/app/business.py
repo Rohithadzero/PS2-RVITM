@@ -192,7 +192,7 @@ def approved_facts(db: Database, profile: dict[str, Any]) -> dict[str, Any] | No
     return None
 
 
-def render_site(profile: dict[str, Any], facts: dict[str, Any] | None, lang: str = "en", preview: bool = False) -> tuple[str, list[str]]:
+def render_site(profile: dict[str, Any], facts: dict[str, Any] | None, lang: str = "en", preview: bool = False, slug: str | None = None) -> tuple[str, list[str]]:
     """Returns (html, warnings). Pure: the same inputs give the same page. The preview leaves out the language switch (the editor has its own)."""
     lang = lang if lang in LANGS else "en"
     t = UI[lang]
@@ -212,6 +212,12 @@ def render_site(profile: dict[str, Any], facts: dict[str, Any] | None, lang: str
 
     tagline = (profile.get("tagline") or {}).get(lang) or (profile.get("tagline") or {}).get("en") or ""
     hello = t["hello"].format(name=name)
+
+    def order_href(item_index: int | None, text: str) -> str:
+        """Live page: through the site's own counting link. Preview: straight to WhatsApp, so nothing is counted while editing."""
+        if slug and not preview:
+            return f"/site/{slug}/order?lang={lang}" + (f"&i={item_index}" if item_index is not None else "")
+        return order_link(phone, text)
     parts = [f"<header><strong>{_e(name)}</strong>"]
     if len(langs) > 1 and not preview:
         parts.append("<nav aria-label=\"Language\">" + " ".join(f'<a target="_self" href="?lang={l}"{" aria-current=\"true\"" if l == lang else ""}>{l.upper()}</a>' for l in langs) + "</nav>")
@@ -232,14 +238,14 @@ def render_site(profile: dict[str, Any], facts: dict[str, Any] | None, lang: str
                 parts.append(f"<p class=\"small\">{_e(facts['terms'])}</p>")
         if sections["whatsapp"] and phone:
             item = f" {facts['item']}" if facts and facts.get("item") else ""
-            parts.append(f"<p><a class=\"btn\" href=\"{_e(order_link(phone, hello + item))}\" rel=\"noopener\">{_e(t['order'])}</a></p>")
+            parts.append(f"<p><a class=\"btn\" href=\"{_e(order_href(None, hello + item))}\" rel=\"noopener\">{_e(t['order'])}</a></p>")
         parts.append("</section>")
     if sections["menu"] and profile.get("menu"):
         parts.append(f"<section><h2>{_e(t['menu'])}</h2><ul class=\"menu\">")
-        for it in profile["menu"]:
+        for n, it in enumerate(profile["menu"]):
             row = f"<span>{_e(it['name'])}</span><span>{_money(it['price'])}</span>"
             if sections["whatsapp"] and phone:
-                row += f"<a href=\"{_e(order_link(phone, hello + ' ' + it['name']))}\" rel=\"noopener\" aria-label=\"{_e(t['order'])}: {_e(it['name'])}\">+</a>"
+                row += f"<a href=\"{_e(order_href(n, hello + ' ' + it['name']))}\" rel=\"noopener\" aria-label=\"{_e(t['order'])}: {_e(it['name'])}\">+</a>"
             parts.append(f"<li>{row}</li>")
         parts.append("</ul></section>")
     about = (profile.get("about") or {}).get(lang) or (profile.get("about") or {}).get("en")
@@ -320,5 +326,27 @@ def public_site(slug: str, request: Request, lang: str = "en") -> Response:
     if row is None:
         return Response("Not found", status_code=404, media_type="text/plain", headers={"X-Content-Type-Options": "nosniff"})
     profile = json.loads(row["profile"])
-    page, _ = render_site(profile, approved_facts(db, profile), lang)
+    page, _ = render_site(profile, approved_facts(db, profile), lang, slug=slug)
     return Response(page, media_type="text/html; charset=utf-8", headers=SITE_HEADERS)
+
+
+@router.get("/site/{slug}/order")
+def order_tap(slug: str, request: Request, lang: str = "en", i: int | None = None) -> Response:
+    """A visitor tapped Order on WhatsApp. Count it, then send them to the shop's own WhatsApp with the message ready.
+    The address is built here from the saved number, never taken from the request, so this cannot redirect anywhere else."""
+    db: Database = request.app.state.db
+    row = db.query_one("SELECT * FROM business WHERE site_slug = ? AND published = 1", (slug,))
+    profile = json.loads(row["profile"]) if row else {}
+    if row is None or not profile.get("phone"):
+        return Response("Not found", status_code=404, media_type="text/plain", headers={"X-Content-Type-Options": "nosniff"})
+    lang = lang if lang in languages.CODES else "en"
+    menu = profile.get("menu") or []
+    item = menu[i]["name"] if i is not None and 0 <= i < len(menu) else None
+    facts = approved_facts(db, profile)
+    what = item or (facts or {}).get("item")
+    text = UI.get(lang, UI["en"])["hello"].format(name=profile.get("name") or "") + (f" {what}" if what else "")
+    from app import notifications  # imported here: notifications uses modules that import this one
+    notifications.notify(db, row["owner"], "order", f"Order tapped on your website" + (f": {what}" if what else ""),
+                         "A visitor tapped Order on WhatsApp. GrowIT cannot see whether they sent the message, so check your WhatsApp.", "customers",
+                         f"order:{slug}:{what}:{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}")  # taps within the same minute are one line
+    return Response(status_code=302, headers={"Location": order_link(profile["phone"], text), "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})

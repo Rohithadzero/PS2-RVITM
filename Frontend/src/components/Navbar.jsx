@@ -4,6 +4,7 @@ import { SyncDot, ProviderChip } from './ui';
 import { getPlan, health } from '../campaign/lib/api';
 import { useCurrent } from '../campaign/lib/current';
 import { useAuth } from '../lib/auth';
+import NotificationsMenu from './NotificationsMenu';
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -71,16 +72,7 @@ const Navbar = ({ page, onSelect, onOpenMenu, onOpenSummary }) => {
       </div>
 
       <div className="flex items-center gap-2">
-        {user && (
-          <span className="flex items-center gap-2 rounded-full bg-black/25 py-1 pl-1 pr-3 text-xs text-white/80 ring-1 ring-white/10" title={user.email}>
-            {user.picture ? (
-              <img src={user.picture} alt="" referrerPolicy="no-referrer" className="size-8 rounded-full" />
-            ) : (
-              <span className="grid size-8 place-items-center rounded-full bg-accent text-sm font-semibold text-on-accent">{first?.[0]}</span>
-            )}
-            <span className="hidden max-w-32 truncate sm:inline">{user.name}</span>
-          </span>
-        )}
+        <NotificationsMenu user={user} />
         <button
           type="button"
           onClick={() => onSelect('change')}
